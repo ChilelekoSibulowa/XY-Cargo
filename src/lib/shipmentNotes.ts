@@ -155,18 +155,22 @@ export const resolveTrackingByStatus = (
   const normalizedStatus = (status || "").toLowerCase().trim();
   const warehouseTracking = getWarehouseTrackingNumber(notes || null)?.trim() || null;
 
-  // 1. Outgoing Parcel onwards: Show Warehouse Assigned Tracking
-  if (["assigned", "outgoing", "in_transit", "intransit", "supplied", "arrived", "delivered", "closed", "collected", "corrected"].includes(normalizedStatus)) {
-    return warehouseTracking || null;
+  // Pre-shipment stages (Created, Incoming, Need Action): show customer parcel tracking
+  if (
+    [
+      "saved_pickup",
+      "saved_dropoff",
+      "received",
+      "need_action",
+      "created",
+      "incoming",
+    ].includes(normalizedStatus)
+  ) {
+    return customTrackingNumber?.trim() || null;
   }
 
-  // 2. Unified Shipment stages: Show NOTHING (as requested)
-  if (["need_action", "submitted", "confirm_shipment", "approved"].includes(normalizedStatus)) {
-    return null;
-  }
-
-  // 3. Pre-consolidation stages: Show Customer Parcel Tracking
-  return customTrackingNumber?.trim() || null;
+  // Submitted onwards: prefer warehouse-assigned tracking, fall back to customer tracking
+  return warehouseTracking || customTrackingNumber?.trim() || null;
 };
 
 export const resolveTrackingByParcelTab = (
