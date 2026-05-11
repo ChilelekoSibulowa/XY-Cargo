@@ -224,7 +224,8 @@ export const notifyShipmentCreated = async (
   const message = `Dear ${customerName}, your parcel ${trackingText}has been successfully created.`;
   const sms = `Dear ${customerName}, your parcel ${trackingText}has been successfully created.`;
 
-  if (options.creator === "customer" && options.customerId) {
+  // Always notify the customer when a parcel is created (regardless of who created it)
+  if (options.customerId) {
     return sendNotification({
       customer_id: options.customerId,
       event_type: "shipment_created",
@@ -236,7 +237,8 @@ export const notifyShipmentCreated = async (
     });
   }
 
-  if (options.creator === "agent" && options.userId) {
+  // Fallback: notify by user_id when no customerId is available
+  if (options.userId) {
     return sendNotification({
       user_id: options.userId,
       event_type: "shipment_created",
