@@ -1,0 +1,496 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Manrope:wght@400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Main Background */
+    --background: 220 20% 97%;
+    --foreground: 222 25% 16%;
+
+    /* Cards */
+    --card: 0 0% 100%;
+    --card-foreground: 220 15% 20%;
+
+    /* Popovers */
+    --popover: 0 0% 100%;
+    --popover-foreground: 220 15% 20%;
+
+    /* Primary - Dark Slate Blue */
+    --primary: 212 33% 28%;
+    --primary-foreground: 0 0% 100%;
+
+    /* Secondary */
+    --secondary: 220 16% 96%;
+    --secondary-foreground: 222 25% 16%;
+
+    /* Muted */
+    --muted: 220 16% 95%;
+    --muted-foreground: 220 10% 45%;
+
+    /* Accent */
+    --accent: 220 16% 94%;
+    --accent-foreground: 222 25% 16%;
+
+    /* Destructive - Crimson Red */
+    --destructive: 348 83% 47%;
+    --destructive-foreground: 0 0% 100%;
+
+    /* Brand Accent - XY Cargo Red */
+    --brand: 0 100% 43%;
+    --brand-foreground: 0 0% 100%;
+
+    /* Border & Input */
+    --border: 220 14% 91%;
+    --input: 220 14% 91%;
+    --ring: 212 33% 28%;
+
+    --radius: 0.625rem;
+
+    /* Chart Colors */
+    --chart-1: 217 91% 60%;
+    --chart-2: 142 71% 45%;
+    --chart-3: 38 92% 50%;
+    --chart-4: 280 60% 55%;
+    --chart-5: 330 65% 55%;
+
+    /* Sidebar - Dark Theme */
+    --sidebar-background: 222 28% 14%;
+    --sidebar-foreground: 220 14% 85%;
+    --sidebar-primary: 0 0% 100%;
+    --sidebar-primary-foreground: 222 28% 14%;
+    --sidebar-accent: 222 24% 20%;
+    --sidebar-accent-foreground: 0 0% 100%;
+    --sidebar-border: 222 22% 22%;
+    --sidebar-ring: 0 0% 100%;
+    --sidebar-muted: 222 20% 50%;
+
+    /* Dashboard Stats Cards */
+    --stat-blue: 199 89% 48%;
+    --stat-blue-foreground: 0 0% 100%;
+    --stat-green: 152 60% 44%;
+    --stat-green-foreground: 0 0% 100%;
+    --stat-yellow: 38 92% 50%;
+    --stat-yellow-foreground: 0 0% 20%;
+    --stat-red: 348 83% 47%;
+    --stat-red-foreground: 0 0% 100%;
+
+    /* Status Colors */
+    --status-pending: 38 92% 50%;
+    --status-approved: 199 89% 48%;
+    --status-delivered: 152 60% 44%;
+    --status-cancelled: 348 83% 47%;
+    --status-assigned: 262 52% 47%;
+
+    /* Logo Color */
+    --logo-red: 0 100% 50%;
+  }
+
+  .dark {
+    --background: 220 15% 10%;
+    --foreground: 0 0% 95%;
+
+    --card: 220 15% 14%;
+    --card-foreground: 0 0% 95%;
+
+    --popover: 220 15% 14%;
+    --popover-foreground: 0 0% 95%;
+
+    --primary: 199 89% 48%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 220 15% 20%;
+    --secondary-foreground: 0 0% 95%;
+
+    --muted: 220 15% 20%;
+    --muted-foreground: 215 14% 60%;
+
+    --accent: 220 15% 20%;
+    --accent-foreground: 0 0% 95%;
+
+    --destructive: 348 83% 47%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 220 15% 22%;
+    --input: 220 15% 22%;
+    --ring: 199 89% 48%;
+
+    --sidebar-background: 220 15% 8%;
+    --sidebar-foreground: 0 0% 90%;
+    --sidebar-primary: 199 89% 48%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 220 15% 14%;
+    --sidebar-accent-foreground: 0 0% 95%;
+    --sidebar-border: 220 15% 18%;
+    --sidebar-ring: 199 89% 48%;
+    --sidebar-muted: 215 14% 50%;
+
+    --chart-1: 217 91% 60%;
+    --chart-2: 142 71% 45%;
+    --chart-3: 38 92% 50%;
+    --chart-4: 280 60% 55%;
+    --chart-5: 330 65% 55%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-family: 'Manrope', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    padding-left: env(safe-area-inset-left, 0px);
+    padding-right: env(safe-area-inset-right, 0px);
+  }
+
+  /* Window Controls Overlay Support */
+  @media (display-mode: window-controls-overlay) {
+    #title-bar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: env(titlebar-area-height, 33px);
+      background-color: var(--background);
+      -webkit-app-region: drag;
+      display: flex;
+      align-items: center;
+      padding-left: env(titlebar-area-x, 0);
+      z-index: 9999;
+    }
+    
+    body {
+      padding-top: calc(env(titlebar-area-height, 33px) + env(safe-area-inset-top, 0px));
+    }
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    @apply tracking-tight font-bold text-slate-900;
+  }
+
+  .dashboard-shell {
+    font-family: "Inter", "Source Sans Pro", sans-serif;
+    font-size: 14px;
+    line-height: 1.6;
+  }
+
+  .public-scope {
+    font-size: 22px;
+    line-height: 34px;
+  }
+
+  /* Custom scrollbar */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-muted-foreground/20 rounded-full;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-muted-foreground/40;
+  }
+}
+
+@layer components {
+  .sidebar-scroll {
+    scroll-behavior: smooth;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
+  }
+
+  .sidebar-scroll::-webkit-scrollbar {
+    width: 4px;
+  }
+
+  .sidebar-scroll::-webkit-scrollbar-track {
+    background: transparent;
+    margin: 4px 0;
+  }
+
+  .sidebar-scroll::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 999px;
+  }
+
+  .sidebar-scroll::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.3);
+  }
+}
+
+@layer components {
+  .header-menu-text {
+    font-family: "Inter", sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 20px;
+    text-transform: capitalize;
+    letter-spacing: -0.01em;
+    color: rgb(0, 0, 0);
+  }
+
+  .public-scope h1,
+  .public-scope h2,
+  .public-scope .public-title {
+    font-family: "Outfit", sans-serif;
+    font-size: 40px;
+    font-weight: 600;
+    line-height: 52px;
+    color: rgb(0, 0, 0);
+    text-transform: none;
+    letter-spacing: normal;
+  }
+
+  .public-scope .public-hero-title {
+    color: rgb(255, 255, 255);
+  }
+
+  .public-scope .support-cta-title {
+    color: rgb(255, 255, 255);
+  }
+
+  .public-scope .newsletter-cta-title {
+    color: rgb(255, 255, 255);
+  }
+
+  .public-scope .service-page-title {
+    font-family: "Outfit", sans-serif;
+    font-size: 18px;
+    font-weight: 600;
+    line-height: 26px;
+    color: rgb(255, 255, 255);
+    letter-spacing: normal;
+    text-transform: none;
+  }
+
+  .public-scope .service-section-title {
+    font-family: "Outfit", sans-serif;
+    font-size: 18px;
+    font-weight: 600;
+    line-height: 26px;
+    color: rgb(15, 23, 42);
+    letter-spacing: normal;
+    text-transform: none;
+  }
+
+  @media (min-width: 768px) {
+    .public-scope .service-page-title {
+      font-size: 22px;
+      line-height: 30px;
+    }
+
+    .public-scope .service-section-title {
+      font-size: 20px;
+      line-height: 28px;
+    }
+  }
+
+  .public-scope .hero-kicker {
+    font-family: "Plus Jakarta Sans", sans-serif;
+    font-size: clamp(0.85rem, 2vw, 22px);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    color: rgb(255, 255, 255);
+  }
+
+  .public-scope .hero-title {
+    font-family: "Plus Jakarta Sans", sans-serif;
+    font-size: clamp(2rem, 7vw, 90px);
+    font-weight: 800;
+    line-height: 1.1;
+    color: rgb(255, 255, 255);
+    text-transform: none;
+    letter-spacing: -0.02em;
+  }
+
+  .public-scope .hero-subtitle {
+    font-family: "Plus Jakarta Sans", sans-serif;
+    font-size: clamp(0.85rem, 2vw, 24px);
+    font-weight: 600;
+    line-height: 1.4;
+    text-transform: uppercase;
+    color: rgb(255, 255, 255);
+    letter-spacing: 0.1em;
+  }
+
+  .public-scope .hero-description {
+    font-family: "Manrope", sans-serif;
+    font-size: clamp(0.95rem, 1.4vw, 19px);
+    line-height: 1.6;
+    color: rgba(255, 255, 255, 0.95);
+    font-weight: 500;
+  }
+
+  /* Stat Card Variants */
+  .stat-card {
+    @apply relative overflow-hidden rounded-xl p-5 transition-all duration-300;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.06);
+  }
+
+  .stat-card:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px -2px rgba(0, 0, 0, 0.08);
+  }
+
+  .stat-card-blue {
+    background: linear-gradient(135deg, hsl(199 89% 48%), hsl(199 89% 42%));
+    color: hsl(var(--stat-blue-foreground));
+  }
+
+  .stat-card-green {
+    background: linear-gradient(135deg, hsl(152 60% 44%), hsl(152 60% 38%));
+    color: hsl(var(--stat-green-foreground));
+  }
+
+  .stat-card-yellow {
+    background: linear-gradient(135deg, hsl(38 92% 50%), hsl(38 92% 44%));
+    color: hsl(var(--stat-yellow-foreground));
+  }
+
+  .stat-card-red {
+    background: linear-gradient(135deg, hsl(348 83% 47%), hsl(348 83% 41%));
+    color: hsl(var(--stat-red-foreground));
+  }
+
+  .stat-card-icon {
+    @apply absolute right-4 top-1/2 -translate-y-1/2 opacity-15;
+  }
+
+  /* Sidebar Active State */
+  .sidebar-item-active {
+    background-color: hsl(var(--stat-blue));
+  }
+
+  /* Data Tables */
+  .data-table-header {
+    @apply bg-muted/40 font-semibold text-muted-foreground uppercase text-[11px] tracking-wider;
+  }
+
+  /* Forms */
+  .form-section {
+    @apply bg-card rounded-xl border p-6 space-y-4;
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.03);
+  }
+
+  .form-label {
+    @apply text-sm font-medium text-foreground;
+  }
+
+  /* Badges */
+  .status-badge {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+  }
+
+  .status-badge-pending {
+    background-color: hsl(var(--status-pending) / 0.12);
+    color: hsl(var(--status-pending));
+  }
+
+  .status-badge-approved {
+    background-color: hsl(var(--status-approved) / 0.12);
+    color: hsl(var(--status-approved));
+  }
+
+  .status-badge-delivered {
+    background-color: hsl(var(--status-delivered) / 0.12);
+    color: hsl(var(--status-delivered));
+  }
+
+  .status-badge-cancelled {
+    background-color: hsl(var(--status-cancelled) / 0.12);
+    color: hsl(var(--status-cancelled));
+  }
+
+  /* Page Header */
+  .page-header {
+    @apply flex flex-nowrap items-center justify-between gap-4 mb-8 overflow-x-auto;
+  }
+
+  .page-title {
+    @apply text-xl font-semibold text-foreground tracking-tight whitespace-nowrap;
+  }
+
+  .dashboard-shell h1,
+  .dashboard-shell h2,
+  .dashboard-shell h3,
+  .dashboard-shell .card-title,
+  .dashboard-shell .badge,
+  .dashboard-shell button,
+  .dashboard-shell th,
+  .dashboard-shell td {
+    white-space: nowrap;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+  
+  .pb-mobile-nav {
+    padding-bottom: 85px;
+  }
+
+  .pull-to-refresh-container {
+    overscroll-behavior-y: contain;
+  }
+  
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+  
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  /* Hide number input spinners */
+  .no-spinners::-webkit-inner-spin-button,
+  .no-spinners::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+
+  .no-spinners {
+    -moz-appearance: textfield;
+    appearance: textfield;
+  }
+
+  /* Sidebar scroll - thin styled scrollbar */
+  .sidebar-scroll {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
+  }
+
+  .sidebar-scroll::-webkit-scrollbar {
+    width: 4px;
+  }
+
+  .sidebar-scroll::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .sidebar-scroll::-webkit-scrollbar-thumb {
+    background-color: rgba(255, 255, 255, 0.25);
+    border-radius: 4px;
+  }
+
+  .sidebar-scroll::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(255, 255, 255, 0.45);
+  }
+}

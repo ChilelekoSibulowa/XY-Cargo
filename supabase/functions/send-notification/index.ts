@@ -1,0 +1,448 @@
+import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
+};
+const jsonHeaders = { ...corsHeaders, "Content-Type": "application/json" };
+
+interface NotificationRequest {
+  notification_id?: string;
+  customer_id?: string;
+  user_id?: string;
+  event_type?: string;
+  title: string;
+  message: string;
+  email?: string;
+  phone?: string;
+  customer_name?: string;
+  sms_message?: string;
+  email_subject?: string;
+  email_body?: string;
+  reference_id?: string;
+  notification_type?: string;
+  channels?: ("sms" | "email" | "bell" | "push")[];
+}
+
+const cleanValue = (v: unknown) => {
+  if (typeof v !== "string") return null;
+  const t = v.trim();
+  return t.length > 0 ? t : null;
+};
+
+const normalizePhoneE164 = (phone: string): string | null => {
+  const digits = phone.replace(/[^0-9+]/g, "");
+  if (!digits || digits.length < 9) return null;
+  if (digits.startsWith("+")) return digits;
+  if (digits.startsWith("0")) return `+260${digits.slice(1)}`;
+  if (digits.startsWith("260")) return `+${digits}`;
+  return `+${digits}`;
+};
+
+const normalizeForZamtel = (phone: string): string | null => {
+  const e164 = normalizePhoneE164(phone);
+  if (!e164) return null;
+  if (e164.startsWith("+260")) return e164.slice(1);
+  return e164.replace(/^\+/, "");
+};
+
+const escapeHtml = (v: string) =>
+  v
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+
+const buildNotificationEmail = (
+  companyName: string,
+  title: string,
+  message: string,
+) => `
+<div style="font-family: Arial, sans-serif; color: #111827; line-height: 1.6; max-width: 560px; margin: 0 auto;">
+  <div style="background: #111827; color: #ffffff; padding: 20px 24px; border-radius: 8px 8px 0 0;">
+    <h2 style="margin: 0; font-size: 18px;">${escapeHtml(companyName)}</h2>
+  </div>
+  <div style="padding: 24px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 8px 8px;">
+    <h3 style="margin: 0 0 12px 0; font-size: 16px;">${escapeHtml(title)}</h3>
+    <p style="margin: 0 0 16px 0; color: #374151;">${escapeHtml(message)}</p>
+    <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 20px 0;" />
+    <p style="font-size: 12px; color: #9ca3af; margin: 0;">&copy; ${new Date().getFullYear()} ${escapeHtml(companyName)}. All rights reserved.</p>
+  </div>
+</div>`;
+
+const logDelivery = async (
+  supabase: any,
+  notificationId: string | undefined,
+  channel: string,
+  status: string,
+  errorMessage: string | null = null,
+  providerResponse: any = null,
+) => {
+  if (!notificationId) return;
+  try {
+    await supabase.from("notification_delivery_logs").insert({
+      notification_id: notificationId,
+      channel,
+      status,
+      error_message: errorMessage,
+      provider_response: providerResponse,
+    });
+  } catch (err) {
+    console.error(`Failed to log delivery for ${channel}:`, err);
+  }
+};
+
+serve(async (req) => {
+  if (req.method === "OPTIONS") {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  try {
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const supabase = createClient(supabaseUrl, serviceKey);
+
+    const body: NotificationRequest = await req.json();
+    const {
+      title,
+      message,
+      channels = ["sms", "email", "bell", "push"],
+    } = body;
+    const event_type = cleanValue(body.event_type)
+      || cleanValue(body.notification_type)
+      || (body.reference_id ? `notification_${body.reference_id}` : "notification_dispatch");
+
+    if (!title || !message) {
+      return new Response(
+        JSON.stringify({
+          error: "title and message are required",
+        }),
+        { status: 400, headers: jsonHeaders },
+      );
+    }
+
+    // Resolve customer details
+    let customerPhone: string | null = null;
+    let customerEmail: string | null = null;
+    let customerName: string | null = null;
+    let targetUserId: string | null = body.user_id || null;
+
+    // Database triggers already resolve contact details from the registered
+    // customer/profile record and pass them through notification metadata.
+    customerPhone = cleanValue(body.phone);
+    customerEmail = cleanValue(body.email);
+    customerName = cleanValue(body.customer_name);
+
+    // Prioritize finding customer info via user_id if customer_id is missing
+    if (!body.customer_id && targetUserId) {
+      const { data: cust } = await supabase
+        .from("customers")
+        .select("id, phone, email, full_name")
+        .eq("user_id", targetUserId)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      
+      if (cust) {
+        customerPhone = cust.phone;
+        customerEmail = cust.email;
+        customerName = cust.full_name;
+      }
+    }
+
+    if (body.customer_id) {
+      const { data: cust } = await supabase
+        .from("customers")
+        .select("phone, email, full_name, user_id")
+        .eq("id", body.customer_id)
+        .maybeSingle();
+
+      if (cust) {
+        customerPhone = customerPhone || cust.phone;
+        customerEmail = customerEmail || cust.email;
+        customerName = customerName || cust.full_name;
+        targetUserId = targetUserId || cust.user_id;
+      }
+    }
+
+    // Fallback to profiles if still no contact info
+    if (!customerPhone && !customerEmail && targetUserId) {
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("email, phone, full_name")
+        .eq("user_id", targetUserId)
+        .maybeSingle();
+
+      if (profile) {
+        customerEmail = profile.email;
+        customerPhone = profile.phone;
+        customerName = customerName || profile.full_name;
+      }
+    }
+
+    const results: Record<string, any> = {};
+
+    // Prevent duplicates: ONLY check if we are NOT being called by the DB trigger
+    // If the DB trigger is calling us, it won't pass 'notification_id' or similar bypass
+    // But a safer way is to check if there is an OLDER duplicate, not including the current one if it exists.
+    if (body.reference_id && title && message) {
+      const { data: existing } = await supabase
+        .from("notifications")
+        .select("id")
+        .eq("reference_id", body.reference_id)
+        .eq("title", title)
+        .eq("message", message)
+        .lt('created_at', new Date(Date.now() - 2000).toISOString()) // Only skip if it's at least 2 seconds old
+        .limit(1);
+
+      if (existing && existing.length > 0) {
+        return new Response(
+          JSON.stringify({
+            success: true,
+            results: { skipped: true, reason: "Duplicate notification" },
+          }),
+          { status: 200, headers: jsonHeaders },
+        );
+      }
+    }
+
+    // 1. Insert bell notification
+    if (channels.includes("bell") && targetUserId) {
+      if (body.notification_id) {
+        await logDelivery(supabase, body.notification_id, "bell", "sent");
+        results.bell = { success: true, existing_notification: true };
+      } else {
+        const { error: bellError } = await supabase.from("notifications").insert({
+          user_id: targetUserId,
+          title,
+          message,
+          notification_type: body.notification_type || event_type,
+          reference_id: body.reference_id || null,
+          is_read: false,
+        });
+        results.bell = bellError
+          ? { error: bellError.message }
+          : { success: true };
+      }
+    }
+
+    // 2. Send SMS via Zamtel
+    if (channels.includes("sms") && customerPhone) {
+      try {
+        const smsText = body.sms_message || message;
+        const zamtelPhone = normalizeForZamtel(customerPhone);
+
+        if (zamtelPhone) {
+          // Resolve Zamtel API key
+          const envApiKey = cleanValue(Deno.env.get("ZAMTEL_SMS_API_KEY"));
+          let apiKey = envApiKey;
+          let senderId =
+            cleanValue(Deno.env.get("ZAMTEL_SMS_SENDER_ID")) || "XYCargo";
+
+          if (!apiKey) {
+            const { data: rows } = await supabase
+              .from("api_secrets")
+              .select("secret_key, secret_value")
+              .in("secret_key", ["ZAMTEL_SMS_API_KEY", "ZAMTEL_SMS_SENDER_ID"])
+              .eq("is_active", true);
+
+            if (rows && rows.length > 0) {
+              apiKey = cleanValue(
+                (rows as any[]).find(
+                  (r: any) => r.secret_key === "ZAMTEL_SMS_API_KEY",
+                )?.secret_value,
+              );
+              senderId =
+                cleanValue(
+                  (rows as any[]).find(
+                    (r: any) => r.secret_key === "ZAMTEL_SMS_SENDER_ID",
+                  )?.secret_value,
+                ) || senderId;
+            }
+          }
+
+          if (apiKey) {
+            const contactsParam = `[${zamtelPhone}]`;
+            const smsUrl = `https://bulksms.zamtel.co.zm/api/v2.1/action/send/api_key/${encodeURIComponent(apiKey)}/contacts/${encodeURIComponent(contactsParam)}/senderId/${encodeURIComponent(senderId)}/message/${encodeURIComponent(smsText.trim())}`;
+            const smsResp = await fetch(smsUrl, {
+              method: "GET",
+              headers: { Accept: "application/json, text/plain, */*" },
+            });
+
+            // Log SMS
+            let smsPayload: any = null;
+            try {
+              smsPayload = await smsResp.json();
+            } catch {
+              /* not json */
+            }
+
+            await supabase.from("sms_logs").insert({
+              recipient_phone: zamtelPhone,
+              message: smsText,
+              provider: "xy_cargo",
+              status: smsResp.ok ? "sent" : "failed",
+              provider_response: smsPayload,
+              reference_type: event_type,
+              reference_id: body.reference_id || null,
+            });
+
+            await logDelivery(supabase, body.notification_id, "sms", smsResp.ok ? "sent" : "failed", smsResp.ok ? null : "Zamtel API error", smsPayload);
+            results.sms = { success: smsResp.ok, phone: zamtelPhone };
+          } else {
+            await logDelivery(supabase, body.notification_id, "sms", "skipped", "No Zamtel API key configured");
+            results.sms = {
+              skipped: true,
+              reason: "No Zamtel API key configured",
+            };
+          }
+        }
+      } catch (smsErr) {
+        console.error("SMS error:", smsErr);
+        await logDelivery(supabase, body.notification_id, "sms", "failed", smsErr instanceof Error ? smsErr.message : "SMS failed");
+        results.sms = {
+          error: smsErr instanceof Error ? smsErr.message : "SMS failed",
+        };
+      }
+    }
+
+    // 3. Send Email via Resend
+    if (channels.includes("email") && customerEmail) {
+      try {
+        const resendApiKey = cleanValue(Deno.env.get("RESEND_API_KEY"));
+        let apiKey = resendApiKey;
+
+        if (!apiKey) {
+          const { data: rows } = await supabase
+            .from("api_secrets")
+            .select("secret_value")
+            .eq("secret_key", "RESEND_API_KEY")
+            .eq("is_active", true)
+            .limit(1);
+          apiKey = cleanValue((rows as any[])?.[0]?.secret_value);
+        }
+
+        if (apiKey) {
+          const emailSubject = body.email_subject || title;
+          const emailHtml =
+            body.email_body ||
+            buildNotificationEmail("XY Cargo Zambia", title, message);
+
+          const emailResp = await fetch("https://api.resend.com/emails", {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${apiKey}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              from: "XY Cargo Zambia <no-reply@xycargozm.com>",
+              to: [customerEmail],
+              subject: emailSubject,
+              html: emailHtml,
+            }),
+          });
+
+          await logDelivery(supabase, body.notification_id, "email", emailResp.ok ? "sent" : "failed", emailResp.ok ? null : "Resend API error");
+          results.email = { success: emailResp.ok, email: customerEmail };
+        } else {
+          await logDelivery(supabase, body.notification_id, "email", "skipped", "No Resend API key configured");
+          results.email = { skipped: true, reason: "No Resend API key" };
+        }
+      } catch (emailErr) {
+        console.error("Email error:", emailErr);
+        await logDelivery(supabase, body.notification_id, "email", "failed", emailErr instanceof Error ? emailErr.message : "Email failed");
+        results.email = {
+          error: emailErr instanceof Error ? emailErr.message : "Email failed",
+        };
+      }
+    }
+
+    // 4. Send Push Notification via Web Push
+    if (channels.includes("push") && targetUserId) {
+      try {
+        const { data: subs } = await supabase
+          .from("push_subscriptions")
+          .select("endpoint, p256dh, auth")
+          .eq("user_id", targetUserId);
+
+        if (subs && subs.length > 0) {
+          // Resolve VAPID keys
+          const { data: keys } = await supabase
+            .from("api_secrets")
+            .select("secret_key, secret_value")
+            .in("secret_key", ["VAPID_PUBLIC_KEY", "VAPID_PRIVATE_KEY"])
+            .eq("is_active", true);
+
+          const publicKey = keys?.find(k => k.secret_key === "VAPID_PUBLIC_KEY")?.secret_value;
+          const privateKey = keys?.find(k => k.secret_key === "VAPID_PRIVATE_KEY")?.secret_value;
+
+          if (publicKey && privateKey) {
+            // Send to each subscription
+            const pushPromises = subs.map(async (sub) => {
+              try {
+                // In a real production environment, you'd use a web-push library.
+                // For this implementation, we assume the existence of a helper or 
+                // we use a fetch to a dedicated push service if available, 
+                // or we use the 'web-push' library via esm.sh
+                
+                // For now, we will use a simplified fetch to a Web Push helper if you had one,
+                // BUT since I want to be thorough, I will use esm.sh/web-push
+                
+                const webpush = await import("https://esm.sh/web-push@3.6.7");
+                webpush.setVapidDetails(
+                  "mailto:info@xycargo.com",
+                  publicKey,
+                  privateKey
+                );
+
+                await webpush.sendNotification({
+                  endpoint: sub.endpoint,
+                  keys: {
+                    p256dh: sub.p256dh,
+                    auth: sub.auth
+                  }
+                }, JSON.stringify({
+                  title: title,
+                  body: message,
+                  icon: "https://xycargozm.com/icons/icon-192.png",
+                  badge: "https://xycargozm.com/icons/icon-192.png",
+                  url: "/customer/inbox"
+                }));
+                return { success: true };
+              } catch (err) {
+                console.error("Push error for sub:", sub.endpoint, err);
+                return { success: false, error: err.message };
+              }
+            });
+
+            const pushResults = await Promise.all(pushPromises);
+            results.push = { success: true, count: pushResults.filter(r => r.success).length };
+          } else {
+            results.push = { skipped: true, reason: "VAPID keys not configured" };
+          }
+        } else {
+          results.push = { skipped: true, reason: "No push subscriptions found for user" };
+        }
+      } catch (pushErr) {
+        console.error("Push notification overall error:", pushErr);
+        results.push = { error: pushErr.message };
+      }
+    }
+
+
+    return new Response(JSON.stringify({ success: true, results }), {
+      status: 200,
+      headers: jsonHeaders,
+    });
+  } catch (error) {
+    console.error("send-notification error:", error);
+    return new Response(
+      JSON.stringify({
+        error: error instanceof Error ? error.message : "Internal error",
+      }),
+      { status: 500, headers: jsonHeaders },
+    );
+  }
+});
