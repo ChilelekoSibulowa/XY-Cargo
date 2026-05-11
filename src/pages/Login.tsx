@@ -16,14 +16,8 @@ import { writeDashboardAuthSnapshot } from "@/lib/dashboardSessionCache";
 const AUTH_CONFIG_ERROR =
   "Authentication is not configured in this environment. Add VITE_SUPABASE_URL and VITE_SUPABASE_PUBLISHABLE_KEY to your .env file.";
 
-declare global {
-  interface Window {
-    grecaptcha?: {
-      ready: (callback: () => void) => void;
-      execute: (siteKey: string, options: { action: string }) => Promise<string>;
-    };
-  }
-}
+// reCAPTCHA removed
+
 
 const getEdgeFunctionErrorMessage = (message: string | undefined, fallback: string) => {
   const normalized = (message || "").toLowerCase();
