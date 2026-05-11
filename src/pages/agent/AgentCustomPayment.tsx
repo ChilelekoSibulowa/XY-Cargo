@@ -94,22 +94,22 @@ const AgentCustomPayment = () => {
 
       <div className="grid gap-8 lg:grid-cols-5">
         <div className="lg:col-span-3 space-y-6">
-          <Card className="border-border/70 shadow-lg overflow-hidden border-t-4 border-t-primary">
-            <CardHeader className="bg-muted/30 border-b border-border/50 pb-6">
+          <Card className="border-border/70 shadow-sm overflow-hidden">
+            <CardHeader className="bg-muted/30 border-b border-border/50">
               <div className="flex items-center justify-between">
-                <CardTitle className="text-xl flex items-center gap-2">
-                  <CreditCard className="h-5 w-5 text-primary" />
+                <CardTitle className="text-base flex items-center gap-2">
+                  <CreditCard className="h-4 w-4 text-primary" />
                   Payment Details
                 </CardTitle>
-                <Badge variant="outline" className="bg-background font-mono text-[10px] tracking-widest uppercase py-1">
+                <Badge variant="outline" className="bg-background text-[10px] uppercase">
                   Secure Checkout
                 </Badge>
               </div>
             </CardHeader>
-            <CardContent className="pt-8">
-              <form onSubmit={handlePayment} className="space-y-8">
-                <div className="space-y-3">
-                  <Label htmlFor="service" className="text-xs font-black uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+            <CardContent className="pt-6">
+              <form onSubmit={handlePayment} className="space-y-5">
+                <div className="space-y-2">
+                  <Label htmlFor="service" className="text-sm font-medium flex items-center gap-2">
                     Service Description
                     <Info className="h-3 w-3 opacity-50" />
                   </Label>
@@ -119,19 +119,19 @@ const AgentCustomPayment = () => {
                     onChange={(e) => setServiceDescription(e.target.value)}
                     placeholder="Enter details about what you are paying for..."
                     required
-                    className="min-h-[120px] border-2 focus:ring-primary/20 resize-none text-base p-4"
+                    className="min-h-[100px] resize-none text-sm"
                   />
                 </div>
 
-                <div className="grid gap-6 md:grid-cols-2">
-                  <div className="space-y-3">
-                    <Label htmlFor="amount" className="text-xs font-black uppercase tracking-wider text-muted-foreground">Amount ({code})</Label>
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="amount" className="text-sm font-medium">Amount ({code})</Label>
                     <div className="relative">
                       <Input
                         id="amount"
                         type="text"
                         inputMode="decimal"
-                        className="h-14 pl-10 border-2 font-black text-xl focus:ring-primary/20 no-spinners"
+                        className="h-10 pl-8 text-sm no-spinners"
                         value={displayAmount}
                         onChange={(e) => {
                           const val = e.target.value;
@@ -148,33 +148,29 @@ const AgentCustomPayment = () => {
                         placeholder="0.00"
                         required
                       />
-                      <div className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground font-black">
+                      <div className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
                         {code === "ZMW" ? "K" : "$"}
                       </div>
                     </div>
                   </div>
 
-                  <div className="space-y-3">
-                    <Label className="text-xs font-black uppercase tracking-wider text-muted-foreground">Payment Method</Label>
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium">Payment Method</Label>
                     <Select value={paymentMethod} onValueChange={(v) => setPaymentMethod(v as "card" | "mobile_money")}>
-                      <SelectTrigger className="h-14 border-2 focus:ring-primary/20 bg-background">
+                      <SelectTrigger className="h-10 text-sm">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="mobile_money" className="py-3">
-                          <div className="flex items-center gap-3">
-                            <div className="h-8 w-8 rounded bg-primary/10 flex items-center justify-center">
-                              <Smartphone className="h-4 w-4 text-primary" />
-                            </div>
-                            <span className="font-bold">Mobile Money</span>
+                        <SelectItem value="mobile_money">
+                          <div className="flex items-center gap-2">
+                            <Smartphone className="h-4 w-4 text-primary" />
+                            <span className="text-sm">Mobile Money</span>
                           </div>
                         </SelectItem>
-                        <SelectItem value="card" className="py-3">
-                          <div className="flex items-center gap-3">
-                            <div className="h-8 w-8 rounded bg-primary/10 flex items-center justify-center">
-                              <CreditCard className="h-4 w-4 text-primary" />
-                            </div>
-                            <span className="font-bold">Visa / Mastercard</span>
+                        <SelectItem value="card">
+                          <div className="flex items-center gap-2">
+                            <CreditCard className="h-4 w-4 text-primary" />
+                            <span className="text-sm">Visa / Mastercard</span>
                           </div>
                         </SelectItem>
                       </SelectContent>
@@ -183,31 +179,29 @@ const AgentCustomPayment = () => {
                 </div>
 
                 {paymentMethod === "mobile_money" && (
-                  <div className="space-y-3 animate-in fade-in slide-in-from-top-2 duration-300">
-                    <Label htmlFor="phone" className="text-xs font-black uppercase tracking-wider text-muted-foreground">Phone Number</Label>
-                    <div className="relative">
-                      <Input
-                        id="phone"
-                        type="tel"
-                        value={phoneNumber}
-                        onChange={(e) => setPhoneNumber(e.target.value)}
-                        placeholder="e.g. 0977123456"
-                        required
-                        className="h-14 border-2 font-bold focus:ring-primary/20"
-                      />
-                    </div>
+                  <div className="space-y-2 animate-in fade-in slide-in-from-top-2 duration-300">
+                    <Label htmlFor="phone" className="text-sm font-medium">Phone Number</Label>
+                    <Input
+                      id="phone"
+                      type="tel"
+                      value={phoneNumber}
+                      onChange={(e) => setPhoneNumber(e.target.value)}
+                      placeholder="e.g. 0977123456"
+                      required
+                      className="h-10 text-sm"
+                    />
                   </div>
                 )}
 
-                <Button 
-                  type="submit" 
-                  disabled={isProcessing || amount <= 0 || !serviceDescription} 
-                  className="w-full h-16 text-lg font-black shadow-xl shadow-primary/20 transition-all hover:scale-[1.01] uppercase tracking-tighter"
+                <Button
+                  type="submit"
+                  disabled={isProcessing || amount <= 0 || !serviceDescription}
+                  className="w-full h-10 text-sm font-semibold"
                 >
                   {isProcessing ? (
-                    <Loader2 className="mr-3 h-6 w-6 animate-spin" />
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   ) : (
-                    <ShieldCheck className="mr-3 h-6 w-6" />
+                    <ShieldCheck className="mr-2 h-4 w-4" />
                   )}
                   {isProcessing ? "Processing..." : `Pay ${amount > 0 ? formatAmount(amount) : ""}`}
                 </Button>
@@ -219,20 +213,20 @@ const AgentCustomPayment = () => {
         <div className="lg:col-span-2 space-y-6">
           <Card className="border-border/70 shadow-md">
             <CardHeader>
-              <CardTitle className="text-sm font-black uppercase tracking-widest text-muted-foreground">Payment Summary</CardTitle>
+              <CardTitle className="text-sm font-semibold text-muted-foreground">Payment Summary</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex justify-between items-center py-2 border-b border-dashed">
-                <span className="text-sm font-medium text-muted-foreground">Payment for:</span>
-                <span className="text-sm font-bold truncate max-w-[150px]">{serviceDescription || "Not specified"}</span>
+                <span className="text-sm text-muted-foreground">Payment for:</span>
+                <span className="text-sm font-medium truncate max-w-[150px]">{serviceDescription || "Not specified"}</span>
               </div>
               <div className="flex justify-between items-center py-2 border-b border-dashed">
-                <span className="text-sm font-medium text-muted-foreground">Method:</span>
-                <Badge variant="secondary" className="font-bold capitalize">{paymentMethod.replace("_", " ")}</Badge>
+                <span className="text-sm text-muted-foreground">Method:</span>
+                <Badge variant="secondary" className="capitalize text-xs">{paymentMethod.replace("_", " ")}</Badge>
               </div>
-              <div className="flex justify-between items-center py-4 text-primary">
-                <span className="text-base font-black uppercase">Total Amount:</span>
-                <span className="text-2xl font-black">{formatAmount(amount)}</span>
+              <div className="flex justify-between items-center py-3 text-primary">
+                <span className="text-sm font-semibold">Total Amount:</span>
+                <span className="text-lg font-semibold">{formatAmount(amount)}</span>
               </div>
               
               <div className="bg-muted/20 rounded-xl p-4 space-y-3 border border-border/50">

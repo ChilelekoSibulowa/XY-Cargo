@@ -221,8 +221,8 @@ export const notifyShipmentCreated = async (
   }
 
   const title = "Parcel Created";
-  const message = `Dear ${customerName}, your parcel ${trackingText}has been created successfully.`;
-  const sms = `Dear ${customerName}, your parcel ${trackingText}has been created successfully.`;
+  const message = `Dear ${customerName}, your parcel ${trackingText}has been successfully created.`;
+  const sms = `Dear ${customerName}, your parcel ${trackingText}has been successfully created.`;
 
   if (options.creator === "customer" && options.customerId) {
     return sendNotification({
