@@ -328,6 +328,14 @@ export const ShipmentBookingForm = ({
       toast.error(shipmentError?.message || "Failed to create shipment.");
     } else {
       toast.success("Shipment created successfully.");
+      // Send the "successfully created" notification (single source of truth for Created stage)
+      const trackingForMsg = (form.custom_tracking_number || shipmentData.code || "").trim();
+      void notifyShipmentCreated({
+        customerId,
+        shipmentCode: trackingForMsg,
+        shipmentId: shipmentData.id,
+        creator: isStaffMode ? "agent" : "customer",
+      }).catch((err) => console.error("notifyShipmentCreated failed:", err));
       if (onSuccess) {
         onSuccess();
       } else {
