@@ -688,20 +688,20 @@ const AgentPayments = () => {
 
       <div className="grid gap-6 md:grid-cols-3">
         <Card className="border-border/70 shadow-sm">
-          <CardHeader className="pb-2"><CardTitle className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Outstanding Invoices</CardTitle></CardHeader>
-          <CardContent><div className="text-3xl font-black text-destructive tracking-tighter">{isLoading ? "..." : formatAmount(totals.outstanding)}</div></CardContent>
+          <CardHeader className="pb-2"><CardTitle className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Outstanding Invoices</CardTitle></CardHeader>
+          <CardContent><div className="text-base font-semibold text-destructive tracking-tighter">{isLoading ? "..." : formatAmount(totals.outstanding)}</div></CardContent>
         </Card>
         <Card className="border-border/70 shadow-sm">
-          <CardHeader className="pb-2"><CardTitle className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Paid Invoices</CardTitle></CardHeader>
-          <CardContent><div className="text-3xl font-black text-emerald-600 tracking-tighter">{isLoading ? "..." : formatAmount(totals.paid)}</div></CardContent>
+          <CardHeader className="pb-2"><CardTitle className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Paid Invoices</CardTitle></CardHeader>
+          <CardContent><div className="text-base font-semibold text-emerald-600 tracking-tighter">{isLoading ? "..." : formatAmount(totals.paid)}</div></CardContent>
         </Card>
         <Card className="border-border/70 shadow-sm border-r-4 border-r-primary">
           <CardHeader className="pb-2 flex flex-row items-center justify-between space-y-0">
-            <CardTitle className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Agent Wallet Balance</CardTitle>
+            <CardTitle className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Agent Wallet Balance</CardTitle>
             <Wallet className="h-4 w-4 text-primary" />
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-black tracking-tighter">{isLoading ? "..." : formatAmount(agentWalletBalance)}</div>
+            <div className="text-base font-semibold tracking-tighter">{isLoading ? "..." : formatAmount(agentWalletBalance)}</div>
             <p className="text-[10px] text-muted-foreground font-bold mt-1 uppercase tracking-widest">Available for client payments</p>
           </CardContent>
         </Card>
@@ -711,7 +711,7 @@ const AgentPayments = () => {
         <Card className="border-border/70 shadow-lg border-l-4 border-l-primary animate-in slide-in-from-top-4 duration-500 overflow-hidden">
           <CardHeader className="bg-primary/5 pb-4">
             <div className="flex items-center justify-between">
-              <CardTitle className="text-base font-black uppercase tracking-widest flex items-center gap-2">
+              <CardTitle className="text-base font-semibold uppercase tracking-widest flex items-center gap-2">
                 <Loader2 className={cn("h-5 w-5 text-primary", isPolling && "animate-spin")} />
                 Payment Verification in Progress
               </CardTitle>
@@ -721,20 +721,20 @@ const AgentPayments = () => {
           <CardContent className="pt-6 space-y-6">
             <div className="grid gap-6 sm:grid-cols-2 md:grid-cols-3">
               <div className="space-y-1.5">
-                <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Status</p>
+                <p className="text-[10px] font-semibold uppercase text-muted-foreground tracking-widest">Status</p>
                 <div className="flex items-center gap-2">
                   {activePayment?.status ? getStatusBadge(activePayment.status) : <Badge variant="secondary" className="animate-pulse">Checking...</Badge>}
                 </div>
               </div>
               <div className="space-y-1.5">
-                <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Amount Due</p>
-                <p className="text-lg font-black tracking-tighter">
+                <p className="text-[10px] font-semibold uppercase text-muted-foreground tracking-widest">Amount Due</p>
+                <p className="text-sm font-semibold tracking-tighter">
                   {formatAmount(activePayment?.amount ?? pendingPaymentAmount)}
                 </p>
               </div>
               <div className="sm:col-span-2 md:col-span-1 space-y-3">
                 {checkoutUrl && activePayment?.status !== "completed" && (
-                  <Button asChild className="w-full font-black uppercase tracking-tighter shadow-md" size="lg">
+                  <Button asChild className="w-full font-semibold uppercase tracking-tighter shadow-md" size="lg">
                     <a href={checkoutUrl} target="_blank" rel="noreferrer">
                       <ExternalLink className="mr-2 h-5 w-5" />
                       Complete Checkout
@@ -743,7 +743,7 @@ const AgentPayments = () => {
                 )}
                 {activePayment?.status === "completed" && (
                   <Button 
-                    className="w-full font-black uppercase tracking-tighter bg-emerald-600 hover:bg-emerald-700" 
+                    className="w-full font-semibold uppercase tracking-tighter bg-emerald-600 hover:bg-emerald-700" 
                     size="lg"
                     onClick={() => {
                       setPendingPaymentCode("");
@@ -764,7 +764,7 @@ const AgentPayments = () => {
               <div className="bg-destructive/10 text-destructive p-4 rounded-xl border border-destructive/20 flex items-start gap-3">
                 <AlertCircle className="h-5 w-5 mt-0.5 shrink-0" />
                 <div className="space-y-1">
-                  <p className="text-sm font-black uppercase tracking-tight">Payment Unsuccessful</p>
+                  <p className="text-sm font-semibold uppercase tracking-tight">Payment Unsuccessful</p>
                   <p className="text-xs font-bold opacity-80">The transaction was cancelled or failed. Please try again or contact support if funds were deducted.</p>
                 </div>
               </div>
@@ -777,7 +777,7 @@ const AgentPayments = () => {
         {/* Add Funds Section */}
         <Card className="border-border/70 shadow-sm overflow-hidden flex flex-col">
           <CardHeader className="bg-muted/30 border-b border-border/50 pb-4">
-            <CardTitle className="text-xl flex items-center gap-2">
+            <CardTitle className="text-base flex items-center gap-2">
               <PlusCircle className="h-5 w-5 text-primary" />
               Agent Wallet Top-Up
             </CardTitle>
@@ -787,7 +787,7 @@ const AgentPayments = () => {
               <div className="space-y-2">
                 <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Deposit Method</Label>
                 <Select value={paymentMethod} onValueChange={(v) => setPaymentMethod(v as "card" | "mobile_money")}>
-                  <SelectTrigger className="h-12 border-2 focus:ring-primary/20">
+                  <SelectTrigger className="h-10 border-2 focus:ring-primary/20">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -824,7 +824,7 @@ const AgentPayments = () => {
                     <Input
                       type="text"
                       inputMode="decimal"
-                      className="h-12 pl-10 border-2 font-bold text-lg no-spinners"
+                      className="h-10 pl-10 border-2 font-bold text-sm no-spinners"
                       value={displayAgentWalletTopUpAmount}
                       onChange={(e) => {
                         const val = e.target.value;
@@ -849,7 +849,7 @@ const AgentPayments = () => {
                   <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Phone Number</Label>
                   <Input
                     type="tel"
-                    className="h-12 border-2 font-medium"
+                    className="h-10 border-2 font-medium"
                     value={agentTopUpPhone}
                     onChange={(e) => setAgentTopUpPhone(e.target.value)}
                     placeholder="e.g. 097..."
@@ -861,7 +861,7 @@ const AgentPayments = () => {
                 type="button"
                 onClick={handleAgentWalletTopUp}
                 disabled={isTopUpSubmitting || agentWalletTopUpAmount <= 0}
-                className="w-full h-14 text-lg font-bold shadow-lg shadow-primary/20 mt-2 transition-all hover:scale-[1.01]"
+                className="w-full h-10 text-sm font-bold shadow-lg shadow-primary/20 mt-2 transition-all hover:scale-[1.01]"
               >
                 {isTopUpSubmitting ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Plus className="mr-2 h-5 w-5" />}
                 Deposit to My Wallet
@@ -873,7 +873,7 @@ const AgentPayments = () => {
         {/* Make Payment Section */}
         <Card className="border-border/70 shadow-sm overflow-hidden flex flex-col">
           <CardHeader className="bg-muted/30 border-b border-border/50 pb-4">
-            <CardTitle className="text-xl flex items-center gap-2">
+            <CardTitle className="text-base flex items-center gap-2">
               <CheckCircle className="h-5 w-5 text-primary" />
               Process Client Payment
             </CardTitle>
@@ -894,7 +894,7 @@ const AgentPayments = () => {
                     )}
                   >
                     <CreditCard className="h-5 w-5" />
-                    <span className="text-[10px] font-black uppercase tracking-tighter">Lipila</span>
+                    <span className="text-[10px] font-semibold uppercase tracking-tighter">Lipila</span>
                   </button>
                   <button
                     type="button"
@@ -907,7 +907,7 @@ const AgentPayments = () => {
                     )}
                   >
                     <ShieldCheck className="h-5 w-5" />
-                    <span className="text-[10px] font-black uppercase tracking-tighter text-center">My Wallet</span>
+                    <span className="text-[10px] font-semibold uppercase tracking-tighter text-center">My Wallet</span>
                   </button>
                 </div>
               </div>
@@ -944,7 +944,7 @@ const AgentPayments = () => {
                   <div className="space-y-2">
                     <Label className="text-[10px] font-bold uppercase text-muted-foreground">Target Invoice</Label>
                     <Select value={selectedShipmentId} onValueChange={setSelectedShipmentId}>
-                      <SelectTrigger className="h-12 border-2">
+                      <SelectTrigger className="h-10 border-2">
                         <SelectValue placeholder="Which invoice are you paying?" />
                       </SelectTrigger>
                       <SelectContent className="max-h-[300px]">
@@ -965,7 +965,7 @@ const AgentPayments = () => {
                     <Input
                       type="text"
                       inputMode="decimal"
-                      className="h-12 border-2 font-bold text-lg no-spinners"
+                      className="h-10 border-2 font-bold text-sm no-spinners"
                       value={displayAmount}
                       onChange={(e) => {
                         const val = e.target.value;
@@ -988,8 +988,8 @@ const AgentPayments = () => {
                 {payFrom === "wallet_agent" && (
                    <div className="bg-primary/5 rounded-xl p-4 border border-primary/20 flex items-center justify-between">
                      <div className="space-y-0.5">
-                       <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Your Balance</p>
-                       <p className={cn("text-lg font-black tracking-tighter", amount > agentWalletBalance ? "text-destructive" : "text-primary")}>
+                       <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Your Balance</p>
+                       <p className={cn("text-sm font-semibold tracking-tighter", amount > agentWalletBalance ? "text-destructive" : "text-primary")}>
                          {formatAmount(agentWalletBalance)}
                        </p>
                      </div>
@@ -1000,7 +1000,7 @@ const AgentPayments = () => {
                 <Button
                   onClick={payFrom === "wallet_agent" ? handleAgentWalletPay : handlePay}
                   disabled={isSubmitting || isTopUpSubmitting || isWalletSubmitting || !selectedShipment || amount <= 0}
-                  className="w-full h-14 text-lg font-bold shadow-lg shadow-primary/20 transition-all hover:scale-[1.01]"
+                  className="w-full h-10 text-sm font-bold shadow-lg shadow-primary/20 transition-all hover:scale-[1.01]"
                 >
                   {isSubmitting || isWalletSubmitting ? (
                     <Loader2 className="mr-2 h-6 w-6 animate-spin" />
@@ -1020,7 +1020,7 @@ const AgentPayments = () => {
         <Card className="border-border/70 shadow-sm flex flex-col">
           <CardHeader className="bg-muted/20 border-b border-border/50">
             <div className="flex items-center justify-between">
-              <CardTitle className="text-lg flex items-center gap-2">
+              <CardTitle className="text-sm flex items-center gap-2">
                 <FileText className="h-5 w-5 text-primary" />
                 Client Invoices
               </CardTitle>
@@ -1034,7 +1034,7 @@ const AgentPayments = () => {
           </CardHeader>
           <CardContent className="pt-6">
             <Tabs defaultValue="outstanding" className="w-full">
-              <TabsList className="grid w-full grid-cols-2 mb-6 p-1 bg-muted rounded-xl h-12">
+              <TabsList className="grid w-full grid-cols-2 mb-6 p-1 bg-muted rounded-xl h-10">
                 <TabsTrigger value="outstanding" className="rounded-lg data-[state=active]:shadow-sm">Outstanding ({outstandingShipments.length})</TabsTrigger>
                 <TabsTrigger value="paid" className="rounded-lg data-[state=active]:shadow-sm">Paid History ({paidShipments.length})</TabsTrigger>
               </TabsList>
@@ -1045,18 +1045,18 @@ const AgentPayments = () => {
                       <div key={shipment.id} className="group flex flex-col md:flex-row md:items-center justify-between p-5 rounded-2xl border-2 border-border/50 bg-background hover:border-primary/30 hover:bg-primary/[0.02] transition-all gap-4 overflow-hidden">
                         <div className="space-y-1.5 min-w-0">
                         <div className="flex items-center gap-2.5">
-                          <span className="font-extrabold text-lg">{shipment.code}</span>
+                          <span className="font-semibold text-sm">{shipment.code}</span>
                           <Badge variant="outline" className="font-bold border-2">{getPortalInvoiceReference(shipment)}</Badge>
                         </div>
                         <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                          <span className="font-black uppercase tracking-tighter text-[10px] bg-muted px-1.5 py-0.5 rounded">{shipment.customer_name}</span>
+                          <span className="font-semibold uppercase tracking-tighter text-[10px] bg-muted px-1.5 py-0.5 rounded">{shipment.customer_name}</span>
                           <span className="flex items-center gap-1.5"><Clock className="h-3 w-3" /> {format(new Date(shipment.created_at), "dd MMM yyyy")}</span>
                         </div>
                       </div>
                       <div className="flex flex-wrap items-center gap-4 justify-between md:justify-end shrink-0">
                         <div className="text-right">
-                          <p className="text-lg font-black text-destructive leading-none">{formatAmount(getBalanceDue(shipment))}</p>
-                          <p className="text-[9px] uppercase tracking-widest text-muted-foreground font-black mt-1">Balance Due</p>
+                          <p className="text-sm font-semibold text-destructive leading-none">{formatAmount(getBalanceDue(shipment))}</p>
+                          <p className="text-[9px] uppercase tracking-widest text-muted-foreground font-semibold mt-1">Balance Due</p>
                         </div>
                         <div className="flex items-center gap-2">
                           <Button size="icon" variant="ghost" className="h-10 w-10 rounded-full hover:bg-blue-50 hover:text-blue-600 transition-colors" onClick={() => handleDownloadInvoice(shipment)} title="Download Invoice">
@@ -1077,7 +1077,7 @@ const AgentPayments = () => {
                       <div className="h-16 w-16 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-4">
                         <CheckCircle className="h-8 w-8 text-emerald-600" />
                       </div>
-                      <p className="font-bold text-lg">No Unpaid Invoices</p>
+                      <p className="font-bold text-sm">No Unpaid Invoices</p>
                       <p className="text-sm text-muted-foreground max-w-[200px] mx-auto">Great! Your clients have cleared all their outstanding shipment invoices.</p>
                     </div>
                   )}
@@ -1106,7 +1106,7 @@ const AgentPayments = () => {
                           <Badge className="bg-emerald-100 text-emerald-700 hover:bg-emerald-100 border-emerald-200">Paid</Badge>
                         </div>
                         <div className="flex items-center gap-2">
-                           <span className="text-[10px] font-black uppercase text-muted-foreground tracking-tight">{shipment.customer_name}</span>
+                           <span className="text-[10px] font-semibold uppercase text-muted-foreground tracking-tight">{shipment.customer_name}</span>
                            <span className="text-[10px] text-muted-foreground uppercase tracking-widest font-medium">| {format(new Date(shipment.created_at), "dd MMM yyyy")}</span>
                         </div>
                       </div>
@@ -1147,7 +1147,7 @@ const AgentPayments = () => {
 
         <Card className="border-border/70 shadow-sm flex flex-col h-fit">
           <CardHeader className="bg-muted/20 border-b border-border/50">
-            <CardTitle className="text-lg flex items-center gap-2">
+            <CardTitle className="text-sm flex items-center gap-2">
               <Clock className="h-5 w-5 text-primary" />
               Transaction Log
             </CardTitle>
@@ -1165,14 +1165,14 @@ const AgentPayments = () => {
                     {payments.slice((transactionsPage - 1) * TRANSACTIONS_PAGE_SIZE, transactionsPage * TRANSACTIONS_PAGE_SIZE).map((payment) => (
                       <div key={payment.id} className="flex items-center justify-between p-4 rounded-xl border-2 border-border/50 bg-background/50 hover:bg-muted/10 transition-colors gap-3 overflow-hidden">
                         <div className="space-y-1.5 min-w-0">
-                          <p className="text-xs font-black font-mono tracking-tighter uppercase">{payment.code}</p>
+                          <p className="text-xs font-semibold font-mono tracking-tighter uppercase">{payment.code}</p>
                           <div className="flex items-center gap-2">
-                            <Badge variant="outline" className="text-[9px] h-4 px-1.5 font-black uppercase tracking-tighter bg-muted/50 border-0">{payment.payment_provider}</Badge>
+                            <Badge variant="outline" className="text-[9px] h-4 px-1.5 font-semibold uppercase tracking-tighter bg-muted/50 border-0">{payment.payment_provider}</Badge>
                             <span className="text-[10px] text-muted-foreground font-bold">{format(new Date(payment.created_at), "MMM d, h:mm a")}</span>
                           </div>
                         </div>
                         <div className="text-right space-y-1.5 shrink-0">
-                          <p className="text-sm font-black tracking-tight">{formatAmount(Number(payment.amount || 0))}</p>
+                          <p className="text-sm font-semibold tracking-tight">{formatAmount(Number(payment.amount || 0))}</p>
                           <div className="scale-75 origin-right">{getStatusBadge(payment.status)}</div>
                         </div>
                       </div>
@@ -1245,11 +1245,11 @@ const AgentPayments = () => {
 
               <div className="rounded-lg border border-border bg-muted/20 p-3 text-xs text-muted-foreground text-left">
                 <p className="font-bold mb-1 uppercase tracking-tighter">MTN users:</p>
-                <p>If the prompt doesn&apos;t appear, dial <strong className="text-primary font-black">*115#</strong> to check pending requests.</p>
+                <p>If the prompt doesn&apos;t appear, dial <strong className="text-primary font-semibold">*115#</strong> to check pending requests.</p>
               </div>
             </div>
           </div>
-          <Button variant="outline" className="w-full font-bold h-12" onClick={() => setShowMomoDialog(false)}>
+          <Button variant="outline" className="w-full font-bold h-10" onClick={() => setShowMomoDialog(false)}>
             Close & Check Status Manually
           </Button>
         </DialogContent>

@@ -589,7 +589,7 @@ const CustomerPayments = () => {
               <CardTitle className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Outstanding Invoices</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-3xl font-bold">{formatAmount(totalOutstanding)}</p>
+              <p className="text-base font-bold">{formatAmount(totalOutstanding)}</p>
               <p className="text-xs text-muted-foreground mt-1">Total unpaid balance</p>
             </CardContent>
           </Card>
@@ -598,7 +598,7 @@ const CustomerPayments = () => {
               <CardTitle className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Paid Invoices</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-3xl font-bold text-emerald-600">{formatAmount(totalPaid)}</p>
+              <p className="text-base font-bold text-emerald-600">{formatAmount(totalPaid)}</p>
               <p className="text-xs text-muted-foreground mt-1">Total settled amount</p>
             </CardContent>
           </Card>
@@ -608,7 +608,7 @@ const CustomerPayments = () => {
             </CardHeader>
             <CardContent>
               <div className="flex items-baseline gap-2">
-                <p className="text-3xl font-bold text-primary">{formatAmount(walletBalance)}</p>
+                <p className="text-base font-bold text-primary">{formatAmount(walletBalance)}</p>
                 <Wallet className="h-5 w-5 text-primary opacity-50" />
               </div>
               <p className="text-xs text-muted-foreground mt-1">Available for instant payments</p>
@@ -622,7 +622,7 @@ const CustomerPayments = () => {
               <div className="h-full bg-primary animate-progress w-full" />
             </div>
             <CardHeader className="pb-3">
-              <CardTitle className="text-lg flex items-center gap-2">
+              <CardTitle className="text-sm flex items-center gap-2">
                 <Clock className="h-5 w-5 text-primary" />
                 Processing Payment
               </CardTitle>
@@ -699,7 +699,7 @@ const CustomerPayments = () => {
           {/* Add Funds Section */}
           <Card className="border-border/70 shadow-sm overflow-hidden flex flex-col">
             <CardHeader className="bg-muted/30 border-b border-border/50 pb-4">
-              <CardTitle className="text-xl flex items-center gap-2">
+              <CardTitle className="text-base flex items-center gap-2">
                 <Wallet className="h-5 w-5 text-primary" />
                 Add Funds to Wallet
               </CardTitle>
@@ -709,7 +709,7 @@ const CustomerPayments = () => {
                 <div className="space-y-2">
                   <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Deposit via Lipila</Label>
                   <Select value={paymentMethod} onValueChange={(v) => setPaymentMethod(v as "card" | "mobile_money")}>
-                    <SelectTrigger className="h-12 border-2 focus:ring-primary/20">
+                    <SelectTrigger className="h-10 border-2 focus:ring-primary/20">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -746,7 +746,7 @@ const CustomerPayments = () => {
                       <Input
                         type="text"
                         inputMode="decimal"
-                        className="h-12 pl-10 border-2 font-bold text-lg no-spinners"
+                        className="h-10 pl-10 border-2 font-bold text-sm no-spinners"
                         value={displayTopUpAmount}
                         onChange={(e) => {
                           const val = e.target.value;
@@ -771,7 +771,7 @@ const CustomerPayments = () => {
                     <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Phone Number</Label>
                     <Input
                       type="tel"
-                      className="h-12 border-2 font-medium"
+                      className="h-10 border-2 font-medium"
                       value={paymentPhone}
                       onChange={(e) => setPaymentPhone(e.target.value)}
                       placeholder="e.g. 097..."
@@ -783,7 +783,7 @@ const CustomerPayments = () => {
                   type="button"
                   onClick={handleWalletTopUp}
                   disabled={isWalletLoading || walletTopUpAmount <= 0}
-                  className="w-full h-14 text-lg font-bold shadow-lg shadow-primary/20 mt-2 transition-all hover:scale-[1.01]"
+                  className="w-full h-10 text-sm font-bold shadow-lg shadow-primary/20 mt-2 transition-all hover:scale-[1.01]"
                 >
                   {isWalletLoading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Plus className="mr-2 h-5 w-5" />}
                   Deposit Funds Now
@@ -799,7 +799,7 @@ const CustomerPayments = () => {
           {/* Make Payment Section */}
           <Card className="border-border/70 shadow-sm overflow-hidden flex flex-col">
             <CardHeader className="bg-muted/30 border-b border-border/50 pb-4">
-              <CardTitle className="text-xl flex items-center gap-2">
+              <CardTitle className="text-base flex items-center gap-2">
                 <CreditCard className="h-5 w-5 text-primary" />
                 Make Payment
               </CardTitle>
@@ -876,7 +876,7 @@ const CustomerPayments = () => {
                     <div className="space-y-2">
                       <Label className="text-[10px] font-bold uppercase text-muted-foreground">Select Invoice</Label>
                       <Select value={selectedShipment} onValueChange={setSelectedShipment}>
-                        <SelectTrigger className="h-12 border-2">
+                        <SelectTrigger className="h-10 border-2">
                           <SelectValue placeholder="Which invoice are you paying?" />
                         </SelectTrigger>
                         <SelectContent className="max-h-[300px]">
@@ -897,7 +897,7 @@ const CustomerPayments = () => {
                       <Input
                         type="text"
                         inputMode="decimal"
-                        className="h-12 border-2 font-bold text-lg no-spinners"
+                        className="h-10 border-2 font-bold text-sm no-spinners"
                         value={displayAmount}
                         onChange={(e) => {
                           const val = e.target.value;
@@ -918,7 +918,7 @@ const CustomerPayments = () => {
                   <Button
                     onClick={payFrom === "wallet" ? handleWalletPayment : handlePayment}
                     disabled={isLoading || isWalletLoading || !selectedShipment || amount <= 0}
-                    className="w-full h-14 text-lg font-bold shadow-lg shadow-primary/20 transition-all hover:scale-[1.01]"
+                    className="w-full h-10 text-sm font-bold shadow-lg shadow-primary/20 transition-all hover:scale-[1.01]"
                   >
                     {isLoading || isWalletLoading ? (
                       <Loader2 className="mr-2 h-6 w-6 animate-spin" />
@@ -938,7 +938,7 @@ const CustomerPayments = () => {
           <Card className="border-border/70 shadow-sm flex flex-col">
             <CardHeader className="bg-muted/20 border-b border-border/50">
               <div className="flex items-center justify-between">
-                <CardTitle className="text-lg flex items-center gap-2">
+                <CardTitle className="text-sm flex items-center gap-2">
                   <FileText className="h-5 w-5 text-primary" />
                   Invoice Management
                 </CardTitle>
@@ -952,7 +952,7 @@ const CustomerPayments = () => {
             </CardHeader>
             <CardContent className="pt-6">
               <Tabs defaultValue="outstanding" className="w-full">
-                <TabsList className="grid w-full grid-cols-2 mb-6 p-1 bg-muted rounded-xl h-12">
+                <TabsList className="grid w-full grid-cols-2 mb-6 p-1 bg-muted rounded-xl h-10">
                   <TabsTrigger value="outstanding" className="rounded-lg data-[state=active]:shadow-sm">Outstanding ({outstandingShipments.length})</TabsTrigger>
                   <TabsTrigger value="paid" className="rounded-lg data-[state=active]:shadow-sm">Paid History ({paidShipments.length})</TabsTrigger>
                 </TabsList>
@@ -963,7 +963,7 @@ const CustomerPayments = () => {
                       <div key={shipment.id} className="group flex flex-col md:flex-row md:items-center justify-between p-5 rounded-2xl border-2 border-border/50 bg-background hover:border-primary/30 hover:bg-primary/[0.02] transition-all gap-4 overflow-hidden">
                         <div className="space-y-1.5">
                           <div className="flex items-center gap-2.5">
-                            <span className="font-extrabold text-lg">{shipment.code}</span>
+                            <span className="font-semibold text-sm">{shipment.code}</span>
                             <Badge variant="outline" className="font-bold border-2">{getPortalInvoiceReference(shipment)}</Badge>
                           </div>
                           <div className="flex items-center gap-4 text-xs text-muted-foreground">
@@ -973,8 +973,8 @@ const CustomerPayments = () => {
                         </div>
                         <div className="flex flex-wrap items-center gap-4 justify-between md:justify-end shrink-0">
                           <div className="text-right">
-                            <p className="text-lg font-black text-destructive leading-none">{formatAmount(getBalanceDue(shipment))}</p>
-                            <p className="text-[9px] uppercase tracking-widest text-muted-foreground font-black mt-1">Balance Due</p>
+                            <p className="text-sm font-semibold text-destructive leading-none">{formatAmount(getBalanceDue(shipment))}</p>
+                            <p className="text-[9px] uppercase tracking-widest text-muted-foreground font-semibold mt-1">Balance Due</p>
                           </div>
                           <div className="flex items-center gap-2">
                             <Button size="icon" variant="ghost" className="h-10 w-10 rounded-full hover:bg-blue-50 hover:text-blue-600 transition-colors" onClick={() => handleDownloadInvoice(shipment)} title="Download Invoice">
@@ -995,7 +995,7 @@ const CustomerPayments = () => {
                         <div className="h-16 w-16 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-4">
                           <CheckCircle className="h-8 w-8 text-emerald-600" />
                         </div>
-                        <p className="font-bold text-lg">All Clear!</p>
+                        <p className="font-bold text-sm">All Clear!</p>
                         <p className="text-sm text-muted-foreground max-w-[200px] mx-auto">You have no outstanding invoices at the moment.</p>
                       </div>
                     )}
@@ -1049,7 +1049,7 @@ const CustomerPayments = () => {
           </Card>
           <Card className="border-border/70 shadow-sm flex flex-col h-fit">
             <CardHeader className="bg-muted/20 border-b border-border/50">
-              <CardTitle className="text-lg flex items-center gap-2">
+              <CardTitle className="text-sm flex items-center gap-2">
                 <Clock className="h-5 w-5 text-primary" />
                 Transaction Log
               </CardTitle>
@@ -1071,14 +1071,14 @@ const CustomerPayments = () => {
                                         {payments.slice((transactionsPage - 1) * TRANSACTIONS_PAGE_SIZE, transactionsPage * TRANSACTIONS_PAGE_SIZE).map((payment) => (
                     <div key={payment.id} className="flex items-center justify-between p-4 rounded-xl border-2 border-border/50 bg-background/50 hover:bg-muted/10 transition-colors gap-3 overflow-hidden">
                       <div className="space-y-1.5">
-                        <p className="text-xs font-black font-mono tracking-tighter uppercase">{payment.code}</p>
+                        <p className="text-xs font-semibold font-mono tracking-tighter uppercase">{payment.code}</p>
                         <div className="flex items-center gap-2">
-                          <Badge variant="outline" className="text-[9px] h-4 px-1.5 font-black uppercase tracking-tighter bg-muted/50 border-0">{payment.payment_provider}</Badge>
+                          <Badge variant="outline" className="text-[9px] h-4 px-1.5 font-semibold uppercase tracking-tighter bg-muted/50 border-0">{payment.payment_provider}</Badge>
                           <span className="text-[10px] text-muted-foreground font-bold">{format(new Date(payment.created_at), "MMM d, h:mm a")}</span>
                         </div>
                       </div>
                       <div className="text-right space-y-1.5 shrink-0">
-                        <p className="text-sm font-black tracking-tight">{formatAmount(payment.amount)}</p>
+                        <p className="text-sm font-semibold tracking-tight">{formatAmount(payment.amount)}</p>
                         <div className="scale-75 origin-right">{getStatusBadge(payment.status)}</div>
                       </div>
                     </div>
@@ -1152,11 +1152,11 @@ const CustomerPayments = () => {
 
               <div className="rounded-lg border border-border bg-muted/20 p-3 text-xs text-muted-foreground text-left">
                 <p className="font-bold mb-1 uppercase tracking-tighter">MTN users:</p>
-                <p>If the prompt doesn&apos;t appear, dial <strong className="text-primary font-black">*115#</strong> to check pending requests.</p>
+                <p>If the prompt doesn&apos;t appear, dial <strong className="text-primary font-semibold">*115#</strong> to check pending requests.</p>
               </div>
             </div>
           </div>
-          <Button variant="outline" className="w-full font-bold h-12" onClick={() => setShowMomoDialog(false)}>
+          <Button variant="outline" className="w-full font-bold h-10" onClick={() => setShowMomoDialog(false)}>
             Close & Check Status Manually
           </Button>
         </DialogContent>
