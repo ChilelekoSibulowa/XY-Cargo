@@ -213,20 +213,20 @@ const AgentCustomPayment = () => {
         <div className="lg:col-span-2 space-y-6">
           <Card className="border-border/70 shadow-md">
             <CardHeader>
-              <CardTitle className="text-sm font-black uppercase tracking-widest text-muted-foreground">Payment Summary</CardTitle>
+              <CardTitle className="text-sm font-semibold text-muted-foreground">Payment Summary</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex justify-between items-center py-2 border-b border-dashed">
-                <span className="text-sm font-medium text-muted-foreground">Payment for:</span>
-                <span className="text-sm font-bold truncate max-w-[150px]">{serviceDescription || "Not specified"}</span>
+                <span className="text-sm text-muted-foreground">Payment for:</span>
+                <span className="text-sm font-medium truncate max-w-[150px]">{serviceDescription || "Not specified"}</span>
               </div>
               <div className="flex justify-between items-center py-2 border-b border-dashed">
-                <span className="text-sm font-medium text-muted-foreground">Method:</span>
-                <Badge variant="secondary" className="font-bold capitalize">{paymentMethod.replace("_", " ")}</Badge>
+                <span className="text-sm text-muted-foreground">Method:</span>
+                <Badge variant="secondary" className="capitalize text-xs">{paymentMethod.replace("_", " ")}</Badge>
               </div>
-              <div className="flex justify-between items-center py-4 text-primary">
-                <span className="text-base font-black uppercase">Total Amount:</span>
-                <span className="text-2xl font-black">{formatAmount(amount)}</span>
+              <div className="flex justify-between items-center py-3 text-primary">
+                <span className="text-sm font-semibold">Total Amount:</span>
+                <span className="text-lg font-semibold">{formatAmount(amount)}</span>
               </div>
               
               <div className="bg-muted/20 rounded-xl p-4 space-y-3 border border-border/50">
