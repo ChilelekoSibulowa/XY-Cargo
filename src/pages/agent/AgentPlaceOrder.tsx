@@ -266,6 +266,7 @@ const AgentPlaceOrder = () => {
     } else {
       void notifyShipmentCreated({
         creator: "agent",
+        customerId: form.customer_id || undefined,
         userId: userId || undefined,
         shipmentCode: form.custom_tracking_number || shipmentData.code,
         shipmentId: shipmentData.id,
