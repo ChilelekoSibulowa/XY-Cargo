@@ -35,47 +35,7 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isSendingReset, setIsSendingReset] = useState(false);
-  const [recaptchaSiteKey, setRecaptchaSiteKey] = useState<string | null>(null);
   const navigate = useNavigate();
-
-  // Load reCAPTCHA v3 site key + script
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const { data } = await supabase.functions.invoke("verify-recaptcha", { method: "GET" } as any);
-        const key = (data as any)?.site_key;
-        if (cancelled || !key) return;
-        setRecaptchaSiteKey(key);
-        if (document.getElementById("recaptcha-v3-script")) return;
-        const script = document.createElement("script");
-        script.id = "recaptcha-v3-script";
-        script.src = `https://www.google.com/recaptcha/api.js?render=${encodeURIComponent(key)}`;
-        script.async = true;
-        script.defer = true;
-        document.head.appendChild(script);
-      } catch {
-        /* ignore */
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  const executeRecaptcha = async (): Promise<string | null> => {
-    if (!recaptchaSiteKey || !window.grecaptcha) return null;
-    return await new Promise((resolve) => {
-      window.grecaptcha!.ready(async () => {
-        try {
-          const token = await window.grecaptcha!.execute(recaptchaSiteKey, { action: "login" });
-          resolve(token);
-        } catch {
-          resolve(null);
-        }
-      });
-    });
-  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -86,29 +46,6 @@ const Login = () => {
     }
 
     setIsLoading(true);
-
-    // Verify reCAPTCHA v3 if configured
-    if (recaptchaSiteKey) {
-      const token = await executeRecaptcha();
-      if (!token) {
-        toast.error("Could not verify you are human. Please refresh and try again.");
-        setIsLoading(false);
-        return;
-      }
-      try {
-        const { data: verify } = await supabase.functions.invoke("verify-recaptcha", {
-          body: { token, action: "login" },
-        });
-        if (verify && (verify as any).success === false) {
-          toast.error("reCAPTCHA verification failed. Please try again.");
-          setIsLoading(false);
-          return;
-        }
-      } catch {
-        // Fail open if verification call errors out, but log
-        console.warn("reCAPTCHA verification skipped due to network error.");
-      }
-    }
 
     const normalizedEmail = email.trim().toLowerCase();
 
