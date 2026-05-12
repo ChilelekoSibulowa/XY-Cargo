@@ -308,67 +308,40 @@ serve(async (req) => {
         const zamtelPhone = normalizeForZamtel(customerPhone);
 
         if (zamtelPhone) {
-          // Resolve Zamtel API key
-          const envApiKey = cleanValue(Deno.env.get("ZAMTEL_SMS_API_KEY"));
-          let apiKey = envApiKey;
-          let senderId =
-            cleanValue(Deno.env.get("ZAMTEL_SMS_SENDER_ID")) || "XYCargo";
+          const credentials = await resolveSmsCredentials(supabase);
 
-          if (!apiKey) {
-            const { data: rows } = await supabase
-              .from("api_secrets")
-              .select("secret_key, secret_value")
-              .in("secret_key", ["ZAMTEL_SMS_API_KEY", "ZAMTEL_SMS_SENDER_ID"])
-              .eq("is_active", true);
-
-            if (rows && rows.length > 0) {
-              apiKey = cleanValue(
-                (rows as any[]).find(
-                  (r: any) => r.secret_key === "ZAMTEL_SMS_API_KEY",
-                )?.secret_value,
-              );
-              senderId =
-                cleanValue(
-                  (rows as any[]).find(
-                    (r: any) => r.secret_key === "ZAMTEL_SMS_SENDER_ID",
-                  )?.secret_value,
-                ) || senderId;
-            }
-          }
-
-          if (apiKey) {
+          if (credentials) {
+            const { apiKey, senderId } = credentials;
             const contactsParam = `[${zamtelPhone}]`;
             const smsUrl = `https://bulksms.zamtel.co.zm/api/v2.1/action/send/api_key/${encodeURIComponent(apiKey)}/contacts/${encodeURIComponent(contactsParam)}/senderId/${encodeURIComponent(senderId)}/message/${encodeURIComponent(smsText.trim())}`;
             const smsResp = await fetch(smsUrl, {
               method: "GET",
               headers: { Accept: "application/json, text/plain, */*" },
             });
-
-            // Log SMS
-            let smsPayload: any = null;
-            try {
-              smsPayload = await smsResp.json();
-            } catch {
-              /* not json */
-            }
+            const smsResult = await parseSmsResponse(smsResp);
 
             await supabase.from("sms_logs").insert({
               recipient_phone: zamtelPhone,
               message: smsText,
               provider: "xy_cargo",
-              status: smsResp.ok ? "sent" : "failed",
-              provider_response: smsPayload,
+              status: smsResult.ok ? "sent" : "failed",
+              provider_response: {
+                status: smsResp.status,
+                message: smsResult.messageText,
+                payload: smsResult.payload,
+                raw_text: smsResult.rawText,
+              },
               reference_type: event_type,
               reference_id: body.reference_id || null,
             });
 
-            await logDelivery(supabase, body.notification_id, "sms", smsResp.ok ? "sent" : "failed", smsResp.ok ? null : "Zamtel API error", smsPayload);
-            results.sms = { success: smsResp.ok, phone: zamtelPhone };
+            await logDelivery(supabase, body.notification_id, "sms", smsResult.ok ? "sent" : "failed", smsResult.ok ? null : smsResult.messageText || "SMS provider error", smsResult.payload);
+            results.sms = { success: smsResult.ok, phone: zamtelPhone };
           } else {
-            await logDelivery(supabase, body.notification_id, "sms", "skipped", "No Zamtel API key configured");
+            await logDelivery(supabase, body.notification_id, "sms", "skipped", "No SMS API key configured");
             results.sms = {
               skipped: true,
-              reason: "No Zamtel API key configured",
+              reason: "No SMS API key configured",
             };
           }
         }
