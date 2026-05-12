@@ -113,10 +113,15 @@ const resolveSmsCredentials = async (supabase: any) => {
   const apiRow = candidates.find((row) => /api.?key|token/i.test(`${row.secret_key} ${row.description || ""}`))
     || candidates.find((row) => isBrandSenderId(String(row.secret_key || "")) && cleanValue(row.secret_value)?.length && cleanValue(row.secret_value)!.length >= 16)
     || candidates.find((row) => cleanValue(row.secret_value)?.length && cleanValue(row.secret_value)!.length >= 16);
-  const senderRow = candidates.find((row) => /sender/i.test(`${row.secret_key} ${row.description || ""}`))
+  const senderRow = candidates.find((row) => String(row.secret_key || "") === "ZAMTEL_SMS_SENDER_ID")
+    || candidates.find((row) => /sender/i.test(String(row.secret_key || "")) && isBrandSenderId(String(row.secret_value || "")))
     || candidates.find((row) => isBrandSenderId(String(row.secret_key || "")));
   const fallbackApiKey = cleanValue(apiRow?.secret_value);
-  const fallbackSenderId = cleanValue(senderRow?.secret_value) || (isBrandSenderId(String(apiRow?.secret_key || "")) ? String(apiRow.secret_key) : "XYCargo");
+  const fallbackSenderId = senderId || (isBrandSenderId(String(senderRow?.secret_value || ""))
+    ? cleanValue(senderRow?.secret_value)
+    : isBrandSenderId(String(senderRow?.secret_key || ""))
+      ? String(senderRow.secret_key)
+      : "XYCargo");
 
   return fallbackApiKey ? { apiKey: fallbackApiKey, senderId: fallbackSenderId } : null;
 };
