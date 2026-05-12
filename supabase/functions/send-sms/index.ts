@@ -229,10 +229,10 @@ const sendViaZamtel = async (apiKey: string, senderId: string, contacts: string[
     const fullUrl = `${baseUrl}?${queryParams.toString()}`;
 
     try {
-      console.log(`Dispatching SMS batch ${i / BATCH_SIZE + 1} to ${batch.length} recipients via Query Params...`);
-      // Most gateways accept GET for query-param based requests, or POST with empty body
+      console.log(`Dispatching SMS batch ${i / BATCH_SIZE + 1} to ${batch.length} recipients via GET Query Params...`);
+      // Use GET as the primary method since Zamtel v2.1 routes seem to reject POST
       let smsResponse = await fetch(fullUrl, { 
-        method: "POST", 
+        method: "GET", 
         headers: { Accept: "application/json, text/plain, */*" } 
       });
 
@@ -240,13 +240,11 @@ const sendViaZamtel = async (apiKey: string, senderId: string, contacts: string[
       let messageText = getProviderMessage(payload, rawText);
       let ok = responseLooksSuccessful(smsResponse, payload, messageText);
 
-      // Fallback: If POST with query params didn't work, try Path segments (legacy format)
+      // Fallback: If GET with query params didn't work, try Path segments (legacy format)
       if (!ok) {
-        console.log("Query param method failed, trying path segments...");
-        // Legacy Format: Path-based (note: brackets are sometimes required, sometimes not)
-        // We'll try without brackets first as it's more standard
+        console.log("Query param method failed, trying path segments with GET...");
         const pathUrl = `${baseUrl}/contacts/${encodeURIComponent(contactsList)}/senderId/${encodeURIComponent(senderId)}/message/${encodeURIComponent(messageTrimmed)}`;
-        smsResponse = await fetch(pathUrl, { method: "POST", headers: { Accept: "application/json, text/plain, */*" } });
+        smsResponse = await fetch(pathUrl, { method: "GET", headers: { Accept: "application/json, text/plain, */*" } });
         const pathResult = await parseProviderResponse(smsResponse);
         rawText = pathResult.rawText;
         payload = pathResult.payload;

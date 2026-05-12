@@ -22,15 +22,15 @@ serve(async (req) => {
     const out: Record<string, unknown> = { senderIdConfigured: senderId, apiKeyLen: apiKey.length };
 
     // List sender IDs
-    const sidResp = await fetch(`https://bulksms.zamtel.co.zm/api/v2.1/action/list/api_key/${encodeURIComponent(apiKey)}/senderIds`, { method: "POST" });
+    const sidResp = await fetch(`https://bulksms.zamtel.co.zm/api/v2.1/action/list/api_key/${encodeURIComponent(apiKey)}/senderIds`, { method: "GET" });
     out.senderIds = await sidResp.text();
 
     // Balance
-    const balResp = await fetch(`https://bulksms.zamtel.co.zm/api/v2.1/action/account/api_key/${encodeURIComponent(apiKey)}/balance`, { method: "POST" });
+    const balResp = await fetch(`https://bulksms.zamtel.co.zm/api/v2.1/action/account/api_key/${encodeURIComponent(apiKey)}/balance`, { method: "GET" });
     out.balance = await balResp.text();
 
     // Account info
-    const accResp = await fetch(`https://bulksms.zamtel.co.zm/api/v2.1/action/account/api_key/${encodeURIComponent(apiKey)}`, { method: "POST" });
+    const accResp = await fetch(`https://bulksms.zamtel.co.zm/api/v2.1/action/account/api_key/${encodeURIComponent(apiKey)}`, { method: "GET" });
     out.account = await accResp.text();
 
     return new Response(JSON.stringify(out, null, 2), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
