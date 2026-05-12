@@ -2206,6 +2206,10 @@ const WarehouseAllParcels = () => {
         setUpdatingId(null);
         if (nextError) return toast.error(nextError.message || "Failed to update outgoing details.");
         toast.success("Outgoing details updated.");
+        if (editTrackingNumber.trim() && editRow.sourceShipment?.customer_id) {
+          notifyWarehouseTrackingAssigned(editRow.sourceShipment.customer_id, editRow.id)
+            .catch((err) => console.error("notifyWarehouseTrackingAssigned failed:", err));
+        }
         releaseState();
         fetchData();
         return;
