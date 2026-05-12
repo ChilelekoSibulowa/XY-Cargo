@@ -652,8 +652,10 @@ const FinancePayments = () => {
     return typeof notes === "string" ? notes : "";
   };
 
-  const formatAmountInput = (amountInDefaultCurrency: number) =>
-    Number(convert(amountInDefaultCurrency).toFixed(2)).toFixed(2);
+  const formatAmountInput = useCallback(
+    (amountInDefaultCurrency: number) => Number(convert(amountInDefaultCurrency).toFixed(2)).toFixed(2),
+    [convert],
+  );
 
   const handleCustomerChange = (customerId: string) => {
     setForm((prev) => {
