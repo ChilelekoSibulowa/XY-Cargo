@@ -657,6 +657,22 @@ const FinancePayments = () => {
     [convert],
   );
 
+  // Recompute amount field when the selected currency changes so the value
+  // shown always matches the active currency (e.g. switching USD <-> ZMW).
+  useEffect(() => {
+    setForm((prev) => {
+      if (!prev.shipment_id) return prev;
+      const next = formatAmountInput(getShipmentDueAmount(prev.shipment_id));
+      return next === prev.amount ? prev : { ...prev, amount: next };
+    });
+    setEditForm((prev) => {
+      if (!prev.shipment_id) return prev;
+      const next = formatAmountInput(getShipmentDueAmount(prev.shipment_id, editingPayment));
+      return next === prev.amount ? prev : { ...prev, amount: next };
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [code, formatAmountInput]);
+
   const handleCustomerChange = (customerId: string) => {
     setForm((prev) => {
       const keepShipment =
