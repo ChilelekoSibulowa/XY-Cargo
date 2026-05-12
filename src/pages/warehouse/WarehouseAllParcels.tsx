@@ -2303,6 +2303,13 @@ const WarehouseAllParcels = () => {
       setUpdatingId(null);
       if (consolidationError) return toast.error(consolidationError.message || "Failed to update outgoing details.");
       toast.success("Outgoing details updated.");
+      if (editTrackingNumber.trim()) {
+        const consCustomerId = (editRow.sourceConsolidation as any)?.customer_id;
+        if (consCustomerId) {
+          notifyWarehouseTrackingAssigned(consCustomerId, editRow.id)
+            .catch((err) => console.error("notifyWarehouseTrackingAssigned failed:", err));
+        }
+      }
       releaseState();
       fetchData();
       return;
