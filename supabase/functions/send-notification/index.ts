@@ -48,6 +48,84 @@ const normalizeForZamtel = (phone: string): string | null => {
   return e164.replace(/^\+/, "");
 };
 
+const normalizeToken = (value: string) => value.replace(/[^a-z0-9]/gi, "").toLowerCase();
+const brandSenderAliases = ["xycargo", "xycargozambia", "xycargozm"];
+const isBrandSenderId = (senderId: string) => brandSenderAliases.includes(normalizeToken(senderId));
+
+const getProviderMessage = (payload: any, rawText: string) => {
+  const direct = typeof payload?.responseText === "string"
+    ? payload.responseText
+    : typeof payload?.message === "string"
+      ? payload.message
+      : null;
+  return direct || rawText || null;
+};
+
+const providerAcceptedSms = (response: Response, payload: any, messageText: string | null) => {
+  const code = typeof payload?.code === "string" ? payload.code.toLowerCase() : null;
+  const status = typeof payload?.status === "string" ? payload.status.toLowerCase() : null;
+  const statusCode = Number(payload?.statusCode || response.status);
+  const success = payload?.success;
+  const normalized = (messageText || "").toLowerCase();
+  if (success === false || code === "error" || status === "error" || /error|invalid|failed|denied|insufficient|unauthori[sz]ed/.test(normalized)) {
+    return false;
+  }
+  return response.ok || success === true || statusCode === 202 || code === "ok" || code === "success" || status === "ok" || status === "success" || /queued for delivery|successfully sent|message sent|sms\(es\) have been queued/i.test(messageText || "");
+};
+
+const parseSmsResponse = async (response: Response) => {
+  const rawText = await response.text();
+  let payload: any = null;
+  try {
+    payload = JSON.parse(rawText);
+  } catch {
+    payload = null;
+  }
+  const messageText = getProviderMessage(payload, rawText);
+  return { rawText, payload, messageText, ok: providerAcceptedSms(response, payload, messageText) };
+};
+
+const resolveSmsCredentials = async (supabase: any) => {
+  const envApiKey = cleanValue(Deno.env.get("ZAMTEL_SMS_API_KEY"));
+  const envSenderId = cleanValue(Deno.env.get("ZAMTEL_SMS_SENDER_ID"));
+  if (envApiKey) {
+    return { apiKey: envApiKey, senderId: envSenderId || "XYCargo" };
+  }
+
+  const { data: standardRows } = await supabase
+    .from("api_secrets")
+    .select("secret_key, secret_value, category, description")
+    .in("secret_key", ["ZAMTEL_SMS_API_KEY", "ZAMTEL_SMS_SENDER_ID"])
+    .eq("is_active", true);
+
+  const standard = (standardRows || []) as any[];
+  const apiKey = cleanValue(standard.find((row) => row.secret_key === "ZAMTEL_SMS_API_KEY")?.secret_value);
+  const senderId = cleanValue(standard.find((row) => row.secret_key === "ZAMTEL_SMS_SENDER_ID")?.secret_value) || "XYCargo";
+  if (apiKey) return { apiKey, senderId };
+
+  const { data: smsRows } = await supabase
+    .from("api_secrets")
+    .select("secret_key, secret_value, category, description")
+    .or("category.eq.sms,secret_key.ilike.%sms%,secret_key.ilike.%zamtel%,description.ilike.%sms%,description.ilike.%zamtel%")
+    .eq("is_active", true);
+
+  const candidates = (smsRows || []) as any[];
+  const apiRow = candidates.find((row) => /api.?key|token/i.test(`${row.secret_key} ${row.description || ""}`))
+    || candidates.find((row) => isBrandSenderId(String(row.secret_key || "")) && cleanValue(row.secret_value)?.length && cleanValue(row.secret_value)!.length >= 16)
+    || candidates.find((row) => cleanValue(row.secret_value)?.length && cleanValue(row.secret_value)!.length >= 16);
+  const senderRow = candidates.find((row) => String(row.secret_key || "") === "ZAMTEL_SMS_SENDER_ID")
+    || candidates.find((row) => /sender/i.test(String(row.secret_key || "")) && isBrandSenderId(String(row.secret_value || "")))
+    || candidates.find((row) => isBrandSenderId(String(row.secret_key || "")));
+  const fallbackApiKey = cleanValue(apiRow?.secret_value);
+  const fallbackSenderId = senderId || (isBrandSenderId(String(senderRow?.secret_value || ""))
+    ? cleanValue(senderRow?.secret_value)
+    : isBrandSenderId(String(senderRow?.secret_key || ""))
+      ? String(senderRow.secret_key)
+      : "XYCargo");
+
+  return fallbackApiKey ? { apiKey: fallbackApiKey, senderId: fallbackSenderId } : null;
+};
+
 const escapeHtml = (v: string) =>
   v
     .replace(/&/g, "&amp;")
@@ -235,67 +313,40 @@ serve(async (req) => {
         const zamtelPhone = normalizeForZamtel(customerPhone);
 
         if (zamtelPhone) {
-          // Resolve Zamtel API key
-          const envApiKey = cleanValue(Deno.env.get("ZAMTEL_SMS_API_KEY"));
-          let apiKey = envApiKey;
-          let senderId =
-            cleanValue(Deno.env.get("ZAMTEL_SMS_SENDER_ID")) || "XYCargo";
+          const credentials = await resolveSmsCredentials(supabase);
 
-          if (!apiKey) {
-            const { data: rows } = await supabase
-              .from("api_secrets")
-              .select("secret_key, secret_value")
-              .in("secret_key", ["ZAMTEL_SMS_API_KEY", "ZAMTEL_SMS_SENDER_ID"])
-              .eq("is_active", true);
-
-            if (rows && rows.length > 0) {
-              apiKey = cleanValue(
-                (rows as any[]).find(
-                  (r: any) => r.secret_key === "ZAMTEL_SMS_API_KEY",
-                )?.secret_value,
-              );
-              senderId =
-                cleanValue(
-                  (rows as any[]).find(
-                    (r: any) => r.secret_key === "ZAMTEL_SMS_SENDER_ID",
-                  )?.secret_value,
-                ) || senderId;
-            }
-          }
-
-          if (apiKey) {
+          if (credentials) {
+            const { apiKey, senderId } = credentials;
             const contactsParam = `[${zamtelPhone}]`;
             const smsUrl = `https://bulksms.zamtel.co.zm/api/v2.1/action/send/api_key/${encodeURIComponent(apiKey)}/contacts/${encodeURIComponent(contactsParam)}/senderId/${encodeURIComponent(senderId)}/message/${encodeURIComponent(smsText.trim())}`;
             const smsResp = await fetch(smsUrl, {
               method: "GET",
               headers: { Accept: "application/json, text/plain, */*" },
             });
-
-            // Log SMS
-            let smsPayload: any = null;
-            try {
-              smsPayload = await smsResp.json();
-            } catch {
-              /* not json */
-            }
+            const smsResult = await parseSmsResponse(smsResp);
 
             await supabase.from("sms_logs").insert({
               recipient_phone: zamtelPhone,
               message: smsText,
               provider: "xy_cargo",
-              status: smsResp.ok ? "sent" : "failed",
-              provider_response: smsPayload,
+              status: smsResult.ok ? "sent" : "failed",
+              provider_response: {
+                status: smsResp.status,
+                message: smsResult.messageText,
+                payload: smsResult.payload,
+                raw_text: smsResult.rawText,
+              },
               reference_type: event_type,
               reference_id: body.reference_id || null,
             });
 
-            await logDelivery(supabase, body.notification_id, "sms", smsResp.ok ? "sent" : "failed", smsResp.ok ? null : "Zamtel API error", smsPayload);
-            results.sms = { success: smsResp.ok, phone: zamtelPhone };
+            await logDelivery(supabase, body.notification_id, "sms", smsResult.ok ? "sent" : "failed", smsResult.ok ? null : smsResult.messageText || "SMS provider error", smsResult.payload);
+            results.sms = { success: smsResult.ok, phone: zamtelPhone };
           } else {
-            await logDelivery(supabase, body.notification_id, "sms", "skipped", "No Zamtel API key configured");
+            await logDelivery(supabase, body.notification_id, "sms", "skipped", "No SMS API key configured");
             results.sms = {
               skipped: true,
-              reason: "No Zamtel API key configured",
+              reason: "No SMS API key configured",
             };
           }
         }

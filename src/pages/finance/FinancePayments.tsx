@@ -236,7 +236,7 @@ const mergeFinancePaymentShipments = (
 };
 
 const FinancePayments = () => {
-  const { formatAmount, code, defaultCode, convertFromSelected } = useDefaultCurrency();
+  const { formatAmount, code, defaultCode, convert, convertFromSelected } = useDefaultCurrency();
   const [customers, setCustomers] = useState<CustomerOption[]>([]);
   const [shipments, setShipments] = useState<ShipmentOption[]>([]);
   const [invoices, setInvoices] = useState<InvoiceLookupRow[]>([]);
@@ -652,6 +652,11 @@ const FinancePayments = () => {
     return typeof notes === "string" ? notes : "";
   };
 
+  const formatAmountInput = useCallback(
+    (amountInDefaultCurrency: number) => Number(convert(amountInDefaultCurrency).toFixed(2)).toFixed(2),
+    [convert],
+  );
+
   const handleCustomerChange = (customerId: string) => {
     setForm((prev) => {
       const keepShipment =
@@ -670,7 +675,7 @@ const FinancePayments = () => {
           nextShipment?.customer_phone ||
           nextCustomer?.phone ||
           "",
-        amount: nextShipmentId ? getShipmentDueAmount(nextShipmentId).toFixed(2) : prev.amount,
+        amount: nextShipmentId ? formatAmountInput(getShipmentDueAmount(nextShipmentId)) : prev.amount,
       };
     });
   };
@@ -683,7 +688,7 @@ const FinancePayments = () => {
       ...prev,
       shipment_id: shipmentId,
       customer_id: shipment.customer_id,
-      amount: getShipmentDueAmount(shipmentId).toFixed(2),
+      amount: formatAmountInput(getShipmentDueAmount(shipmentId)),
       phone_number: prev.phone_number || shipment.customer_phone || "",
     }));
   };
@@ -701,7 +706,7 @@ const FinancePayments = () => {
         ...prev,
         customer_id: customerId,
         shipment_id: nextShipmentId,
-        amount: nextShipmentId ? getShipmentDueAmount(nextShipmentId, editingPayment).toFixed(2) : prev.amount,
+        amount: nextShipmentId ? formatAmountInput(getShipmentDueAmount(nextShipmentId, editingPayment)) : prev.amount,
         phone_number:
           prev.phone_number ||
           nextShipment?.customer_phone ||
@@ -719,7 +724,7 @@ const FinancePayments = () => {
       ...prev,
       shipment_id: shipmentId,
       customer_id: shipment.customer_id,
-      amount: getShipmentDueAmount(shipmentId, editingPayment).toFixed(2),
+      amount: formatAmountInput(getShipmentDueAmount(shipmentId, editingPayment)),
       phone_number: prev.phone_number || shipment.customer_phone || "",
     }));
   };
@@ -1360,7 +1365,7 @@ const FinancePayments = () => {
     setEditForm({
       customer_id: payment.customer_id || shipment?.customer_id || "",
       shipment_id: payment.shipment_id || "",
-      amount: payment.amount.toFixed(2),
+      amount: formatAmountInput(payment.amount),
       payment_provider: payment.payment_provider,
       status: payment.status || "pending",
       provider_reference: payment.provider_reference || "",
@@ -1381,8 +1386,8 @@ const FinancePayments = () => {
       return;
     }
 
-    const amount = Number(editForm.amount);
-    if (Number.isNaN(amount) || amount <= 0) {
+    const inputAmount = Number(editForm.amount);
+    if (Number.isNaN(inputAmount) || inputAmount <= 0) {
       toast.error("Enter a valid payment amount.");
       return;
     }
@@ -1392,6 +1397,10 @@ const FinancePayments = () => {
       toast.error("Selected shipment was not found.");
       return;
     }
+
+    const amount = code === defaultCode
+      ? inputAmount
+      : Number(convertFromSelected(inputAmount).toFixed(2));
 
     const dueAmount = getShipmentDueAmount(editForm.shipment_id, editingPayment);
     if (amount > dueAmount) {
@@ -1408,6 +1417,8 @@ const FinancePayments = () => {
         manual_entry: true,
         finance_notes: editForm.notes || null,
         edited_at: new Date().toISOString(),
+        entered_amount: inputAmount,
+        entered_currency: code,
       };
 
       const { error } = await supabase
@@ -1416,6 +1427,7 @@ const FinancePayments = () => {
           customer_id: nextCustomerId,
           shipment_id: editForm.shipment_id,
           amount,
+          currency: defaultCode,
           payment_provider: editForm.payment_provider,
           provider_reference: editForm.provider_reference || null,
           phone_number: editForm.phone_number || null,
@@ -2076,7 +2088,7 @@ const FinancePayments = () => {
               </Select>
             </div>
             <div className="space-y-2">
-              <Label>Amount ({editingPayment?.currency || "ZMW"})</Label>
+              <Label>Amount ({code})</Label>
               <Input
                 type="number"
                 min="0"
