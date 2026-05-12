@@ -333,13 +333,30 @@ serve(async (req) => {
 
           if (credentials) {
             const { apiKey, senderId } = credentials;
-            const contactsParam = `[${zamtelPhone}]`;
-            const smsUrl = `https://bulksms.zamtel.co.zm/api/v2.1/action/send/api_key/${encodeURIComponent(apiKey)}/contacts/${encodeURIComponent(contactsParam)}/senderId/${encodeURIComponent(senderId)}/message/${encodeURIComponent(smsText.trim())}`;
-            const smsResp = await fetch(smsUrl, {
+            const baseUrl = `https://bulksms.zamtel.co.zm/api/v2.1/action/send/api_key/${encodeURIComponent(apiKey)}`;
+            const queryParams = new URLSearchParams({
+              contacts: zamtelPhone,
+              senderId: senderId,
+              message: smsText.trim()
+            });
+            
+            const fullUrl = `${baseUrl}?${queryParams.toString()}`;
+            
+            let smsResp = await fetch(fullUrl, {
               method: "POST",
               headers: { Accept: "application/json, text/plain, */*" },
             });
-            const smsResult = await parseSmsResponse(smsResp);
+            let smsResult = await parseSmsResponse(smsResp);
+
+            // Fallback to path segments if query params failed
+            if (!smsResult.ok) {
+              const pathUrl = `${baseUrl}/contacts/${encodeURIComponent(zamtelPhone)}/senderId/${encodeURIComponent(senderId)}/message/${encodeURIComponent(smsText.trim())}`;
+              smsResp = await fetch(pathUrl, {
+                method: "POST",
+                headers: { Accept: "application/json, text/plain, */*" },
+              });
+              smsResult = await parseSmsResponse(smsResp);
+            }
 
             await supabase.from("sms_logs").insert({
               recipient_phone: zamtelPhone,

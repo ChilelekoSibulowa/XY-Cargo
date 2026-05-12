@@ -9,7 +9,9 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Send, Upload, Users, Search, MessageSquare } from "lucide-react";
+import { Send, Upload, Users, Search, MessageSquare, History, RefreshCcw, Eye, X } from "lucide-react";
+import { format } from "date-fns";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 type CustomerRow = {
   id: string;
@@ -68,9 +70,30 @@ const SupportBulkSms = () => {
   const [csvNumbers, setCsvNumbers] = useState<string[]>([]);
   const [isSending, setIsSending] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [history, setHistory] = useState<any[]>([]);
+  const [isLoadingHistory, setIsLoadingHistory] = useState(false);
+  const [selectedLog, setSelectedLog] = useState<any | null>(null);
+
+  const loadHistory = async () => {
+    setIsLoadingHistory(true);
+    try {
+      const { data, error } = await supabase
+        .from("sms_logs")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .limit(20);
+      if (error) throw error;
+      setHistory(data || []);
+    } catch (err) {
+      console.error("Failed to load SMS history:", err);
+    } finally {
+      setIsLoadingHistory(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchCustomers = async () => {
+    loadHistory();
+  }, []);
       const { data, error } = await supabase
         .from("customers")
         .select("id, full_name, phone, code, email")
@@ -183,6 +206,9 @@ const SupportBulkSms = () => {
         const errorMsg = sanitizeBranding(data?.error) || "Delivery failed. Please check your SMS credits and API configuration.";
         toast.error(errorMsg);
       }
+      
+      // Refresh history after send
+      await loadHistory();
     } catch (err) {
       const msg = await getFunctionErrorMessage(err);
       toast.error(msg || "Failed to send SMS.");
@@ -319,6 +345,133 @@ const SupportBulkSms = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* SMS History Section */}
+      <div className="mt-8">
+        <Card className="border-border/40 shadow-sm overflow-hidden">
+          <CardHeader className="flex flex-row items-center justify-between bg-muted/20 pb-4 border-b">
+            <CardTitle className="flex items-center gap-2 text-lg font-semibold">
+              <History className="h-5 w-5 text-primary" />
+              Delivery History
+            </CardTitle>
+            <Button variant="outline" size="sm" onClick={loadHistory} disabled={isLoadingHistory} className="h-8">
+              <RefreshCcw className={`h-3.5 w-3.5 mr-2 ${isLoadingHistory ? "animate-spin" : ""}`} />
+              Refresh Status
+            </Button>
+          </CardHeader>
+          <CardContent className="p-0">
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader className="bg-muted/30">
+                  <TableRow>
+                    <TableHead className="w-[100px] py-3 pl-6">Date</TableHead>
+                    <TableHead>Recipient</TableHead>
+                    <TableHead>Message Preview</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right pr-6">Logs</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {isLoadingHistory ? (
+                    <TableRow>
+                      <TableCell colSpan={5} className="h-32 text-center text-muted-foreground italic">
+                        Fetching latest delivery logs...
+                      </TableCell>
+                    </TableRow>
+                  ) : history.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={5} className="h-32 text-center text-muted-foreground">
+                        No recent SMS activity found.
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    history.map((log) => (
+                      <TableRow key={log.id} className="hover:bg-muted/10 transition-colors">
+                        <TableCell className="whitespace-nowrap text-xs text-muted-foreground pl-6">
+                          {format(new Date(log.created_at), "MMM d, HH:mm")}
+                        </TableCell>
+                        <TableCell className="font-medium">{log.recipient_phone}</TableCell>
+                        <TableCell className="max-w-[240px] truncate text-xs text-muted-foreground">
+                          {log.message}
+                        </TableCell>
+                        <TableCell>
+                          <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
+                            log.status === "sent" ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400" : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
+                          }`}>
+                            {log.status === "sent" ? "Accepted" : "Rejected"}
+                          </span>
+                        </TableCell>
+                        <TableCell className="text-right pr-6">
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            onClick={() => setSelectedLog(log)}
+                            className="h-8 w-8 hover:bg-primary/10 hover:text-primary"
+                          >
+                            <Eye className="h-3.5 w-3.5" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Response Detail Dialog Overlay */}
+      {selectedLog && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-background/80 backdrop-blur-md p-4 animate-in fade-in duration-300">
+          <Card className="w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col shadow-2xl border-primary/20 ring-1 ring-primary/10">
+            <CardHeader className="border-b bg-muted/40 px-6 py-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="text-xl font-bold">API Diagnostic Logs</CardTitle>
+                  <p className="text-xs text-muted-foreground mt-1">Transaction ID: {selectedLog.id}</p>
+                </div>
+                <Button variant="ghost" size="icon" onClick={() => setSelectedLog(null)} className="rounded-full">
+                  <X className="h-5 w-5" />
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent className="p-0 overflow-y-auto">
+              <div className="p-6 space-y-6">
+                <div className="grid grid-cols-2 gap-6 bg-muted/20 p-4 rounded-xl border border-border/50">
+                  <div>
+                    <p className="text-[10px] uppercase font-bold text-muted-foreground mb-1 tracking-widest">Recipient Mobile</p>
+                    <p className="font-mono text-lg font-semibold">{selectedLog.recipient_phone}</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] uppercase font-bold text-muted-foreground mb-1 tracking-widest">Gateway Status</p>
+                    <p className={`text-lg font-bold ${selectedLog.status === "sent" ? "text-green-500" : "text-red-500"}`}>
+                      {selectedLog.status?.toUpperCase() || "UNKNOWN"}
+                    </p>
+                  </div>
+                </div>
+                
+                <div className="space-y-2">
+                  <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Transmitted Message</p>
+                  <div className="bg-muted/30 p-4 rounded-xl text-sm border border-border/40 italic leading-relaxed shadow-inner">
+                    "{selectedLog.message}"
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Raw Provider Payload</p>
+                  <pre className="bg-slate-950 text-emerald-400 p-5 rounded-xl text-[11px] overflow-x-auto border border-white/10 shadow-2xl font-mono leading-tight">
+                    {JSON.stringify(selectedLog.provider_response, null, 2)}
+                  </pre>
+                </div>
+              </div>
+            </CardContent>
+            <div className="border-t p-4 bg-muted/20 flex justify-end gap-3 px-6">
+              <Button variant="outline" onClick={() => setSelectedLog(null)}>Dismiss</Button>
+            </div>
+          </Card>
+        </div>
+      )}
     </div>
   );
 };

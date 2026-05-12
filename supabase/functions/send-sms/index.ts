@@ -207,26 +207,52 @@ async function resolveCredentials(supabase: any, brandSenderId: string) {
 
 // --- Send via Zamtel ---
 const sendViaZamtel = async (apiKey: string, senderId: string, contacts: string[], message: string) => {
-  // Batching: Zamtel and other gateways often limit contacts per request
   const BATCH_SIZE = 50;
   const results = [];
   const messageTrimmed = message.trim();
 
   for (let i = 0; i < contacts.length; i += BATCH_SIZE) {
     const batch = contacts.slice(i, i + BATCH_SIZE);
-    const contactsParam = `[${batch.join(",")}]`;
-    const pathUrl = `https://bulksms.zamtel.co.zm/api/v2.1/action/send/api_key/${encodeURIComponent(apiKey)}/contacts/${encodeURIComponent(contactsParam)}/senderId/${encodeURIComponent(senderId)}/message/${encodeURIComponent(messageTrimmed)}`;
+    
+    // Try different URL formats if the first one fails
+    // Format A: Comma-separated list in path (common for Zamtel v2.1)
+    const contactsList = batch.join(",");
+    
+    // Using query parameters for message and contacts is SAFER for encoding
+    const baseUrl = `https://bulksms.zamtel.co.zm/api/v2.1/action/send/api_key/${encodeURIComponent(apiKey)}`;
+    const queryParams = new URLSearchParams({
+      contacts: contactsList,
+      senderId: senderId,
+      message: messageTrimmed
+    });
+    
+    const fullUrl = `${baseUrl}?${queryParams.toString()}`;
 
     try {
-      console.log(`Dispatching SMS batch ${i / BATCH_SIZE + 1} to ${batch.length} recipients...`);
-      const smsResponse = await fetch(pathUrl, { 
+      console.log(`Dispatching SMS batch ${i / BATCH_SIZE + 1} to ${batch.length} recipients via Query Params...`);
+      // Most gateways accept GET for query-param based requests, or POST with empty body
+      let smsResponse = await fetch(fullUrl, { 
         method: "POST", 
         headers: { Accept: "application/json, text/plain, */*" } 
       });
-      
-      const { rawText, payload } = await parseProviderResponse(smsResponse);
-      const messageText = getProviderMessage(payload, rawText);
-      const ok = responseLooksSuccessful(smsResponse, payload, messageText);
+
+      let { rawText, payload } = await parseProviderResponse(smsResponse);
+      let messageText = getProviderMessage(payload, rawText);
+      let ok = responseLooksSuccessful(smsResponse, payload, messageText);
+
+      // Fallback: If POST with query params didn't work, try Path segments (legacy format)
+      if (!ok) {
+        console.log("Query param method failed, trying path segments...");
+        // Legacy Format: Path-based (note: brackets are sometimes required, sometimes not)
+        // We'll try without brackets first as it's more standard
+        const pathUrl = `${baseUrl}/contacts/${encodeURIComponent(contactsList)}/senderId/${encodeURIComponent(senderId)}/message/${encodeURIComponent(messageTrimmed)}`;
+        smsResponse = await fetch(pathUrl, { method: "POST", headers: { Accept: "application/json, text/plain, */*" } });
+        const pathResult = await parseProviderResponse(smsResponse);
+        rawText = pathResult.rawText;
+        payload = pathResult.payload;
+        messageText = getProviderMessage(payload, rawText);
+        ok = responseLooksSuccessful(smsResponse, payload, messageText);
+      }
 
       results.push({
         ok,
