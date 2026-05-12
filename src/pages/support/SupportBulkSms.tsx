@@ -168,13 +168,20 @@ const SupportBulkSms = () => {
         throw new Error(providerError || "Failed to send SMS.");
       }
 
+      const results = data?.results || [];
+      const totalSent = results.reduce((acc: number, r: any) => acc + (r.ok ? r.recipients.length : 0), 0);
+      const totalFailed = allPhones.length - totalSent;
+
       if (data?.success) {
-        toast.success(`SMS sent to ${allPhones.length} recipient(s).`);
+        toast.success(`SMS successfully accepted for all ${allPhones.length} recipient(s).`);
         setMessage("");
         setSelectedIds(new Set());
         setCsvNumbers([]);
+      } else if (totalSent > 0) {
+        toast.warning(`Partial delivery: ${totalSent} sent, ${totalFailed} failed. Check API keys or credits.`);
       } else {
-        toast.error(sanitizeBranding(data?.error) || "Failed to send SMS. Check API keys in Admin Settings.");
+        const errorMsg = sanitizeBranding(data?.error) || "Delivery failed. Please check your SMS credits and API configuration.";
+        toast.error(errorMsg);
       }
     } catch (err) {
       const msg = await getFunctionErrorMessage(err);

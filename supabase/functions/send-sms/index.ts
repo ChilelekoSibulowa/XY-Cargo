@@ -15,8 +15,8 @@ interface SmsRequest {
 
 type ProviderPayload = Record<string, unknown> | null;
 const jsonHeaders = { ...corsHeaders, "Content-Type": "application/json" };
-const DEFAULT_BRAND_SENDER_ID = "XY Cargo Zambia";
-const BRAND_ALIASES = ["xycargozambia", "xycargo", "xycargozm"];
+const DEFAULT_BRAND_SENDER_ID = "XYCargo";
+const BRAND_ALIASES = ["xycargozambia", "xycargo", "xycargozm", "xycargo_zm"];
 
 const sanitizeBranding = (value: string | null, brandName: string = DEFAULT_BRAND_SENDER_ID) =>
   value?.replace(/zamtel/gi, brandName) ?? null;
@@ -40,15 +40,32 @@ const getProviderMessage = (payload: ProviderPayload, rawText: string) => {
   return direct || nested || rawText || null;
 };
 
-const responseLooksSuccessful = (_response: Response, payload: ProviderPayload, msg: string | null) => {
+const responseLooksSuccessful = (response: Response, payload: ProviderPayload, msg: string | null) => {
+  if (!payload && /<!doctype html|<html[\s>]/i.test(msg || "")) {
+    return false;
+  }
+  
   const code = typeof payload?.code === "string" ? payload.code.toLowerCase() : null;
   const status = typeof payload?.status === "string" ? payload.status.toLowerCase() : null;
   const flag = payload?.success;
-  const norm = msg?.toLowerCase() || "";
-  const fail = flag === false || code === "error" || code === "failed" || status === "error" || status === "failed" || /error|invalid|failed|denied|insufficient|unauthori[sz]ed/.test(norm);
-  if (fail) return false;
-  const ok = flag === true || code === "ok" || code === "success" || status === "ok" || status === "success" || /queued for delivery|successfully sent|successfully send|message sent|sms\(es\) have been queued/i.test(msg || "");
-  return ok;
+  const norm = (msg || "").toLowerCase();
+  
+  const isExplicitError = flag === false || 
+    code === "error" || code === "failed" || 
+    status === "error" || status === "failed" || 
+    /error|invalid|failed|denied|insufficient|unauthori[sz]ed|not found|missing/i.test(norm);
+    
+  if (isExplicitError) return false;
+
+  const isExplicitSuccess = flag === true || 
+    code === "ok" || code === "success" || 
+    status === "ok" || status === "success" || 
+    /queued for delivery|successfully sent|successfully send|message sent|sms\(es\) have been queued/i.test(msg || "");
+    
+  if (isExplicitSuccess) return true;
+
+  // Fallback to HTTP status if no explicit markers found
+  return response.ok;
 };
 
 const parseProviderResponse = async (response: Response): Promise<{ rawText: string; payload: ProviderPayload }> => {
@@ -190,21 +207,60 @@ async function resolveCredentials(supabase: any, brandSenderId: string) {
 
 // --- Send via Zamtel ---
 const sendViaZamtel = async (apiKey: string, senderId: string, contacts: string[], message: string) => {
-  const contactsParam = `[${contacts.join(",")}]`;
-  const pathUrl = `https://bulksms.zamtel.co.zm/api/v2.1/action/send/api_key/${encodeURIComponent(apiKey)}/contacts/${encodeURIComponent(contactsParam)}/senderId/${encodeURIComponent(senderId)}/message/${encodeURIComponent(message.trim())}`;
+  // Batching: Zamtel and other gateways often limit contacts per request
+  const BATCH_SIZE = 50;
+  const results = [];
+  const messageTrimmed = message.trim();
 
-  const smsResponse = await fetch(pathUrl, { method: "POST", headers: { Accept: "application/json, text/plain, */*" } });
-  const { rawText, payload } = await parseProviderResponse(smsResponse);
-  const messageText = getProviderMessage(payload, rawText);
+  for (let i = 0; i < contacts.length; i += BATCH_SIZE) {
+    const batch = contacts.slice(i, i + BATCH_SIZE);
+    const contactsParam = `[${batch.join(",")}]`;
+    const pathUrl = `https://bulksms.zamtel.co.zm/api/v2.1/action/send/api_key/${encodeURIComponent(apiKey)}/contacts/${encodeURIComponent(contactsParam)}/senderId/${encodeURIComponent(senderId)}/message/${encodeURIComponent(messageTrimmed)}`;
 
+    try {
+      console.log(`Dispatching SMS batch ${i / BATCH_SIZE + 1} to ${batch.length} recipients...`);
+      const smsResponse = await fetch(pathUrl, { 
+        method: "POST", 
+        headers: { Accept: "application/json, text/plain, */*" } 
+      });
+      
+      const { rawText, payload } = await parseProviderResponse(smsResponse);
+      const messageText = getProviderMessage(payload, rawText);
+      const ok = responseLooksSuccessful(smsResponse, payload, messageText);
+
+      results.push({
+        ok,
+        status: smsResponse.status,
+        payload,
+        rawText,
+        message: messageText,
+        recipients: batch
+      });
+    } catch (err) {
+      console.error("Batch send error:", err);
+      results.push({
+        ok: false,
+        status: 500,
+        message: err instanceof Error ? err.message : "Network error",
+        recipients: batch
+      });
+    }
+  }
+
+  // Aggregate results: consider it a success if at least one batch succeeded? 
+  // No, for bulk we want to know if everything is OK.
+  const allOk = results.every(r => r.ok);
+  const firstFail = results.find(r => !r.ok);
+  
   return {
-    ok: responseLooksSuccessful(smsResponse, payload, messageText),
-    status: smsResponse.status,
-    payload,
-    rawText,
-    message: messageText,
-    requestUrl: pathUrl,
-    requestMethod: "POST" as const,
+    ok: allOk,
+    results,
+    // Return first error message or success message
+    message: allOk ? results[0]?.message : firstFail?.message,
+    status: allOk ? 200 : (firstFail?.status || 500),
+    rawText: JSON.stringify(results.map(r => r.rawText)),
+    payload: results.map(r => r.payload),
+    requestMethod: "POST" as const
   };
 };
 
@@ -292,8 +348,6 @@ serve(async (req) => {
       return new Response(JSON.stringify({ error: "No valid recipients for Zamtel format" }), { status: 400, headers: jsonHeaders });
     }
 
-    console.log("Sending branded SMS to:", zamtelContacts, "senderId:", senderId);
-
     const providerResponse = await sendViaZamtel(apiKey, senderId, zamtelContacts, body.message.trim());
     const providerReturnedHtml = /<!doctype html|<html[\s>]/i.test(providerResponse.rawText || "");
     console.log("SMS provider response:", JSON.stringify({ status: providerResponse.status, ok: providerResponse.ok, method: providerResponse.requestMethod, senderIdUsed: senderId, htmlFallback: providerReturnedHtml, payload: providerResponse.payload }));
@@ -304,21 +358,47 @@ serve(async (req) => {
     );
     const smsAccepted = providerResponse.ok && !providerReturnedHtml;
 
-    const smsLogs = zamtelContacts.map((phone) => ({
-      recipient_phone: phone,
-      message: body.message,
-      provider: "xy_cargo",
-      status: smsAccepted ? "sent" : "failed",
-      provider_response: {
-        status: providerResponse.status,
-        message: brandedMessage,
-        request_method: providerResponse.requestMethod,
-        payload: providerResponse.payload,
-        raw_text: providerResponse.rawText,
-      },
-      reference_type: body.reference_type || null,
-      reference_id: body.reference_id || null,
-    }));
+    // Log individual results for each contact
+    const smsLogs = [];
+    if (providerResponse.results) {
+      for (const batchRes of providerResponse.results) {
+        for (const phone of batchRes.recipients) {
+          smsLogs.push({
+            recipient_phone: phone,
+            message: body.message,
+            provider: "xy_cargo",
+            status: batchRes.ok ? "sent" : "failed",
+            provider_response: {
+              status: batchRes.status,
+              message: sanitizeBranding(batchRes.message, brandSenderId),
+              payload: batchRes.payload,
+              raw_text: batchRes.rawText,
+            },
+            reference_type: body.reference_type || null,
+            reference_id: body.reference_id || null,
+          });
+        }
+      }
+    } else {
+      // Fallback for unexpected format
+      zamtelContacts.forEach(phone => {
+        smsLogs.push({
+          recipient_phone: phone,
+          message: body.message,
+          provider: "xy_cargo",
+          status: smsAccepted ? "sent" : "failed",
+          provider_response: {
+            status: providerResponse.status,
+            message: brandedMessage,
+            payload: providerResponse.payload,
+            raw_text: providerResponse.rawText,
+          },
+          reference_type: body.reference_type || null,
+          reference_id: body.reference_id || null,
+        });
+      });
+    }
+
     await supabase.from("sms_logs").insert(smsLogs);
 
     if (smsAccepted) {

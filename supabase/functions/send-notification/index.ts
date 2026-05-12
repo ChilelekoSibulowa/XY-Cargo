@@ -65,15 +65,28 @@ const providerAcceptedSms = (response: Response, payload: any, messageText: stri
   if (!payload && /<!doctype html|<html[\s>]/i.test(messageText || "")) {
     return false;
   }
+  
   const code = typeof payload?.code === "string" ? payload.code.toLowerCase() : null;
   const status = typeof payload?.status === "string" ? payload.status.toLowerCase() : null;
-  const statusCode = Number(payload?.statusCode || response.status);
-  const success = payload?.success;
-  const normalized = (messageText || "").toLowerCase();
-  if (success === false || code === "error" || status === "error" || /error|invalid|failed|denied|insufficient|unauthori[sz]ed/.test(normalized)) {
-    return false;
-  }
-  return response.ok || success === true || statusCode === 202 || code === "ok" || code === "success" || status === "ok" || status === "success" || /queued for delivery|successfully sent|message sent|sms\(es\) have been queued/i.test(messageText || "");
+  const flag = payload?.success;
+  const norm = (messageText || "").toLowerCase();
+  
+  const isExplicitError = flag === false || 
+    code === "error" || code === "failed" || 
+    status === "error" || status === "failed" || 
+    /error|invalid|failed|denied|insufficient|unauthori[sz]ed|not found|missing/i.test(norm);
+    
+  if (isExplicitError) return false;
+
+  const isExplicitSuccess = flag === true || 
+    code === "ok" || code === "success" || 
+    status === "ok" || status === "success" || 
+    /queued for delivery|successfully sent|successfully send|message sent|sms\(es\) have been queued/i.test(messageText || "");
+    
+  if (isExplicitSuccess) return true;
+
+  // Fallback to HTTP status if no explicit markers found
+  return response.ok;
 };
 
 const parseSmsResponse = async (response: Response) => {
