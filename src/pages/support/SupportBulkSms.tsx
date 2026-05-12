@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Send, Upload, Users, Search, MessageSquare, History, RefreshCcw, Eye, X } from "lucide-react";
+import { Send, Upload, Users, Search, MessageSquare, History, RefreshCcw, Eye, X, Activity } from "lucide-react";
 import { format } from "date-fns";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
@@ -73,8 +73,22 @@ const SupportBulkSms = () => {
   const [history, setHistory] = useState<any[]>([]);
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
   const [selectedLog, setSelectedLog] = useState<any | null>(null);
+  const [diagnosticResult, setDiagnosticResult] = useState<any | null>(null);
+  const [isRunningDiagnostic, setIsRunningDiagnostic] = useState(false);
 
-  const loadHistory = async () => {
+  const runDiagnostic = async () => {
+    setIsRunningDiagnostic(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("sms-diagnostic");
+      if (error) throw error;
+      setDiagnosticResult(data);
+      toast.success("Diagnostic completed.");
+    } catch (err: any) {
+      toast.error(err.message || "Diagnostic failed.");
+    } finally {
+      setIsRunningDiagnostic(false);
+    }
+  };
     setIsLoadingHistory(true);
     try {
       const { data, error } = await supabase
@@ -357,10 +371,16 @@ const SupportBulkSms = () => {
               <History className="h-5 w-5 text-primary" />
               Delivery History
             </CardTitle>
-            <Button variant="outline" size="sm" onClick={loadHistory} disabled={isLoadingHistory} className="h-8">
-              <RefreshCcw className={`h-3.5 w-3.5 mr-2 ${isLoadingHistory ? "animate-spin" : ""}`} />
-              Refresh Status
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button variant="outline" size="sm" onClick={runDiagnostic} disabled={isRunningDiagnostic} className="h-8">
+                <Activity className={`h-3.5 w-3.5 mr-2 ${isRunningDiagnostic ? "animate-spin" : ""}`} />
+                API Diagnostic
+              </Button>
+              <Button variant="outline" size="sm" onClick={loadHistory} disabled={isLoadingHistory} className="h-8">
+                <RefreshCcw className={`h-3.5 w-3.5 mr-2 ${isLoadingHistory ? "animate-spin" : ""}`} />
+                Refresh Status
+              </Button>
+            </div>
           </CardHeader>
           <CardContent className="p-0">
             <div className="overflow-x-auto">
@@ -471,6 +491,63 @@ const SupportBulkSms = () => {
             </CardContent>
             <div className="border-t p-4 bg-muted/20 flex justify-end gap-3 px-6">
               <Button variant="outline" onClick={() => setSelectedLog(null)}>Dismiss</Button>
+            </div>
+          </Card>
+        </div>
+      )}
+
+      {/* Diagnostic Result Dialog */}
+      {diagnosticResult && (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
+          <Card className="w-full max-w-2xl max-h-[85vh] overflow-hidden flex flex-col shadow-2xl border-blue-500/30">
+            <CardHeader className="bg-blue-500/10 border-b">
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center gap-2 text-blue-600">
+                  <Activity className="h-5 w-5" />
+                  Zamtel API Diagnostic Result
+                </CardTitle>
+                <Button variant="ghost" size="icon" onClick={() => setDiagnosticResult(null)}>
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent className="p-6 overflow-y-auto">
+              <div className="space-y-6">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="bg-muted p-3 rounded-lg">
+                    <p className="text-[10px] text-muted-foreground uppercase font-bold">Configured Sender ID</p>
+                    <p className="font-mono text-sm">{diagnosticResult.senderIdConfigured || "Not set"}</p>
+                  </div>
+                  <div className="bg-muted p-3 rounded-lg">
+                    <p className="text-[10px] text-muted-foreground uppercase font-bold">API Key Status</p>
+                    <p className="font-mono text-sm">{diagnosticResult.apiKeyLen ? `Active (${diagnosticResult.apiKeyLen} chars)` : "Missing"}</p>
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <p className="text-xs font-bold text-muted-foreground uppercase">Approved Sender IDs on Account</p>
+                  <pre className="bg-slate-900 text-slate-100 p-3 rounded-md text-xs overflow-x-auto">
+                    {typeof diagnosticResult.senderIds === 'string' ? diagnosticResult.senderIds : JSON.stringify(diagnosticResult.senderIds, null, 2)}
+                  </pre>
+                </div>
+
+                <div className="space-y-1">
+                  <p className="text-xs font-bold text-muted-foreground uppercase">Account Balance</p>
+                  <pre className="bg-slate-900 text-slate-100 p-3 rounded-md text-xs overflow-x-auto">
+                    {typeof diagnosticResult.balance === 'string' ? diagnosticResult.balance : JSON.stringify(diagnosticResult.balance, null, 2)}
+                  </pre>
+                </div>
+
+                <div className="space-y-1">
+                  <p className="text-xs font-bold text-muted-foreground uppercase">Account Info</p>
+                  <pre className="bg-slate-900 text-slate-100 p-3 rounded-md text-xs overflow-x-auto">
+                    {typeof diagnosticResult.account === 'string' ? diagnosticResult.account : JSON.stringify(diagnosticResult.account, null, 2)}
+                  </pre>
+                </div>
+              </div>
+            </CardContent>
+            <div className="border-t p-4 bg-muted/20 flex justify-end">
+              <Button onClick={() => setDiagnosticResult(null)}>Close</Button>
             </div>
           </Card>
         </div>
