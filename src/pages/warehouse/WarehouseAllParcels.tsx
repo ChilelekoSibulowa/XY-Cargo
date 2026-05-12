@@ -52,7 +52,7 @@ import {
 } from "@/lib/warehouseTabFilters";
 import { Check, CheckCircle2, Eye, Loader2, Pencil, Trash2, Undo2 } from "lucide-react";
 import { toast } from "sonner";
-import { notifyStatusChange, notifyBulkTransitUpdate } from "@/lib/notifications";
+import { notifyStatusChange, notifyBulkTransitUpdate, notifyWarehouseTrackingAssigned, notifyShippingFeeAdded } from "@/lib/notifications";
 
 type ShipmentRow = {
   id: string;
