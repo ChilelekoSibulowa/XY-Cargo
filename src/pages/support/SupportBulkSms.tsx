@@ -89,6 +89,8 @@ const SupportBulkSms = () => {
       setIsRunningDiagnostic(false);
     }
   };
+
+  const loadHistory = async () => {
     setIsLoadingHistory(true);
     try {
       const { data, error } = await supabase
