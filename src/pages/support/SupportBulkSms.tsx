@@ -94,6 +94,9 @@ const SupportBulkSms = () => {
   useEffect(() => {
     loadHistory();
   }, []);
+
+  useEffect(() => {
+    const fetchCustomers = async () => {
       const { data, error } = await supabase
         .from("customers")
         .select("id, full_name, phone, code, email")
