@@ -11,6 +11,22 @@ declare global {
 
 const GA_MEASUREMENT_ID = "G-84Z3B4TFLK";
 
+const isLovableHost = (host: string) => {
+  const normalized = host.toLowerCase();
+  return normalized.includes("lovable.app") || normalized.includes("lovable.dev") || normalized.includes("lovableproject.com");
+};
+
+const isLovablePreviewTraffic = () => {
+  if (isLovableHost(window.location.hostname)) return true;
+  if (!document.referrer) return false;
+
+  try {
+    return isLovableHost(new URL(document.referrer).hostname);
+  } catch {
+    return document.referrer.toLowerCase().includes("lovable");
+  }
+};
+
 const getTrafficSource = () => {
   const params = new URLSearchParams(window.location.search);
   const utmSource = (params.get("utm_source") || "").trim().toLowerCase();
@@ -94,6 +110,10 @@ export const GoogleAnalytics = () => {
   useEffect(() => {
     const pagePath = `${location.pathname}${location.search}`;
     if (lastTrackedPathRef.current === pagePath) return;
+    if (isLovablePreviewTraffic()) {
+      lastTrackedPathRef.current = pagePath;
+      return;
+    }
 
     const trafficSource = getTrafficSource();
     const isLandingPage = location.pathname === "/";

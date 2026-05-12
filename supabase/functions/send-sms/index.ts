@@ -193,7 +193,7 @@ const sendViaZamtel = async (apiKey: string, senderId: string, contacts: string[
   const contactsParam = `[${contacts.join(",")}]`;
   const pathUrl = `https://bulksms.zamtel.co.zm/api/v2.1/action/send/api_key/${encodeURIComponent(apiKey)}/contacts/${encodeURIComponent(contactsParam)}/senderId/${encodeURIComponent(senderId)}/message/${encodeURIComponent(message.trim())}`;
 
-  const smsResponse = await fetch(pathUrl, { method: "GET", headers: { Accept: "application/json, text/plain, */*" } });
+  const smsResponse = await fetch(pathUrl, { method: "POST", headers: { Accept: "application/json, text/plain, */*" } });
   const { rawText, payload } = await parseProviderResponse(smsResponse);
   const messageText = getProviderMessage(payload, rawText);
 
@@ -204,7 +204,7 @@ const sendViaZamtel = async (apiKey: string, senderId: string, contacts: string[
     rawText,
     message: messageText,
     requestUrl: pathUrl,
-    requestMethod: "GET" as const,
+    requestMethod: "POST" as const,
   };
 };
 
@@ -295,15 +295,20 @@ serve(async (req) => {
     console.log("Sending branded SMS to:", zamtelContacts, "senderId:", senderId);
 
     const providerResponse = await sendViaZamtel(apiKey, senderId, zamtelContacts, body.message.trim());
-    console.log("SMS provider response:", JSON.stringify({ status: providerResponse.status, ok: providerResponse.ok, method: providerResponse.requestMethod, senderIdUsed: senderId, payload: providerResponse.payload }));
+    const providerReturnedHtml = /<!doctype html|<html[\s>]/i.test(providerResponse.rawText || "");
+    console.log("SMS provider response:", JSON.stringify({ status: providerResponse.status, ok: providerResponse.ok, method: providerResponse.requestMethod, senderIdUsed: senderId, htmlFallback: providerReturnedHtml, payload: providerResponse.payload }));
 
-    const brandedMessage = sanitizeBranding(providerResponse.message, brandSenderId);
+    const brandedMessage = sanitizeBranding(
+      providerReturnedHtml ? "SMS provider returned a web page instead of an API response" : providerResponse.message,
+      brandSenderId,
+    );
+    const smsAccepted = providerResponse.ok && !providerReturnedHtml;
 
     const smsLogs = zamtelContacts.map((phone) => ({
       recipient_phone: phone,
       message: body.message,
       provider: "xy_cargo",
-      status: providerResponse.ok ? "sent" : "failed",
+      status: smsAccepted ? "sent" : "failed",
       provider_response: {
         status: providerResponse.status,
         message: brandedMessage,
@@ -316,7 +321,7 @@ serve(async (req) => {
     }));
     await supabase.from("sms_logs").insert(smsLogs);
 
-    if (providerResponse.ok) {
+    if (smsAccepted) {
       return new Response(JSON.stringify({ success: true, provider: "zamtel", channels: ["sms"], message: brandedMessage || `SMS sent successfully from ${brandSenderId}`, recipients: zamtelContacts.length }), { status: 200, headers: jsonHeaders });
     }
 
