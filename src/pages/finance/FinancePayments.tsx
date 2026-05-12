@@ -236,7 +236,7 @@ const mergeFinancePaymentShipments = (
 };
 
 const FinancePayments = () => {
-  const { formatAmount, code, defaultCode, convertFromSelected } = useDefaultCurrency();
+  const { formatAmount, code, defaultCode, convert, convertFromSelected } = useDefaultCurrency();
   const [customers, setCustomers] = useState<CustomerOption[]>([]);
   const [shipments, setShipments] = useState<ShipmentOption[]>([]);
   const [invoices, setInvoices] = useState<InvoiceLookupRow[]>([]);
@@ -652,6 +652,9 @@ const FinancePayments = () => {
     return typeof notes === "string" ? notes : "";
   };
 
+  const formatAmountInput = (amountInDefaultCurrency: number) =>
+    Number(convert(amountInDefaultCurrency).toFixed(2)).toFixed(2);
+
   const handleCustomerChange = (customerId: string) => {
     setForm((prev) => {
       const keepShipment =
@@ -670,7 +673,7 @@ const FinancePayments = () => {
           nextShipment?.customer_phone ||
           nextCustomer?.phone ||
           "",
-        amount: nextShipmentId ? getShipmentDueAmount(nextShipmentId).toFixed(2) : prev.amount,
+        amount: nextShipmentId ? formatAmountInput(getShipmentDueAmount(nextShipmentId)) : prev.amount,
       };
     });
   };
@@ -683,7 +686,7 @@ const FinancePayments = () => {
       ...prev,
       shipment_id: shipmentId,
       customer_id: shipment.customer_id,
-      amount: getShipmentDueAmount(shipmentId).toFixed(2),
+      amount: formatAmountInput(getShipmentDueAmount(shipmentId)),
       phone_number: prev.phone_number || shipment.customer_phone || "",
     }));
   };
@@ -701,7 +704,7 @@ const FinancePayments = () => {
         ...prev,
         customer_id: customerId,
         shipment_id: nextShipmentId,
-        amount: nextShipmentId ? getShipmentDueAmount(nextShipmentId, editingPayment).toFixed(2) : prev.amount,
+        amount: nextShipmentId ? formatAmountInput(getShipmentDueAmount(nextShipmentId, editingPayment)) : prev.amount,
         phone_number:
           prev.phone_number ||
           nextShipment?.customer_phone ||
@@ -719,7 +722,7 @@ const FinancePayments = () => {
       ...prev,
       shipment_id: shipmentId,
       customer_id: shipment.customer_id,
-      amount: getShipmentDueAmount(shipmentId, editingPayment).toFixed(2),
+      amount: formatAmountInput(getShipmentDueAmount(shipmentId, editingPayment)),
       phone_number: prev.phone_number || shipment.customer_phone || "",
     }));
   };
