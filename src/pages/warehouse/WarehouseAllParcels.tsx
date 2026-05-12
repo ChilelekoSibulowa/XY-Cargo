@@ -2157,6 +2157,18 @@ const WarehouseAllParcels = () => {
         return toast.error(consolidationError.message || "Failed to update consolidation.");
       }
       toast.success("Updated and moved to Confirm Shipment.");
+      const consCustomerId = (editRow.sourceConsolidation as any)?.customer_id;
+      if (consCustomerId) {
+        notifyShippingFeeAdded(consCustomerId, editRow.id)
+          .catch((err) => console.error("notifyShippingFeeAdded failed:", err));
+        notifyStatusChange(
+          consCustomerId,
+          (editRow.sourceConsolidation as any)?.tracking_code || null,
+          editRow.id,
+          "approved",
+          { handlingMethod: "consolidated" },
+        ).catch((err) => console.error("notifyStatusChange (approved) failed:", err));
+      }
       releaseState();
       setSearchParams({ tab: "confirm" });
       fetchData();
