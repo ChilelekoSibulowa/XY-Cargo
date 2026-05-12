@@ -52,7 +52,7 @@ import {
 } from "@/lib/warehouseTabFilters";
 import { Check, CheckCircle2, Eye, Loader2, Pencil, Trash2, Undo2 } from "lucide-react";
 import { toast } from "sonner";
-import { notifyStatusChange, notifyBulkTransitUpdate } from "@/lib/notifications";
+import { notifyStatusChange, notifyBulkTransitUpdate, notifyWarehouseTrackingAssigned, notifyShippingFeeAdded } from "@/lib/notifications";
 
 type ShipmentRow = {
   id: string;
@@ -2056,6 +2056,17 @@ const WarehouseAllParcels = () => {
 
 
         toast.success("Updated and moved to Confirm Shipment.");
+        if (editRow.sourceShipment?.customer_id) {
+          notifyShippingFeeAdded(editRow.sourceShipment.customer_id, editRow.id)
+            .catch((err) => console.error("notifyShippingFeeAdded failed:", err));
+          notifyStatusChange(
+            editRow.sourceShipment.customer_id,
+            resolveTrackingByStatus("approved", editRow.sourceShipment.notes, editRow.sourceShipment.custom_tracking_number),
+            editRow.id,
+            "approved",
+            { handlingMethod: editRow.sourceShipment.handling_method === "consolidation" ? "consolidated" : "single" },
+          ).catch((err) => console.error("notifyStatusChange (approved) failed:", err));
+        }
         releaseState();
         setSearchParams({ tab: "confirm" });
         fetchData();
@@ -2146,6 +2157,18 @@ const WarehouseAllParcels = () => {
         return toast.error(consolidationError.message || "Failed to update consolidation.");
       }
       toast.success("Updated and moved to Confirm Shipment.");
+      const consCustomerId = (editRow.sourceConsolidation as any)?.customer_id;
+      if (consCustomerId) {
+        notifyShippingFeeAdded(consCustomerId, editRow.id)
+          .catch((err) => console.error("notifyShippingFeeAdded failed:", err));
+        notifyStatusChange(
+          consCustomerId,
+          (editRow.sourceConsolidation as any)?.tracking_code || null,
+          editRow.id,
+          "approved",
+          { handlingMethod: "consolidated" },
+        ).catch((err) => console.error("notifyStatusChange (approved) failed:", err));
+      }
       releaseState();
       setSearchParams({ tab: "confirm" });
       fetchData();
@@ -2206,6 +2229,10 @@ const WarehouseAllParcels = () => {
         setUpdatingId(null);
         if (nextError) return toast.error(nextError.message || "Failed to update outgoing details.");
         toast.success("Outgoing details updated.");
+        if (editTrackingNumber.trim() && editRow.sourceShipment?.customer_id) {
+          notifyWarehouseTrackingAssigned(editRow.sourceShipment.customer_id, editRow.id)
+            .catch((err) => console.error("notifyWarehouseTrackingAssigned failed:", err));
+        }
         releaseState();
         fetchData();
         return;
@@ -2299,6 +2326,13 @@ const WarehouseAllParcels = () => {
       setUpdatingId(null);
       if (consolidationError) return toast.error(consolidationError.message || "Failed to update outgoing details.");
       toast.success("Outgoing details updated.");
+      if (editTrackingNumber.trim()) {
+        const consCustomerId = (editRow.sourceConsolidation as any)?.customer_id;
+        if (consCustomerId) {
+          notifyWarehouseTrackingAssigned(consCustomerId, editRow.id)
+            .catch((err) => console.error("notifyWarehouseTrackingAssigned failed:", err));
+        }
+      }
       releaseState();
       fetchData();
       return;

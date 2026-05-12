@@ -441,14 +441,65 @@ export const notifyBulkTransitUpdate = async (
   if (customer?.full_name) customerName = customer.full_name;
 
   const tracking = (shipmentTrackingNumber || "").trim();
-  const trackingInfo = tracking ? ` for ${tracking}` : "";
+  const trackingPart = tracking ? `with tracking number ${tracking} ` : "";
+  const text = updateMessage?.trim()
+    ? `Dear ${customerName}, your shipment ${trackingPart}update: ${updateMessage.trim()}`
+    : `Dear ${customerName}, your shipment ${trackingPart}is now in transit.`;
 
   return sendNotification({
     customer_id: customerId,
     event_type: "transit_update",
     title: "Shipment Update",
-    message: `Dear ${customerName}, update${trackingInfo}: ${updateMessage}`,
-    sms_message: `Dear ${customerName}, update${trackingInfo}: ${updateMessage}`,
+    message: text,
+    sms_message: text,
+    reference_id: shipmentId,
+    notification_type: "shipment",
+  });
+};
+
+export const notifyWarehouseTrackingAssigned = async (
+  customerId: string,
+  shipmentId: string,
+) => {
+  let customerName = "Valued Customer";
+  const { data: customer } = await supabase
+    .from("customers")
+    .select("full_name")
+    .eq("id", customerId)
+    .maybeSingle();
+  if (customer?.full_name) customerName = customer.full_name;
+
+  const text = `Dear ${customerName}, a tracking number has been assigned to your shipment.`;
+  return sendNotification({
+    customer_id: customerId,
+    event_type: "tracking_assigned",
+    title: "Tracking Number Assigned",
+    message: text,
+    sms_message: text,
+    reference_id: shipmentId,
+    notification_type: "shipment",
+  });
+};
+
+export const notifyShippingFeeAdded = async (
+  customerId: string,
+  shipmentId: string,
+) => {
+  let customerName = "Valued Customer";
+  const { data: customer } = await supabase
+    .from("customers")
+    .select("full_name")
+    .eq("id", customerId)
+    .maybeSingle();
+  if (customer?.full_name) customerName = customer.full_name;
+
+  const text = `Dear ${customerName}, a shipping fee has been added to your shipment.`;
+  return sendNotification({
+    customer_id: customerId,
+    event_type: "shipping_fee_added",
+    title: "Shipping Fee Added",
+    message: text,
+    sms_message: text,
     reference_id: shipmentId,
     notification_type: "shipment",
   });
