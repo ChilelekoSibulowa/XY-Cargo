@@ -2056,6 +2056,17 @@ const WarehouseAllParcels = () => {
 
 
         toast.success("Updated and moved to Confirm Shipment.");
+        if (editRow.sourceShipment?.customer_id) {
+          notifyShippingFeeAdded(editRow.sourceShipment.customer_id, editRow.id)
+            .catch((err) => console.error("notifyShippingFeeAdded failed:", err));
+          notifyStatusChange(
+            editRow.sourceShipment.customer_id,
+            resolveTrackingByStatus("approved", editRow.sourceShipment.notes, editRow.sourceShipment.custom_tracking_number),
+            editRow.id,
+            "approved",
+            { handlingMethod: editRow.sourceShipment.handling_method === "consolidation" ? "consolidated" : "single" },
+          ).catch((err) => console.error("notifyStatusChange (approved) failed:", err));
+        }
         releaseState();
         setSearchParams({ tab: "confirm" });
         fetchData();
