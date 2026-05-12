@@ -236,7 +236,7 @@ const mergeFinancePaymentShipments = (
 };
 
 const FinancePayments = () => {
-  const { formatAmount, code } = useDefaultCurrency();
+  const { formatAmount, code, defaultCode, convertFromSelected } = useDefaultCurrency();
   const [customers, setCustomers] = useState<CustomerOption[]>([]);
   const [shipments, setShipments] = useState<ShipmentOption[]>([]);
   const [invoices, setInvoices] = useState<InvoiceLookupRow[]>([]);
