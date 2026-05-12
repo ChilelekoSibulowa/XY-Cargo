@@ -1205,8 +1205,8 @@ const FinancePayments = () => {
       return;
     }
 
-    const amount = Number(form.amount);
-    if (Number.isNaN(amount) || amount <= 0) {
+    const inputAmount = Number(form.amount);
+    if (Number.isNaN(inputAmount) || inputAmount <= 0) {
       toast.error("Enter a valid payment amount.");
       return;
     }
@@ -1217,13 +1217,19 @@ const FinancePayments = () => {
       return;
     }
 
+    // Convert the user's input (entered in the currently selected currency)
+    // back to the system base/default currency so it matches invoice amounts.
+    const amount = code === defaultCode
+      ? inputAmount
+      : Number(convertFromSelected(inputAmount).toFixed(2));
+
     const customerId = form.customer_id || shipment.customer_id;
     const dueAmount = getShipmentDueAmount(form.shipment_id);
     if (dueAmount <= 0) {
       toast.error("This shipment is already fully paid. No further payments can be recorded.");
       return;
     }
-    if (amount > dueAmount) {
+    if (amount > dueAmount + 0.01) {
       toast.error("Amount exceeds the outstanding balance.");
       return;
     }
@@ -1237,7 +1243,7 @@ const FinancePayments = () => {
         customer_id: customerId,
         shipment_id: form.shipment_id,
         amount,
-        currency: code,
+        currency: defaultCode,
         payment_provider: form.payment_provider,
         provider_reference: form.provider_reference || null,
         phone_number: form.phone_number || null,
@@ -1246,6 +1252,8 @@ const FinancePayments = () => {
           manual_entry: true,
           finance_notes: form.notes || null,
           recorded_at: new Date().toISOString(),
+          entered_amount: inputAmount,
+          entered_currency: code,
         },
       });
 
