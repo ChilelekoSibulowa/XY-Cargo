@@ -1363,7 +1363,7 @@ const FinancePayments = () => {
     setEditForm({
       customer_id: payment.customer_id || shipment?.customer_id || "",
       shipment_id: payment.shipment_id || "",
-      amount: payment.amount.toFixed(2),
+      amount: formatAmountInput(payment.amount),
       payment_provider: payment.payment_provider,
       status: payment.status || "pending",
       provider_reference: payment.provider_reference || "",
@@ -1384,8 +1384,8 @@ const FinancePayments = () => {
       return;
     }
 
-    const amount = Number(editForm.amount);
-    if (Number.isNaN(amount) || amount <= 0) {
+    const inputAmount = Number(editForm.amount);
+    if (Number.isNaN(inputAmount) || inputAmount <= 0) {
       toast.error("Enter a valid payment amount.");
       return;
     }
@@ -1395,6 +1395,10 @@ const FinancePayments = () => {
       toast.error("Selected shipment was not found.");
       return;
     }
+
+    const amount = code === defaultCode
+      ? inputAmount
+      : Number(convertFromSelected(inputAmount).toFixed(2));
 
     const dueAmount = getShipmentDueAmount(editForm.shipment_id, editingPayment);
     if (amount > dueAmount) {
@@ -1411,6 +1415,8 @@ const FinancePayments = () => {
         manual_entry: true,
         finance_notes: editForm.notes || null,
         edited_at: new Date().toISOString(),
+        entered_amount: inputAmount,
+        entered_currency: code,
       };
 
       const { error } = await supabase
@@ -1419,6 +1425,7 @@ const FinancePayments = () => {
           customer_id: nextCustomerId,
           shipment_id: editForm.shipment_id,
           amount,
+          currency: defaultCode,
           payment_provider: editForm.payment_provider,
           provider_reference: editForm.provider_reference || null,
           phone_number: editForm.phone_number || null,
