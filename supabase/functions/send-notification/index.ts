@@ -62,6 +62,9 @@ const getProviderMessage = (payload: any, rawText: string) => {
 };
 
 const providerAcceptedSms = (response: Response, payload: any, messageText: string | null) => {
+  if (!payload && /<!doctype html|<html[\s>]/i.test(messageText || "")) {
+    return false;
+  }
   const code = typeof payload?.code === "string" ? payload.code.toLowerCase() : null;
   const status = typeof payload?.status === "string" ? payload.status.toLowerCase() : null;
   const statusCode = Number(payload?.statusCode || response.status);
@@ -320,7 +323,7 @@ serve(async (req) => {
             const contactsParam = `[${zamtelPhone}]`;
             const smsUrl = `https://bulksms.zamtel.co.zm/api/v2.1/action/send/api_key/${encodeURIComponent(apiKey)}/contacts/${encodeURIComponent(contactsParam)}/senderId/${encodeURIComponent(senderId)}/message/${encodeURIComponent(smsText.trim())}`;
             const smsResp = await fetch(smsUrl, {
-              method: "GET",
+              method: "POST",
               headers: { Accept: "application/json, text/plain, */*" },
             });
             const smsResult = await parseSmsResponse(smsResp);
@@ -333,6 +336,7 @@ serve(async (req) => {
               provider_response: {
                 status: smsResp.status,
                 message: smsResult.messageText,
+                request_method: "POST",
                 payload: smsResult.payload,
                 raw_text: smsResult.rawText,
               },
