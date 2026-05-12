@@ -131,7 +131,7 @@ async function resolveBrandSenderId(supabase: any) {
     .eq("is_active", true)
     .limit(1);
 
-  const settingValue = cleanSecretValue((settingRows?.[0] as { setting_value?: unknown } | undefined)?.setting_value);
+  const settingValue = cleanSecretValue((settingRows?.[0] as { secret_value?: unknown } | undefined)?.secret_value);
   return settingValue || DEFAULT_BRAND_SENDER_ID;
 }
 
