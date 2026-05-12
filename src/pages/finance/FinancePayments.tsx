@@ -2086,7 +2086,7 @@ const FinancePayments = () => {
               </Select>
             </div>
             <div className="space-y-2">
-              <Label>Amount ({editingPayment?.currency || "ZMW"})</Label>
+              <Label>Amount ({code})</Label>
               <Input
                 type="number"
                 min="0"
