@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { format } from "date-fns";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { DateRangeFilter } from "@/components/shared/DateRangeFilter";
+import { StatusBadge } from "@/components/shared/StatusBadge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -17,6 +18,7 @@ import {
   getInvoicePaidAmount,
   getShipmentInvoiceTotal,
   getShipmentOutstandingBalance,
+  isFinanceInvoiceVisible,
   isWithinFinanceDateRange,
   openFinanceDetailWindow,
   toNumber,
@@ -26,6 +28,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { AlertCircle, CreditCard, DollarSign, Eye, FileText, TrendingUp } from "lucide-react";
 import { fetchLogo } from "@/hooks/useLogo";
+import { formatCurrencyDisplay, removeMinorWholeAmountDrift, roundCurrencyAmount } from "@/lib/currencyDisplay";
 
 type ShipmentRow = {
   id: string;
@@ -80,6 +83,8 @@ type ExpenseRow = {
   id: string;
   amount: number;
   expense_date: string | null;
+  original_amount: number | null;
+  original_currency: string | null;
 };
 
 const formatClientLabel = (customerName: string | null | undefined, customerCode: string | null | undefined) => {
@@ -93,7 +98,7 @@ const formatClientLabel = (customerName: string | null | undefined, customerCode
 
 const FinanceDashboard = () => {
   const navigate = useNavigate();
-  const { formatAmount } = useDefaultCurrency();
+  const { formatAmount, code, symbol, convert } = useDefaultCurrency();
   const [shipments, setShipments] = useState<ShipmentRow[]>([]);
   const [payments, setPayments] = useState<PaymentRow[]>([]);
   const [invoices, setInvoices] = useState<InvoiceLookupRow[]>([]);
@@ -125,7 +130,7 @@ const FinanceDashboard = () => {
         .from("invoices")
         .select("id, code, shipment_id, customer_id, amount, status, created_at, shipment:shipments(paid_amount, total_cost, shipping_cost)")
         .order("created_at", { ascending: false }),
-      supabase.from("finance_expenses").select("id, amount, expense_date"),
+      supabase.from("finance_expenses").select("id, amount, expense_date, original_amount, original_currency"),
       supabase
         .from("customer_claims")
         .select("id, shipment_code, description, requested_amount, status, created_at, requested_by_role, customer:customers(full_name, code), shipment:shipments(code, custom_tracking_number, notes, status)")
@@ -239,6 +244,8 @@ const FinanceDashboard = () => {
         id: row.id,
         amount: toNumber(row.amount),
         expense_date: row.expense_date || null,
+        original_amount: row.original_amount == null ? null : toNumber(row.original_amount),
+        original_currency: row.original_currency || null,
       })),
     );
     setRefunds(refundsRes.data || []);
@@ -292,7 +299,7 @@ const FinanceDashboard = () => {
   );
 
   const totalInvoiced = useMemo(
-    () => filteredInvoices.reduce((sum, invoice) => sum + invoice.amount, 0),
+    () => filteredInvoices.filter(inv => isFinanceInvoiceVisible(inv.status)).reduce((sum, invoice) => sum + invoice.amount, 0),
     [filteredInvoices],
   );
 
@@ -328,13 +335,18 @@ const FinanceDashboard = () => {
   );
 
   const outstandingInvoices = useMemo(
-    () => filteredInvoices.filter((invoice) => getInvoiceDashboardBalance(invoice) > 0),
+    () => filteredInvoices.filter((invoice) => isFinanceInvoiceVisible(invoice.status) && getInvoiceDashboardBalance(invoice) > 0),
     [filteredInvoices],
   );
 
   const outstandingInvoiceAmount = useMemo(
     () => outstandingInvoices.reduce((sum, invoice) => sum + getInvoiceDashboardBalance(invoice), 0),
     [outstandingInvoices],
+  );
+
+  const outstandingInvoiceDisplayAmount = useMemo(
+    () => removeMinorWholeAmountDrift(convert(outstandingInvoiceAmount)),
+    [convert, outstandingInvoiceAmount],
   );
 
   const completedPayments = useMemo(
@@ -353,43 +365,37 @@ const FinanceDashboard = () => {
   );
 
   const outstandingQueue = useMemo(() => {
-    const grouped = new Map<string, ShipmentRow>();
+    return outstandingInvoices.map(invoice => {
+      const shipment = Array.isArray(invoice.shipment) ? invoice.shipment[0] : invoice.shipment;
+      return {
+        id: invoice.id,
+        code: invoice.code,
+        customer_id: invoice.customer_id,
+        customer_name: shipmentById.get(invoice.shipment_id || "")?.customer_name || "Customer",
+        customer_code: shipmentById.get(invoice.shipment_id || "")?.customer_code,
+        custom_tracking_number: shipmentById.get(invoice.shipment_id || "")?.custom_tracking_number,
+        payment_status: invoice.status,
+        amount: invoice.amount,
+        balance: getInvoiceDashboardBalance(invoice),
+        shipment_id: invoice.shipment_id
+      };
+    });
+  }, [outstandingInvoices, shipmentById]);
 
-    filteredShipments
-      .filter((shipment) => getShipmentOutstandingBalance(shipment) > 0)
-      .forEach((shipment) => {
-        const warehouseTracking = (shipment.custom_tracking_number || "").trim();
-        const key = warehouseTracking || `shipment:${shipment.id}`;
-        const existing = grouped.get(key);
-
-        if (!existing) {
-          grouped.set(key, {
-            ...shipment,
-            description: warehouseTracking ? "Mixed Products" : shipment.description,
-            service_type: warehouseTracking ? "mixed" : shipment.service_type,
-          });
-          return;
-        }
-
-        const nextInvoiceTotal = getShipmentInvoiceTotal(existing) + getShipmentInvoiceTotal(shipment);
-        const nextBalance = getShipmentOutstandingBalance(existing) + getShipmentOutstandingBalance(shipment);
-        const nextPaid = Math.max(nextInvoiceTotal - nextBalance, 0);
-
-        grouped.set(key, {
-          ...existing,
-          shipping_cost: nextInvoiceTotal,
-          total_cost: nextInvoiceTotal,
-          paid_amount: nextPaid,
-          description: "Mixed Products",
-          service_type: "mixed",
-        });
-      });
-
-    return Array.from(grouped.values());
-  }, [filteredShipments]);
+  const getExpenseDisplayAmount = (row: ExpenseRow) => {
+    if (row.original_amount != null && row.original_currency) {
+      return roundCurrencyAmount(convert(row.original_amount, row.original_currency));
+    }
+    return removeMinorWholeAmountDrift(convert(row.amount));
+  };
 
   const totalExpenses = useMemo(
-    () => filteredExpenses.reduce((sum, row) => sum + row.amount, 0),
+    () => roundCurrencyAmount(filteredExpenses.reduce((sum, row) => sum + getExpenseDisplayAmount(row), 0)),
+    [convert, filteredExpenses],
+  );
+
+  const totalExpenseBaseAmount = useMemo(
+    () => roundCurrencyAmount(filteredExpenses.reduce((sum, row) => sum + row.amount, 0)),
     [filteredExpenses],
   );
 
@@ -400,7 +406,8 @@ const FinanceDashboard = () => {
     [filteredRefunds],
   );
 
-  const netProfit = completedPaymentAmount - totalRefundAmount - totalExpenses;
+  const netProfit = completedPaymentAmount - totalRefundAmount - totalExpenseBaseAmount;
+  const netProfitDisplay = removeMinorWholeAmountDrift(convert(netProfit));
 
   const recentTransactions = filteredPayments.slice(0, 15);
   const failedPaymentList: any[] = [];
@@ -531,7 +538,7 @@ const FinanceDashboard = () => {
           </CardHeader>
           <CardContent>
             <p className="break-words text-lg font-semibold leading-tight">{isLoading ? "..." : outstandingInvoices.length}</p>
-            <p className="mt-1 text-xs text-muted-foreground">{formatAmount(outstandingInvoiceAmount)}</p>
+            <p className="mt-1 text-xs text-muted-foreground">{formatCurrencyDisplay(outstandingInvoiceDisplayAmount, code, symbol)}</p>
           </CardContent>
         </Card>
 
@@ -555,7 +562,7 @@ const FinanceDashboard = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="break-words text-lg font-semibold leading-tight">{isLoading ? "..." : formatAmount(totalExpenses)}</p>
+            <p className="break-words text-lg font-semibold leading-tight">{isLoading ? "..." : formatCurrencyDisplay(totalExpenses, code, symbol)}</p>
           </CardContent>
         </Card>
         <Card className="min-w-0">
@@ -566,7 +573,7 @@ const FinanceDashboard = () => {
           </CardHeader>
           <CardContent>
             <p className={`break-words text-lg font-semibold leading-tight ${netProfit >= 0 ? "text-emerald-600" : "text-red-600"}`}>
-              {isLoading ? "..." : formatAmount(netProfit)}
+              {isLoading ? "..." : formatCurrencyDisplay(netProfitDisplay, code, symbol)}
             </p>
           </CardContent>
         </Card>
@@ -656,18 +663,16 @@ const FinanceDashboard = () => {
               </tr>
             </thead>
             <tbody>
-              {outstandingQueue.map((shipment) => (
-                <tr key={shipment.id} className="border-b last:border-0">
-                  <td className="p-3">{formatClientLabel(shipment.customer_name, shipment.customer_code)}</td>
-                  <td className="p-3">{shipment.custom_tracking_number || "-"}</td>
-                  <td className="p-3">{invoiceCodeFor(shipment.id, shipment.customer_id)}</td>
-                  <td className="p-3">{formatAmount(getShipmentInvoiceTotal(shipment))}</td>
+              {outstandingQueue.map((row) => (
+                <tr key={row.id} className="border-b last:border-0">
+                  <td className="p-3">{formatClientLabel(row.customer_name, row.customer_code)}</td>
+                  <td className="p-3">{row.custom_tracking_number || "-"}</td>
+                  <td className="p-3">{row.code}</td>
+                  <td className="p-3">{formatAmount(row.amount)}</td>
                   <td className="p-3">
-                    <Badge variant={shipment.payment_status === "completed" ? "default" : "secondary"}>
-                      {shipment.payment_status || "pending"}
-                    </Badge>
+                    <StatusBadge status={row.payment_status || "pending"} />
                   </td>
-                  <td className="p-3">{formatAmount(getShipmentOutstandingBalance(shipment))}</td>
+                  <td className="p-3">{formatAmount(row.balance)}</td>
                   <td className="p-3">
                     <Button
                       size="icon"
@@ -675,9 +680,9 @@ const FinanceDashboard = () => {
                       title="View outstanding record"
                       onClick={() =>
                         openShipmentFinanceView({
-                          title: `Outstanding ${shipment.code}`,
-                          shipment,
-                          amount: getShipmentInvoiceTotal(shipment),
+                          title: `Invoice ${row.code}`,
+                          shipment: row.shipment_id ? shipmentById.get(row.shipment_id) : undefined,
+                          amount: row.amount,
                         })
                       }
                     >

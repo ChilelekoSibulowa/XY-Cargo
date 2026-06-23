@@ -12,6 +12,7 @@ import { useDefaultCurrency } from "@/hooks/useDefaultCurrency";
 import { Pencil } from "lucide-react";
 import { TablePagination, paginate } from "@/components/shared/TablePagination";
 import { toast } from "sonner";
+import { isBlockedMarketingSource } from "@/lib/marketingMetrics";
 
 interface LeadRow {
   id: string;
@@ -51,7 +52,7 @@ const MarketingSales = () => {
       sb.from("profiles").select("user_id, full_name, email"),
     ]);
 
-    setLeads((leadRes.data || []) as LeadRow[]);
+    setLeads(((leadRes.data || []) as LeadRow[]).filter((lead) => !isBlockedMarketingSource(lead.source)));
     setProfiles((profileRes.data || []) as ProfileRow[]);
     setIsLoading(false);
   };
@@ -118,7 +119,7 @@ const MarketingSales = () => {
   return (
     <div className="space-y-6 animate-fade-in">
       <PageHeader title="Sales Integration"  />
-      <div className="grid gap-4 grid-cols-2 md:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2">
         <Card className="border-l-4 border-l-blue-500">
           <CardHeader><CardTitle className="text-sm truncate">Leads Assigned to Sales</CardTitle></CardHeader>
           <CardContent><p className="text-xl sm:text-2xl lg:text-3xl font-bold truncate">{isLoading ? "..." : assignedLeads.length}</p></CardContent>
@@ -223,4 +224,3 @@ const MarketingSales = () => {
 };
 
 export default MarketingSales;
-

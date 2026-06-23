@@ -184,7 +184,7 @@ export const resolveTrackingByParcelTab = (
   const warehouseTracking = getWarehouseTrackingNumber(notes || null)?.trim() || null;
 
   // Prioritize visibility rules for specific tabs
-  if (["created", "incoming"].includes(normalizedTab)) {
+  if (["all", "created", "incoming"].includes(normalizedTab)) {
     return customTrackingNumber?.trim() || null;
   }
 

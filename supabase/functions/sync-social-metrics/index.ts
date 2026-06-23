@@ -18,6 +18,7 @@ interface MetaCredentials {
   userAccessToken: string;
   pageId: string;
   instagramAccountId: string;
+  missing: string[];
 }
 
 async function loadMetaCredentials(supabase: any): Promise<MetaCredentials> {
@@ -63,7 +64,12 @@ async function loadMetaCredentials(supabase: any): Promise<MetaCredentials> {
     }
   }
 
-  return { pageAccessToken, userAccessToken, pageId, instagramAccountId };
+  const missing = [
+    !pageAccessToken ? "META_PAGE_ACCESS_TOKEN" : null,
+    !pageId ? "META_PAGE_ID" : null,
+  ].filter(Boolean) as string[];
+
+  return { pageAccessToken, userAccessToken, pageId, instagramAccountId, missing };
 }
 
 interface PlatformMetrics {
@@ -279,8 +285,11 @@ async function fetchMetaCampaigns(accessToken: string): Promise<any[]> {
             : 0;
 
         campaigns.push({
+          meta_campaign_id: campaign.id,
           name: campaign.name,
           channel: "Facebook / Instagram",
+          platform: "Meta",
+          data_source: "meta",
           status: campaign.status === "ACTIVE" ? "active" : campaign.status === "PAUSED" ? "paused" : "completed",
           budget,
           spend,
@@ -317,11 +326,15 @@ serve(async (req) => {
   }
 
   const adminClient = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
-  const { pageAccessToken: META_PAGE_ACCESS_TOKEN, userAccessToken, pageId: META_PAGE_ID, instagramAccountId: META_INSTAGRAM_ACCOUNT_ID } =
+  const { pageAccessToken: META_PAGE_ACCESS_TOKEN, userAccessToken, pageId: META_PAGE_ID, instagramAccountId: META_INSTAGRAM_ACCOUNT_ID, missing } =
     await loadMetaCredentials(adminClient);
 
-  if (!META_PAGE_ACCESS_TOKEN) {
-    return new Response(JSON.stringify({ error: "META_PAGE_ACCESS_TOKEN not configured. Add it in Settings → API Secrets." }), {
+  if (missing.length > 0) {
+    return new Response(JSON.stringify({
+      success: false,
+      error: `${missing.join(", ")} not configured. Add active Meta credentials in Settings -> API Secrets.`,
+      missing,
+    }), {
       status: 400,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
@@ -389,13 +402,21 @@ serve(async (req) => {
   // Sync campaigns to marketing_campaigns table
   if (metaCampaigns.length > 0) {
     for (const campaign of metaCampaigns) {
-      // Check if campaign already exists by name + channel
-      const { data: existing } = await supabase
+      let { data: existing } = await supabase
         .from("marketing_campaigns")
         .select("id")
-        .eq("name", campaign.name)
-        .eq("channel", campaign.channel)
+        .eq("meta_campaign_id", campaign.meta_campaign_id)
         .limit(1);
+
+      if (!existing || existing.length === 0) {
+        const fallback = await supabase
+          .from("marketing_campaigns")
+          .select("id")
+          .eq("name", campaign.name)
+          .eq("channel", campaign.channel)
+          .limit(1);
+        existing = fallback.data;
+      }
 
       if (existing && existing.length > 0) {
         // Update existing campaign
@@ -403,6 +424,9 @@ serve(async (req) => {
           .from("marketing_campaigns")
           .update({
             status: campaign.status,
+            platform: campaign.platform,
+            data_source: "meta",
+            meta_campaign_id: campaign.meta_campaign_id,
             budget: campaign.budget,
             spend: campaign.spend,
             leads: campaign.leads,

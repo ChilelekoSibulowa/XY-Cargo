@@ -4,7 +4,6 @@ import { PageHeader } from "@/components/shared/PageHeader";
 import { DataTable, Column } from "@/components/shared/DataTable";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -26,13 +25,14 @@ import {
   getDeliveryRequestStatusLabel,
   getLatestDeliveryRequestLinks,
   getLinkedShipmentIdsForConsolidations,
+  REQUESTABLE_DELIVERY_CONSOLIDATION_STATUSES,
   REQUESTABLE_DELIVERY_SHIPMENT_STATUSES,
 } from "@/lib/deliveryRequests";
+import { isSingleHandlingMethod } from "@/lib/parcelWorkflow";
 import {
   getAirwayBillNumber,
   getProductType,
   getWarehouseTrackingNumber,
-  resolveTrackingByStatus,
 } from "@/lib/shipmentNotes";
 import { toast } from "sonner";
 
@@ -40,6 +40,7 @@ type ShipmentDetail = {
   id: string;
   code: string;
   customer_id: string;
+  status: string;
   workflow_status: string;
   delivery_request_status: string | null;
   service_type: string;
@@ -48,6 +49,8 @@ type ShipmentDetail = {
   total_cost: number;
   shipping_cost: number;
   custom_tracking_number: string | null;
+  handling_method: string | null;
+  consolidation_id: string | null;
   weight: number | null;
   cbm: number | null;
   receiver: { full_name: string | null; phone: string | null; address: string | null } | null;
@@ -96,26 +99,23 @@ const formatRequestedAt = (value: string | null) => {
   return parsed.toLocaleString();
 };
 
-const normalizeTrackingNumber = (value: string | null | undefined) => {
-  const trimmed = (value || "").trim();
-  return trimmed || null;
+const getWarehouseOnlyTrackingNumber = (
+  notes: string | null | undefined,
+  trackingCode?: string | null,
+) => {
+  const warehouseTracking = getWarehouseTrackingNumber(notes || null)?.trim();
+  if (warehouseTracking) return warehouseTracking;
+
+  const consolidationTracking = (trackingCode || "").trim();
+  return consolidationTracking || null;
 };
 
-const resolveDisplayTrackingNumber = (
-  notes: string | null | undefined,
-  primaryTrackingNumber: string | null | undefined,
-  fallbackTrackingNumber?: string | null | undefined,
-  status?: string | null | undefined,
-) =>
-  resolveTrackingByStatus(status, notes, primaryTrackingNumber) ||
-  normalizeTrackingNumber(fallbackTrackingNumber);
-
 const normalizeShipmentRows = (shipments: any[]) =>
-  ((shipments || []).map((row: any) => ({
-    ...row,
-    workflow_status: row.status,
-    custom_tracking_number: resolveDisplayTrackingNumber(row.notes, row.custom_tracking_number, undefined, row.status),
-  })) as ShipmentDetail[]);
+((shipments || []).map((row: any) => ({
+  ...row,
+  workflow_status: row.status,
+  custom_tracking_number: getWarehouseOnlyTrackingNumber(row.notes),
+})) as ShipmentDetail[]);
 
 const getGroupedRequestStatus = (shipments: ShipmentDetail[]) => {
   if (shipments.some((shipment) => shipment.delivery_request_status === "assigned")) return "assigned";
@@ -209,12 +209,7 @@ const buildGroupedRequestRows = (
         total_cost:
           Number(consolidation?.total_cost ?? childShipments.reduce((sum, shipment) => sum + Number(shipment.total_cost || 0), 0)),
         shipping_cost: childShipments.reduce((sum, shipment) => sum + Number(shipment.shipping_cost || 0), 0),
-        custom_tracking_number: resolveDisplayTrackingNumber(
-          consolidation?.notes,
-          consolidation?.tracking_code,
-          childShipments.find((shipment) => !!shipment.custom_tracking_number)?.custom_tracking_number,
-          consolidation?.status || firstShipment.workflow_status,
-        ),
+        custom_tracking_number: getWarehouseOnlyTrackingNumber(consolidation?.notes, consolidation?.tracking_code),
         weight:
           Number(consolidation?.total_weight ?? childShipments.reduce((sum, shipment) => sum + Number(shipment.weight || 0), 0)),
         cbm:
@@ -233,6 +228,8 @@ const buildGroupedRequestRows = (
 
   shipments.forEach((shipment, index) => {
     if (consumedShipmentIds.has(shipment.id)) return;
+    if (shipment.consolidation_id) return;
+    if (!isSingleHandlingMethod(shipment)) return;
 
     rows.push({
       index,
@@ -256,14 +253,8 @@ const AgentRequestDelivery = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [removingId, setRemovingId] = useState<string | null>(null);
-  const [isSavingItemRemoval, setIsSavingItemRemoval] = useState(false);
-  const [selectedRemovalIds, setSelectedRemovalIds] = useState<Set<string>>(new Set());
   const [viewDetailsRow, setViewDetailsRow] = useState<RequestRow | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
-
-  useEffect(() => {
-    setSelectedRemovalIds(new Set());
-  }, [viewDetailsRow?.id]);
 
   useEffect(() => {
     const fetchRows = async () => {
@@ -300,7 +291,7 @@ const AgentRequestDelivery = () => {
       }
 
       const baseShipmentSelect =
-        "id, code, customer_id, status, delivery_request_status, service_type, description, notes, total_cost, shipping_cost, custom_tracking_number, weight, cbm, delivery_request_requested_at, delivery_request_completed_at, receiver:receivers(full_name, phone, address)";
+        "id, code, customer_id, status, delivery_request_status, service_type, description, notes, total_cost, shipping_cost, custom_tracking_number, handling_method, consolidation_id, weight, cbm, delivery_request_requested_at, delivery_request_completed_at, receiver:receivers(full_name, phone, address)";
       const baseConsolidationSelect =
         "id, code, customer_id, status, delivery_request_status, notes, total_cost, total_weight, total_cbm, tracking_code, delivery_request_requested_at, delivery_request_completed_at";
 
@@ -308,6 +299,7 @@ const AgentRequestDelivery = () => {
         availableShipmentsRes,
         activeShipmentsRes,
         historyShipmentsRes,
+        availableConsolidationsRes,
         activeConsolidationsRes,
         historyConsolidationsRes,
       ] = await Promise.all([
@@ -334,6 +326,13 @@ const AgentRequestDelivery = () => {
           .from("consolidations")
           .select(baseConsolidationSelect)
           .in("customer_id", customerIds)
+          .in("status", [...REQUESTABLE_DELIVERY_CONSOLIDATION_STATUSES])
+          .is("delivery_request_status", null)
+          .order("created_at", { ascending: false }),
+        supabase
+          .from("consolidations")
+          .select(baseConsolidationSelect)
+          .in("customer_id", customerIds)
           .in("delivery_request_status", [...ACTIVE_DELIVERY_REQUEST_STATUSES])
           .order("delivery_request_requested_at", { ascending: false }),
         supabase
@@ -353,10 +352,11 @@ const AgentRequestDelivery = () => {
       const directShipmentIds = Array.from(
         new Set([...availableShipments, ...activeShipments, ...historyShipments].map((shipment) => shipment.id)),
       );
+      const initialAvailableConsolidationIds = (availableConsolidationsRes.data || []).map((row: any) => row.id);
       const activeConsolidationIds = (activeConsolidationsRes.data || []).map((row: any) => row.id);
       const historyConsolidationIds = (historyConsolidationsRes.data || []).map((row: any) => row.id);
       const requestConsolidationIds = Array.from(
-        new Set([...activeConsolidationIds, ...historyConsolidationIds]),
+        new Set([...initialAvailableConsolidationIds, ...activeConsolidationIds, ...historyConsolidationIds]),
       );
 
       let links: ConsolidationLink[] = [];
@@ -461,6 +461,9 @@ const AgentRequestDelivery = () => {
       const shipmentIdsByHistoryConsolidation = new Set(
         getLinkedShipmentIdsForConsolidations(links, historyConsolidationIds),
       );
+      const shipmentIdsByAvailableConsolidation = new Set(
+        getLinkedShipmentIdsForConsolidations(links, initialAvailableConsolidationIds),
+      );
 
       const mergedActiveShipments = dedupeDeliveryRequestRowsById([
         ...activeShipments,
@@ -473,28 +476,22 @@ const AgentRequestDelivery = () => {
       const activeOrHistoryHiddenShipmentIds = new Set([
         ...activeShipments.map((shipment) => shipment.id),
         ...historyShipments.map((shipment) => shipment.id),
-        ...extraShipments.map((shipment) => shipment.id),
+        ...extraShipments
+          .filter((shipment) => shipmentIdsByActiveConsolidation.has(shipment.id) || shipmentIdsByHistoryConsolidation.has(shipment.id))
+          .map((shipment) => shipment.id),
       ]);
-      const visibleAvailableShipments = availableShipments.filter(
-        (shipment) => !activeOrHistoryHiddenShipmentIds.has(shipment.id),
-      );
-      const visibleAvailableShipmentIdSet = new Set(visibleAvailableShipments.map((shipment) => shipment.id));
-      const availableConsolidationIds = Array.from(
+      const visibleAvailableShipments = dedupeDeliveryRequestRowsById([
+        ...availableShipments,
+        ...extraShipments.filter((shipment) => shipmentIdsByAvailableConsolidation.has(shipment.id)),
+      ]).filter((shipment) => !activeOrHistoryHiddenShipmentIds.has(shipment.id));
+      const linkedAvailableConsolidationIds = Array.from(
         new Set(
           links
-            .filter((link) => visibleAvailableShipmentIdSet.has(link.shipment_id))
+            .filter((link) => shipmentIdsByAvailableConsolidation.has(link.shipment_id))
             .map((link) => link.consolidation_id),
         ),
       );
-      const fullyAvailableConsolidationIds = new Set(
-        availableConsolidationIds.filter((consolidationId) => {
-          const linkedShipmentIds = getLinkedShipmentIdsForConsolidations(links, [consolidationId]);
-          return (
-            linkedShipmentIds.length > 0 &&
-            linkedShipmentIds.every((shipmentId) => visibleAvailableShipmentIdSet.has(shipmentId))
-          );
-        }),
-      );
+      const fullyAvailableConsolidationIds = new Set(linkedAvailableConsolidationIds);
       const availableGroupingLinks = links.filter((link) =>
         fullyAvailableConsolidationIds.has(link.consolidation_id),
       );
@@ -503,6 +500,7 @@ const AgentRequestDelivery = () => {
         availableShipmentsRes.error && `available-shipments: ${availableShipmentsRes.error.message}`,
         activeShipmentsRes.error && `active-shipments: ${activeShipmentsRes.error.message}`,
         historyShipmentsRes.error && `history-shipments: ${historyShipmentsRes.error.message}`,
+        availableConsolidationsRes.error && `available-consolidations: ${availableConsolidationsRes.error.message}`,
         activeConsolidationsRes.error && `active-consolidations: ${activeConsolidationsRes.error.message}`,
         historyConsolidationsRes.error && `history-consolidations: ${historyConsolidationsRes.error.message}`,
         linksError && `request-links: ${linksError}`,
@@ -552,6 +550,19 @@ const AgentRequestDelivery = () => {
       return;
     }
 
+    if (row.row_type === "consolidation" && row.consolidation_id) {
+      const consolidationUpdate = await supabase
+        .from("consolidations")
+        .update(requestPayload)
+        .eq("id", row.consolidation_id);
+
+      if (consolidationUpdate.error) {
+        toast.error(consolidationUpdate.error.message || "Failed to request consolidated delivery.");
+        setUpdatingId(null);
+        return;
+      }
+    }
+
     toast.success("Delivery request sent to warehouse.");
     if (row.customer_id) {
       const { notifyDeliveryRequested } = await import("@/lib/notifications");
@@ -572,9 +583,10 @@ const AgentRequestDelivery = () => {
 
     setRemovingId(row.id);
     const shipmentIds = row.child_shipments.map((shipment) => shipment.id);
+    const clearPayload = buildClearDeliveryRequestPayload();
     const shipmentUpdate = await supabase
       .from("shipments")
-      .update(buildClearDeliveryRequestPayload())
+      .update(clearPayload)
       .in("id", shipmentIds);
 
     if (shipmentUpdate.error) {
@@ -583,51 +595,21 @@ const AgentRequestDelivery = () => {
       return;
     }
 
+    if (row.row_type === "consolidation" && row.consolidation_id) {
+      const consolidationUpdate = await supabase
+        .from("consolidations")
+        .update(clearPayload)
+        .eq("id", row.consolidation_id);
+
+      if (consolidationUpdate.error) {
+        toast.error(consolidationUpdate.error.message || "Failed to remove consolidated delivery request.");
+        setRemovingId(null);
+        return;
+      }
+    }
+
     toast.success("Delivery request returned to Need Action.");
     setRemovingId(null);
-    setRefreshKey((value) => value + 1);
-  };
-
-  const toggleRemovalSelection = (shipmentId: string, checked: boolean) => {
-    setSelectedRemovalIds((prev) => {
-      const next = new Set(prev);
-      if (checked) {
-        next.add(shipmentId);
-      } else {
-        next.delete(shipmentId);
-      }
-      return next;
-    });
-  };
-
-  const handleSaveSelectedRemoval = async () => {
-    if (!viewDetailsRow || viewDetailsRow.row_type !== "consolidation") return;
-
-    const shipmentIds = viewDetailsRow.child_shipments
-      .filter((shipment) => selectedRemovalIds.has(shipment.id))
-      .map((shipment) => shipment.id);
-
-    if (shipmentIds.length === 0) {
-      toast.error("Select at least one item to remove.");
-      return;
-    }
-
-    setIsSavingItemRemoval(true);
-    const shipmentUpdate = await supabase
-      .from("shipments")
-      .update(buildClearDeliveryRequestPayload())
-      .in("id", shipmentIds);
-
-    if (shipmentUpdate.error) {
-      toast.error(shipmentUpdate.error.message || "Failed to remove selected items.");
-      setIsSavingItemRemoval(false);
-      return;
-    }
-
-    setIsSavingItemRemoval(false);
-    setSelectedRemovalIds(new Set());
-    setViewDetailsRow(null);
-    toast.success("Selected items returned to Need Action.");
     setRefreshKey((value) => value + 1);
   };
 
@@ -742,7 +724,7 @@ const AgentRequestDelivery = () => {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <PageHeader title="Request Delivery"  />
+      <PageHeader title="Request Delivery" />
 
       <div className="space-y-2">
         <h2 className="text-lg font-semibold">Need Action</h2>
@@ -816,19 +798,8 @@ const AgentRequestDelivery = () => {
                 </Label>
                 {detailShipments.map((shipment) => (
                   <div key={shipment.id} className="rounded-md border p-3 space-y-1 text-sm">
-                    {viewDetailsRow.row_type === "consolidation" && canRemoveDeliveryRequest(viewDetailsRow.delivery_request_status) ? (
-                      <label className="flex items-center gap-2 text-xs text-muted-foreground">
-                        <Checkbox
-                          checked={selectedRemovalIds.has(shipment.id)}
-                          onCheckedChange={(checked) => toggleRemovalSelection(shipment.id, checked === true)}
-                        />
-                        Remove this item from submitted delivery request
-                      </label>
-                    ) : null}
                     <p className="font-semibold">{shipment.description || shipment.code}</p>
                     <p className="text-xs font-mono text-muted-foreground">
-                      Tracking: {shipment.custom_tracking_number || "-"}
-                      {" | "}
                       AWB/BL No.: {getAirwayBillNumber(shipment.notes) || "-"}
                     </p>
                     <p>
@@ -850,16 +821,6 @@ const AgentRequestDelivery = () => {
           )}
 
           <DialogFooter>
-            {viewDetailsRow?.row_type === "consolidation" && canRemoveDeliveryRequest(viewDetailsRow.delivery_request_status) ? (
-              <Button
-                variant="destructive"
-                onClick={handleSaveSelectedRemoval}
-                disabled={selectedRemovalIds.size === 0 || isSavingItemRemoval}
-              >
-                {isSavingItemRemoval ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                Remove Selected ({selectedRemovalIds.size})
-              </Button>
-            ) : null}
             <Button variant="outline" onClick={() => setViewDetailsRow(null)}>Close</Button>
           </DialogFooter>
         </DialogContent>
@@ -869,4 +830,3 @@ const AgentRequestDelivery = () => {
 };
 
 export default AgentRequestDelivery;
-

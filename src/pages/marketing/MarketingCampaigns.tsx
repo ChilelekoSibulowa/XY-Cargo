@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { DeleteDialog } from "@/components/shared/DeleteDialog";
 import { useDefaultCurrency } from "@/hooks/useDefaultCurrency";
-import { Plus, Target, Mail, MessageSquare, Globe, Smartphone, Pencil, Trash2 } from "lucide-react";
+import { Plus, Target, Mail, MessageSquare, Globe, Smartphone, Pencil, Trash2, RefreshCw } from "lucide-react";
 import { TablePagination, paginate } from "@/components/shared/TablePagination";
 import { toast } from "sonner";
 
@@ -30,6 +30,9 @@ type CampaignRow = {
   reach: number | null;
   page_likes: number | null;
   link_clicks: number | null;
+  data_source?: string | null;
+  platform?: string | null;
+  meta_campaign_id?: string | null;
   start_date: string | null;
   end_date: string | null;
   notes: string | null;
@@ -78,6 +81,7 @@ const MarketingCampaigns = () => {
   const [editing, setEditing] = useState<CampaignRow | null>(null);
   const [form, setForm] = useState(emptyForm);
   const [isSaving, setIsSaving] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
   const [deleteItem, setDeleteItem] = useState<CampaignRow | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [campaignPage, setCampaignPage] = useState(1);
@@ -186,6 +190,26 @@ const MarketingCampaigns = () => {
     setDeleteItem(null);
   };
 
+  const handleSyncFromMeta = async () => {
+    setIsSyncing(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("sync-social-metrics");
+      if (error) {
+        toast.error(error.message || "Failed to sync Meta campaigns.");
+      } else if (data?.success === false) {
+        toast.error(data?.error || "Failed to sync Meta campaigns.");
+      } else {
+        const results = Array.isArray(data?.results) ? data.results : [];
+        toast.success(results.length ? results.join("; ") : "Meta sync completed.");
+        await fetchCampaigns();
+      }
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to sync Meta campaigns.");
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
   const activeCampaigns = campaigns.filter((campaign) => campaign.status === "active");
   const totalLeads = campaigns.reduce((sum, campaign) => sum + (campaign.leads || 0), 0);
   const totalBudget = campaigns.reduce((sum, campaign) => sum + (campaign.budget || 0), 0);
@@ -207,9 +231,14 @@ const MarketingCampaigns = () => {
         title="Campaign Management"
         
         actions={
-          <Button size="sm" onClick={openCreate}>
-            <Plus className="mr-2 h-4 w-4" /> New Campaign
-          </Button>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button size="sm" variant="outline" onClick={handleSyncFromMeta} disabled={isSyncing}>
+              <RefreshCw className={`mr-2 h-4 w-4 ${isSyncing ? "animate-spin" : ""}`} /> Sync from Meta
+            </Button>
+            <Button size="sm" onClick={openCreate}>
+              <Plus className="mr-2 h-4 w-4" /> New Campaign
+            </Button>
+          </div>
         }
       />
 
@@ -267,7 +296,9 @@ const MarketingCampaigns = () => {
                   </div>
                   <div>
                     <p className="font-medium">{campaign.name}</p>
-                    <p className="text-sm text-muted-foreground">{campaign.channel} | Budget: {formatAmount(campaign.budget, "USD")}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {campaign.channel} | Budget: {formatAmount(campaign.budget, "USD")} | {campaign.data_source === "meta" ? "Meta sync" : campaign.data_source === "manual_cost" ? "Manual cost" : "Manual campaign"}
+                    </p>
                   </div>
                 </div>
                 <div className="flex items-center gap-4">
@@ -402,4 +433,3 @@ const MarketingCampaigns = () => {
 };
 
 export default MarketingCampaigns;
-

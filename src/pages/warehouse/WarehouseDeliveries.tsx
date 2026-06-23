@@ -70,16 +70,18 @@ const WarehouseDeliveries = () => {
     { key: "customer_city", label: "City", render: (r) => r.customer_city || "-" },
     { key: "product_type", label: "Product Type", render: (r) => getProductType(r.notes, r.description) },
     { key: "tracking", label: "Tracking No.", render: (r) => <span className="font-mono text-xs">{resolveTrackingByStatus(r.status, r.notes, r.custom_tracking_number) || "Tracking pending"}</span> },
-    { key: "payment_status", label: "Payment Status", render: (r) => (
+    {
+      key: "payment_status", label: "Payment Status", render: (r) => (
         <Badge variant={r.payment_status === "completed" ? "default" : "destructive"}>
           {r.payment_status === "completed" ? "Paid" : "Unpaid"}
         </Badge>
-      ) },
+      )
+    },
   ];
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <PageHeader title="Deliveries"  />
+      <PageHeader title="Deliveries" />
       <DataTable
         columns={columns}
         data={rows}

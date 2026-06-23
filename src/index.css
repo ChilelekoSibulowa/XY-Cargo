@@ -150,27 +150,6 @@
     padding-right: env(safe-area-inset-right, 0px);
   }
 
-  /* Window Controls Overlay Support */
-  @media (display-mode: window-controls-overlay) {
-    #title-bar {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: env(titlebar-area-height, 33px);
-      background-color: var(--background);
-      -webkit-app-region: drag;
-      display: flex;
-      align-items: center;
-      padding-left: env(titlebar-area-x, 0);
-      z-index: 9999;
-    }
-    
-    body {
-      padding-top: calc(env(titlebar-area-height, 33px) + env(safe-area-inset-top, 0px));
-    }
-  }
-
   h1, h2, h3, h4, h5, h6 {
     font-family: 'Plus Jakarta Sans', sans-serif;
     @apply tracking-tight font-bold text-slate-900;
@@ -442,10 +421,6 @@
     text-wrap: balance;
   }
   
-  .pb-mobile-nav {
-    padding-bottom: 85px;
-  }
-
   .pull-to-refresh-container {
     overscroll-behavior-y: contain;
   }

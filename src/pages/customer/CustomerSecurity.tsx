@@ -9,8 +9,6 @@ import { toast } from "sonner";
 import { CustomerProfileGate } from "@/components/customer/CustomerProfileGate";
 import { useCustomerRecord } from "@/hooks/useCustomerRecord";
 import TwoFactorAuthCard from "@/components/settings/TwoFactorAuthCard";
-import { subscribeToPushNotifications } from "@/lib/pushNotifications";
-import { Bell, ShieldCheck } from "lucide-react";
 
 const CustomerSecurity = () => {
   const { customer, refreshCustomer } = useCustomerRecord();
@@ -65,36 +63,6 @@ const CustomerSecurity = () => {
 
         <Card className="border-border/70">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Bell className="w-5 h-5" />
-              Push Notifications
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <p className="text-sm text-muted-foreground">
-              Get real-time updates on your parcels and shipment status directly on your device.
-            </p>
-            <div className="flex items-center justify-between gap-4 p-4 rounded-lg bg-muted/50 border border-border/50">
-              <div className="space-y-0.5">
-                <p className="text-sm font-medium">Notification Pop-ups</p>
-                <p className="text-xs text-muted-foreground">Enabled for this device</p>
-              </div>
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={async () => {
-                  await subscribeToPushNotifications();
-                  toast.success("Push notifications enabled!");
-                }}
-              >
-                Enable Notifications
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="border-border/70">
-          <CardHeader>
             <CardTitle>Change Password</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -117,4 +85,3 @@ const CustomerSecurity = () => {
 };
 
 export default CustomerSecurity;
-

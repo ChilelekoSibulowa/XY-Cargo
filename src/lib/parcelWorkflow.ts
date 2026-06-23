@@ -40,15 +40,29 @@ const getHandlingMethod = (notes: string | null | undefined) => {
   return match ? match[1].trim().toLowerCase() : null;
 };
 
-export const isSingleHandlingMethod = <T extends ParcelWorkflowRow>(shipment: T) => {
+export const isSingleHandlingMethod = <T extends ParcelWorkflowRow>(shipment: T | null | undefined) => {
+  if (!shipment) return true;
   // Notes ALWAYS reflect the user's chosen handling method at parcel-creation time.
   // The DB column defaults to 'single', so trusting the column alone causes
   // consolidation parcels to be misclassified. The notes value wins when present.
   const noteMethod = getHandlingMethod(shipment.notes);
-  const columnMethod = ((shipment as any).handling_method as string | undefined) || null;
+  const columnMethod = ((shipment as any).handling_method as string | undefined) || ((shipment as any).handlingMethod as string | undefined) || null;
   const effective = (noteMethod || columnMethod || "single").toLowerCase();
   // Any explicit non-"single" handling method (consolidated/consolidation) is NOT single.
   return effective === "single";
+};
+
+/**
+ * Returns true if the parcel is a consolidation parcel but hasn't been unified yet.
+ * Such parcels should never appear in "Submitted" or later stages.
+ */
+export const isUnconsolidatedConsolidationParcel = <T extends ParcelWorkflowRow>(shipment: T | null | undefined) => {
+  if (!shipment) return false;
+  if (isSingleHandlingMethod(shipment)) return false;
+  
+  // It's a consolidation parcel. Is it unified?
+  const hasConsolidationId = !!((shipment as any).consolidation_id || (shipment as any).consolidationId);
+  return !hasConsolidationId;
 };
 
 const prefersConsolidation = <T extends ParcelWorkflowRow>(shipment: T) => {

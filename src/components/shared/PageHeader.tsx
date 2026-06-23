@@ -49,13 +49,6 @@ export const PageHeader = ({
             </Link>
           </Button>
         )}
-        {backLink && window.matchMedia('(display-mode: standalone)').matches && (
-          <Button variant="outline" size="sm" className="h-9 px-4 font-medium sm:hidden" asChild>
-            <Link to={backLink}>
-              Close
-            </Link>
-          </Button>
-        )}
       </div>
     </div>
   );

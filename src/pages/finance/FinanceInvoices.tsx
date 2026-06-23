@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { type ReactNode, useCallback, useEffect, useMemo, useState } from "react";
 import { format } from "date-fns";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { DateRangeFilter } from "@/components/shared/DateRangeFilter";
@@ -23,18 +23,24 @@ import {
   getInvoicePaymentState,
   getFinanceDateRange,
   getShipmentInvoiceTotal,
+  getCustomInvoiceNote,
   isWithinFinanceDateRange,
   openFinanceDetailWindow,
   toNumber,
 } from "@/lib/financePortal";
 import { getWarehouseTrackingNumber, resolveTrackingByStatus } from "@/lib/shipmentNotes";
+import { normalizeConsolidationStatus, normalizeShipmentStatus } from "@/lib/warehouseTabFilters";
 import { fetchLogo } from "@/hooks/useLogo";
 import { toast } from "sonner";
 import { Download, Eye, Pencil } from "lucide-react";
 import { generateInvoicePdf } from "@/lib/invoicePdfGenerator";
 import { notifyInvoiceIssued, notifyInvoicePaid } from "@/lib/notifications";
+import { isSingleHandlingMethod } from "@/lib/parcelWorkflow";
 
 const statusOptions = ["draft", "sent", "approved", "paid"];
+const officialInvoiceStatuses = new Set(["sent", "approved", "paid"]);
+const singleInvoiceEligibleStatuses = new Set(["assigned", "supplied", "delivered", "closed"]);
+const consolidationInvoiceEligibleStatuses = new Set(["outgoing", "in_transit", "arrived", "collected"]);
 
 type InvoiceRow = {
   id: string;
@@ -70,6 +76,8 @@ type ShipmentOption = {
   id: string;
   code: string;
   custom_tracking_number: string | null;
+  billing_key: string;
+  member_shipment_ids: string[];
   consolidation_id: string | null;
   consolidation_code: string | null;
   consolidation_tracking_number: string | null;
@@ -112,13 +120,11 @@ const uniqueText = (values: Array<string | null | undefined>) =>
   );
 
 const getShipmentBillingGroupKey = (
-  shipment: Pick<ShipmentOption, "id" | "custom_tracking_number" | "consolidation_id">,
-) => {
-  const warehouseTracking = shipment.custom_tracking_number?.trim();
-  if (warehouseTracking) return `tracking:${warehouseTracking}`;
-  if (shipment.consolidation_id) return `consolidation:${shipment.consolidation_id}`;
-  return `shipment:${shipment.id}`;
-};
+  shipment: Pick<ShipmentOption, "id" | "billing_key" | "consolidation_id">,
+) => shipment.billing_key || (shipment.consolidation_id ? `consolidation:${shipment.consolidation_id}` : `shipment:${shipment.id}`);
+
+const isOfficialInvoiceStatus = (status: string | null | undefined) =>
+  officialInvoiceStatuses.has((status || "").trim().toLowerCase());
 
 const mergeShipmentOptionsByBillingGroup = (rows: ShipmentOption[]) => {
   const grouped = new Map<string, ShipmentOption>();
@@ -129,27 +135,50 @@ const mergeShipmentOptionsByBillingGroup = (rows: ShipmentOption[]) => {
 
     if (!existing) {
       const initialAmount = getShipmentInvoiceTotal(shipment);
-      const fallbackConsolidationTotal = toNumber(shipment.consolidation_total_cost);
+      const consolidationTotal = toNumber(shipment.consolidation_total_cost);
+
+      // For consolidations, if a unified total exists on the consolidation record, use it.
+      // Otherwise, start with the individual parcel's fee.
+      const finalCost = (shipment.consolidation_id && consolidationTotal > 0)
+        ? consolidationTotal
+        : initialAmount;
+
       grouped.set(key, {
         ...shipment,
-        shipping_cost: initialAmount > 0 ? initialAmount : fallbackConsolidationTotal,
-        total_cost: initialAmount > 0 ? initialAmount : fallbackConsolidationTotal,
+        shipping_cost: finalCost,
+        total_cost: finalCost,
       });
       return;
     }
 
-    const nextInvoiceTotal = getShipmentInvoiceTotal(existing) + getShipmentInvoiceTotal(shipment);
+    const currentSum = toNumber(existing.shipping_cost);
+    const consolidationTotal = toNumber(shipment.consolidation_total_cost);
+
+    // If it's a consolidation and we have a unified total, that total IS the full fee.
+    // We don't sum it multiple times. If we don't have a unified total, we sum the children.
+    let nextInvoiceTotal = currentSum;
+    if (shipment.consolidation_id) {
+      if (consolidationTotal > 0) {
+        nextInvoiceTotal = consolidationTotal;
+      } else {
+        nextInvoiceTotal = currentSum + getShipmentInvoiceTotal(shipment);
+      }
+    } else {
+      nextInvoiceTotal = currentSum + getShipmentInvoiceTotal(shipment);
+    }
+
     const nextPaidAmount = toNumber(existing.paid_amount) + toNumber(shipment.paid_amount);
-    const fallbackConsolidationTotal = Math.max(
-      toNumber(existing.consolidation_total_cost),
-      toNumber(shipment.consolidation_total_cost),
-    );
 
     grouped.set(key, {
       ...existing,
-      shipping_cost: nextInvoiceTotal > 0 ? nextInvoiceTotal : fallbackConsolidationTotal,
-      total_cost: nextInvoiceTotal > 0 ? nextInvoiceTotal : fallbackConsolidationTotal,
+      shipping_cost: nextInvoiceTotal,
+      total_cost: nextInvoiceTotal,
       paid_amount: nextPaidAmount,
+      member_shipment_ids: uniqueText([
+        ...existing.member_shipment_ids,
+        ...shipment.member_shipment_ids,
+        shipment.id,
+      ]),
       description:
         existing.description && shipment.description && existing.description !== shipment.description
           ? "Mixed Products"
@@ -226,6 +255,10 @@ const FinanceInvoices = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [form, setForm] = useState<InvoiceFormState>(emptyForm);
   const [editingInvoice, setEditingInvoice] = useState<InvoiceRow | null>(null);
+  const [viewDetail, setViewDetail] = useState<{
+    title: string;
+    items: Array<{ label: string; value: ReactNode; fullWidth?: boolean }>;
+  } | null>(null);
   const [editForm, setEditForm] = useState<InvoiceFormState>(emptyForm);
   const [dateFilter, setDateFilter] = useState<FinanceDateFilter>("all");
   const [customStartDate, setCustomStartDate] = useState("");
@@ -244,7 +277,7 @@ const FinanceInvoices = () => {
     return convertFromSelected(parsed).toFixed(2);
   };
 
-  const fetchInvoices = async () => {
+  const fetchInvoices = useCallback(async () => {
     setIsLoading(true);
     const { data, error } = await supabase
       .from("invoices")
@@ -341,23 +374,40 @@ const FinanceInvoices = () => {
         }
       });
     }
-  };
+  }, [formatAmount]);
 
-  const fetchOptions = async () => {
-    const [customersRes, shipmentsRes] = await Promise.all([
+  const fetchOptions = useCallback(async () => {
+    const [customersRes, shipmentsRes, consolidationsRes] = await Promise.all([
       supabase.from("customers").select("id, code, full_name").order("full_name"),
       supabase
         .from("shipments")
         .select(
-          "id, code, custom_tracking_number, notes, description, total_cost, shipping_cost, paid_amount, customer_id, status, customer:customers(full_name, code)",
+          "id, code, custom_tracking_number, notes, description, total_cost, shipping_cost, paid_amount, customer_id, status, handling_method, customer:customers(full_name, code)",
         )
-        .order("created_at", { ascending: false })
-        .limit(300),
+        .in("status", ["assigned", "supplied", "delivered", "closed"])
+        .order("updated_at", { ascending: false })
+        .limit(1000),
+      supabase
+        .from("consolidations")
+        .select("id, code, customer_id, status, notes, total_cost, tracking_code, customers(full_name, code), consolidation_shipments(shipment_id, shipment:shipments(id, code, custom_tracking_number, notes, description, total_cost, shipping_cost, paid_amount, customer_id, status))")
+        .in("status", [
+          "outgoing", "in_transit", "arrived", "collected",
+        ])
+        .order("updated_at", { ascending: false })
+        .limit(500),
     ]);
 
-    const shipmentRows = ((shipmentsRes.data || []) as any[]).filter((shipment) =>
-      ["approved", "assigned", "supplied", "delivered", "closed"].includes(shipment.status),
-    );
+    if (customersRes.error || shipmentsRes.error || consolidationsRes.error) {
+      toast.error("Failed to load invoice-eligible shipments.");
+      setCustomers([]);
+      setShipments([]);
+      return;
+    }
+
+    const shipmentRows = ((shipmentsRes.data || []) as any[]).filter((shipment) => {
+      const normalized = normalizeShipmentStatus(shipment.status);
+      return singleInvoiceEligibleStatuses.has(normalized);
+    });
 
     const shipmentIds = shipmentRows.map((shipment) => shipment.id).filter(Boolean);
     const consolidationByShipment = new Map<
@@ -383,45 +433,126 @@ const FinanceInvoices = () => {
       });
     }
 
+    const consolidationOptions: ShipmentOption[] = (consolidationsRes.data || []).flatMap((cons: any) => {
+      const normalizedStatus = normalizeConsolidationStatus(cons.status || "");
+      if (!consolidationInvoiceEligibleStatuses.has(normalizedStatus)) return [];
+
+      const unifiedShippingFee = toNumber(cons.total_cost);
+      if (unifiedShippingFee <= 0) return [];
+
+      const childLinks = cons.consolidation_shipments || [];
+      if (childLinks.length === 0) return [];
+
+      // Use the first child as a representative for Finance, but with consolidation data
+      const representative = childLinks[0].shipment;
+      if (!representative) return [];
+      const customer = Array.isArray(cons.customers) ? cons.customers[0] : cons.customers;
+      const memberShipmentIds = childLinks
+        .map((link: any) => link.shipment_id || link.shipment?.id)
+        .filter(Boolean);
+
+      return [{
+        id: representative.id,
+        code: representative.code,
+        custom_tracking_number: cons.tracking_code || getWarehouseTrackingNumber(cons.notes) || null,
+        billing_key: `consolidation:${cons.id}`,
+        member_shipment_ids: memberShipmentIds,
+        consolidation_id: cons.id,
+        consolidation_code: cons.code,
+        consolidation_tracking_number: cons.tracking_code,
+        consolidation_total_cost: unifiedShippingFee,
+        description: representative.description || cons.notes || null,
+        total_cost: unifiedShippingFee,
+        shipping_cost: unifiedShippingFee,
+        paid_amount: representative.paid_amount ? toNumber(representative.paid_amount) : 0,
+        customer_id: cons.customer_id,
+        customer_name: customer?.full_name || null,
+        customer_code: customer?.code || null,
+        status: cons.status,
+      }];
+    });
+
     setCustomers((customersRes.data as CustomerOption[] | null) || []);
-    setShipments(
-      shipmentRows.map((shipment) => {
+
+    const individualShipments = shipmentRows
+      .filter((shipment) => {
+        // Must NOT be part of a consolidation
         const linkedConsolidation = consolidationByShipment.get(shipment.id);
-        const directShippingFee =
-          shipment.shipping_cost === null ? null : toNumber(shipment.shipping_cost);
+        if (linkedConsolidation) return false;
+
+        // Must be single handling method (default is single)
+        if (!isSingleHandlingMethod(shipment)) return false;
+
+        const fee = toNumber(shipment.shipping_cost);
+        return fee > 0;
+      })
+      .map((shipment) => {
+        const directShippingFee = toNumber(shipment.shipping_cost);
 
         return {
           id: shipment.id,
           code: shipment.code,
-          custom_tracking_number:
-            linkedConsolidation?.tracking_code ||
-            resolveTrackingByStatus(shipment.status || null, shipment.notes || null, shipment.custom_tracking_number || null) ||
-            null,
-          consolidation_id: linkedConsolidation?.id || null,
-          consolidation_code: linkedConsolidation?.code || null,
-          consolidation_tracking_number: linkedConsolidation?.tracking_code || null,
-          consolidation_total_cost: linkedConsolidation?.total_cost ?? null,
+          custom_tracking_number: getWarehouseTrackingNumber(shipment.notes) || null,
+          billing_key: `shipment:${shipment.id}`,
+          member_shipment_ids: [shipment.id],
+          consolidation_id: null,
+          consolidation_code: null,
+          consolidation_tracking_number: null,
+          consolidation_total_cost: null,
           description: shipment.description || null,
-          total_cost: toNumber(shipment.total_cost),
+          total_cost: directShippingFee,
           shipping_cost: directShippingFee,
           paid_amount: shipment.paid_amount === null ? null : toNumber(shipment.paid_amount),
           customer_id: shipment.customer_id,
-          customer_name: Array.isArray(shipment.customer)
-            ? shipment.customer[0]?.full_name || null
-            : shipment.customer?.full_name || null,
-          customer_code: Array.isArray(shipment.customer)
-            ? shipment.customer[0]?.code || null
-            : shipment.customer?.code || null,
+          customer_name: (Array.isArray(shipment.customer) ? shipment.customer[0] : shipment.customer)?.full_name || null,
+          customer_code: (Array.isArray(shipment.customer) ? shipment.customer[0] : shipment.customer)?.code || null,
           status: shipment.status,
         };
-      }) as ShipmentOption[],
-    );
-  };
+      });
+
+    setShipments([...individualShipments, ...consolidationOptions] as ShipmentOption[]);
+  }, []);
 
   useEffect(() => {
     void fetchInvoices();
     void fetchOptions();
-  }, []);
+
+    const channel = supabase
+      .channel("finance-invoices-live")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "shipments" },
+        () => {
+          void fetchOptions();
+        },
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "consolidations" },
+        () => {
+          void fetchOptions();
+        },
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "consolidation_shipments" },
+        () => {
+          void fetchOptions();
+        },
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "invoices" },
+        () => {
+          void fetchInvoices();
+        },
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [fetchInvoices, fetchOptions]);
 
   useEffect(() => {
     const shipmentIds = uniqueText([
@@ -462,15 +593,14 @@ const FinanceInvoices = () => {
     return fallback || "";
   };
 
-  const getInvoiceDisplayDescription = (
-    shipmentId: string | null | undefined,
-    fallback?: string | null,
-    notes?: string | null,
-  ) => {
-    const trimmedNotes = notes?.trim();
-    if (trimmedNotes) return trimmedNotes;
-    return getShipmentLineDescription(shipmentId, fallback) || "-";
-  };
+  const getInvoiceCustomNote = (invoice: Pick<InvoiceRow, "notes" | "shipment_id" | "shipment_description">) =>
+    getCustomInvoiceNote(invoice.notes, [
+      getShipmentLineDescription(invoice.shipment_id, invoice.shipment_description),
+      invoice.shipment_description,
+    ]);
+
+  const getInvoiceDisplayDescription = (shipmentId: string | null | undefined, fallback?: string | null) =>
+    getShipmentLineDescription(shipmentId, fallback) || "-";
 
   const customerSearchOptions = useMemo<SearchableSelectOption[]>(
     () =>
@@ -482,17 +612,24 @@ const FinanceInvoices = () => {
     [customers],
   );
 
-  // Shipment IDs that already have active invoices (sent/approved/paid)
-  const invoicedShipmentIds = useMemo(() => {
-    const ids = new Set<string>();
+  // Billing groups that already have officially sent invoices.
+  // Drafts stay selectable until Finance actually sends the invoice.
+  const invoicedBillingKeys = useMemo(() => {
+    const keys = new Set<string>();
     invoices.forEach((inv) => {
-      const status = inv.status || "draft";
-      if (inv.shipment_id && ["sent", "approved", "paid"].includes(status)) {
-        ids.add(inv.shipment_id);
+      if (!inv.shipment_id || !isOfficialInvoiceStatus(inv.status)) return;
+
+      const billingGroup = groupedShipments.find((shipment) =>
+        shipment.member_shipment_ids.includes(inv.shipment_id!),
+      );
+      if (billingGroup) {
+        keys.add(getShipmentBillingGroupKey(billingGroup));
+      } else {
+        keys.add(`shipment:${inv.shipment_id}`);
       }
     });
-    return ids;
-  }, [invoices]);
+    return keys;
+  }, [groupedShipments, invoices]);
 
   const createShipmentOptions = useMemo<SearchableSelectOption[]>(() => {
     const rows = form.customer_id
@@ -500,14 +637,14 @@ const FinanceInvoices = () => {
       : groupedShipments;
 
     return rows
-      .filter((shipment) => !invoicedShipmentIds.has(shipment.id))
+      .filter((shipment) => !invoicedBillingKeys.has(getShipmentBillingGroupKey(shipment)))
       .map((shipment) => ({
-      value: shipment.id,
-      label: shipment.custom_tracking_number?.trim() || shipment.consolidation_tracking_number || "Tracking pending",
-      keywords: `${shipment.custom_tracking_number || ""} ${shipment.consolidation_tracking_number || ""} ${shipment.code} ${shipment.consolidation_code || ""} ${shipment.customer_name || ""} ${shipment.customer_code || ""}`,
-      description: `${shipment.customer_name || "Customer"}${shipment.customer_code ? ` (${shipment.customer_code})` : ""} | Invoice Total: ${formatAmount(getShipmentInvoiceTotal(shipment))}`,
-    }));
-  }, [form.customer_id, groupedShipments, formatAmount, invoicedShipmentIds]);
+        value: shipment.id,
+        label: shipment.custom_tracking_number?.trim() || shipment.consolidation_tracking_number || "Tracking pending",
+        keywords: `${shipment.custom_tracking_number || ""} ${shipment.consolidation_tracking_number || ""} ${shipment.code} ${shipment.consolidation_code || ""} ${shipment.customer_name || ""} ${shipment.customer_code || ""}`,
+        description: `${shipment.customer_name || "Customer"}${shipment.customer_code ? ` (${shipment.customer_code})` : ""} | Invoice Total: ${formatAmount(getShipmentInvoiceTotal(shipment))}`,
+      }));
+  }, [form.customer_id, groupedShipments, formatAmount, invoicedBillingKeys]);
 
   const normalizedStatus = (status: string | null) => status || "draft";
 
@@ -609,10 +746,15 @@ const FinanceInvoices = () => {
       shipmentById.get(form.shipment_id)?.customer_id ||
       null;
 
-    // Prevent duplicate invoices for the same shipment
+    const shipment = form.shipment_id ? shipmentById.get(form.shipment_id) || null : null;
+
+    // Prevent duplicate official invoices for the same single shipment or unified consolidation.
     if (form.shipment_id) {
       const existingInvoice = invoices.find(
-        (inv) => inv.shipment_id === form.shipment_id && ["sent", "approved", "paid"].includes(normalizedStatus(inv.status)),
+        (inv) =>
+          inv.shipment_id &&
+          shipment?.member_shipment_ids.includes(inv.shipment_id) &&
+          isOfficialInvoiceStatus(inv.status),
       );
       if (existingInvoice) {
         toast.error(`Invoice ${existingInvoice.code} has already been sent for this shipment. Each shipment should only be invoiced once.`);
@@ -620,14 +762,7 @@ const FinanceInvoices = () => {
         return;
       }
     }
-    const shipment = form.shipment_id ? shipmentById.get(form.shipment_id) || null : null;
-    const shipmentLineDescription = getShipmentLineDescription(form.shipment_id, shipment?.description);
     const trimmedNotes = form.notes.trim();
-    const invoiceNotes = trimmedNotes
-      ? shipmentLineDescription && trimmedNotes !== shipmentLineDescription
-        ? `${shipmentLineDescription}\n\n${trimmedNotes}`
-        : trimmedNotes
-      : shipmentLineDescription || "Invoice raised by finance";
 
     if (!customerId) {
       toast.error("Search and select a customer or shipment.");
@@ -645,7 +780,7 @@ const FinanceInvoices = () => {
       due_date: form.due_date || null,
       customer_id: customerId,
       shipment_id: form.shipment_id || null,
-      notes: invoiceNotes,
+      notes: trimmedNotes || null,
     }).select("id").single();
 
     if (error) {
@@ -672,7 +807,7 @@ const FinanceInvoices = () => {
       amount: invoice.amount.toFixed(2),
       status: normalizedStatus(invoice.status),
       due_date: invoice.due_date || "",
-      notes: invoice.notes || "",
+      notes: getInvoiceCustomNote(invoice) || "",
     });
   };
 
@@ -698,7 +833,7 @@ const FinanceInvoices = () => {
         amount,
         status: editForm.status,
         due_date: editForm.due_date || null,
-        notes: editForm.notes || null,
+        notes: editForm.notes.trim() || null,
       })
       .eq("id", editingInvoice.id);
 
@@ -736,7 +871,7 @@ const FinanceInvoices = () => {
         billTo: row.customer_name || "Customer",
         billToId: row.customer_code || undefined,
         date: format(new Date(row.created_at), "PPpp"),
-        description: getInvoiceDisplayDescription(row.shipment_id, row.shipment_description, row.notes),
+        description: getInvoiceDisplayDescription(row.shipment_id, row.shipment_description),
         amount: formatAmount(row.amount),
         paid: formatAmount(paidAmount),
         balance: formatAmount(balance),
@@ -788,7 +923,7 @@ const FinanceInvoices = () => {
       key: "balance",
       label: "Balance",
       align: "center",
-      
+
       render: (row) => formatAmount(getInvoiceBalance(row)),
     },
     {
@@ -826,6 +961,20 @@ const FinanceInvoices = () => {
       render: (row) => (row.due_date ? format(new Date(row.due_date), "PP") : "-"),
     },
     {
+      key: "notes",
+      label: "Notes",
+      render: (row) => {
+        const customNote = getInvoiceCustomNote(row);
+        return customNote ? (
+          <div className="max-w-[280px] whitespace-pre-line text-xs text-muted-foreground">
+            {customNote}
+          </div>
+        ) : (
+          "-"
+        );
+      },
+    },
+    {
       key: "download",
       label: "Download",
       render: (row) => (
@@ -837,48 +986,56 @@ const FinanceInvoices = () => {
     {
       key: "action",
       label: "Action",
-      render: (row) => (
-        <div className="flex gap-1 whitespace-nowrap">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8 p-0"
-            title="View invoice"
-            onClick={async () =>
-              openFinanceDetailWindow(`Invoice ${row.code}`, "Invoice Details", [
-                { label: "Invoice No.", value: row.code },
-                {
-                  label: "Customer",
-                  value: row.customer_name
-                    ? `${row.customer_name}${row.customer_code ? ` (${row.customer_code})` : ""}`
-                    : row.customer_code || "Customer",
-                },
-                { label: "Shipment ID", value: row.shipment_tracking_no || row.shipment_code || "-" },
-                { label: "System Shipment No.", value: row.shipment_code || "-" },
-                { label: "Receiver", value: row.receiver_name || "-" },
-                { label: "Receiver Phone", value: row.receiver_phone || "-" },
-                { label: "Receiver Address", value: row.receiver_address || "-" },
-                { label: "Invoice Amount", value: formatAmount(row.amount) },
-                { label: "Paid", value: formatAmount(getInvoicePaid(row)) },
-                { label: "Balance", value: formatAmount(getInvoiceBalance(row)) },
-                { label: "Invoice Status", value: normalizedStatus(row.status) },
-                { label: "Payment Progress", value: getInvoicePaymentProgress(row) },
-                { label: "Date", value: format(new Date(row.created_at), "PP") },
-                { label: "Due Date", value: row.due_date ? format(new Date(row.due_date), "PP") : "-" },
-                {
-                  label: "Description",
-                  value: getInvoiceDisplayDescription(row.shipment_id, row.shipment_description, row.notes),
-                },
-              ], undefined, await fetchLogo())
-            }
-          >
-            <Eye className="h-4 w-4 text-blue-600" />
-          </Button>
-          <Button variant="ghost" size="icon" className="h-8 w-8 p-0" onClick={() => openEditDialog(row)} title="Edit invoice" disabled={getInvoiceDisplayStatus(row) === "paid"}>
-            <Pencil className="h-4 w-4 text-blue-600" />
-          </Button>
-        </div>
-      ),
+      render: (row) => {
+        const customNote = getInvoiceCustomNote(row);
+        return (
+          <div className="flex gap-1 whitespace-nowrap">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 p-0"
+              title="View invoice"
+              onClick={() =>
+                setViewDetail({
+                  title: `Invoice ${row.code}`,
+                  items: [
+                    { label: "Invoice No.", value: row.code },
+                    {
+                      label: "Customer",
+                      value: row.customer_name
+                        ? `${row.customer_name}${row.customer_code ? ` (${row.customer_code})` : ""}`
+                        : row.customer_code || "Customer",
+                    },
+                    { label: "Shipment ID", value: row.shipment_tracking_no || row.shipment_code || "-" },
+                    { label: "System Shipment No.", value: row.shipment_code || "-" },
+                    { label: "Receiver", value: row.receiver_name || "-" },
+                    { label: "Receiver Phone", value: row.receiver_phone || "-" },
+                    { label: "Receiver Address", value: row.receiver_address || "-" },
+                    { label: "Invoice Amount", value: formatAmount(row.amount) },
+                    { label: "Paid", value: formatAmount(getInvoicePaid(row)) },
+                    { label: "Balance", value: formatAmount(getInvoiceBalance(row)) },
+                    { label: "Invoice Status", value: normalizedStatus(row.status) },
+                    { label: "Payment Progress", value: getInvoicePaymentProgress(row) },
+                    { label: "Date", value: format(new Date(row.created_at), "PP") },
+                    { label: "Due Date", value: row.due_date ? format(new Date(row.due_date), "PP") : "-" },
+                    { label: "Notes", value: customNote || "-", fullWidth: true },
+                    {
+                      label: "Description",
+                      value: getInvoiceDisplayDescription(row.shipment_id, row.shipment_description),
+                      fullWidth: true,
+                    },
+                  ],
+                })
+              }
+            >
+              <Eye className="h-4 w-4 text-blue-600" />
+            </Button>
+            <Button variant="ghost" size="icon" className="h-8 w-8 p-0" onClick={() => openEditDialog(row)} title="Edit invoice" disabled={getInvoiceDisplayStatus(row) === "paid"}>
+              <Pencil className="h-4 w-4 text-blue-600" />
+            </Button>
+          </div>
+        );
+      },
     },
   ];
 
@@ -886,7 +1043,7 @@ const FinanceInvoices = () => {
     <div className="space-y-6 animate-fade-in">
       <PageHeader
         title="Invoices"
-        
+
       />
       <DateRangeFilter
         value={dateFilter}
@@ -1034,6 +1191,36 @@ const FinanceInvoices = () => {
         </TabsContent>
       </Tabs>
 
+      <Dialog open={!!viewDetail} onOpenChange={() => setViewDetail(null)}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{viewDetail?.title}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-0 border rounded-md overflow-hidden">
+            {viewDetail?.items.map((item, idx) => (
+              <div
+                key={idx}
+                className={`grid gap-1 p-2 text-sm ${
+                  item.fullWidth ? "grid-cols-1" : "grid-cols-2"
+                } ${idx % 2 === 0 ? "bg-muted/30" : ""}`}
+              >
+                <div className="font-medium text-muted-foreground">{item.label}</div>
+                <div
+                  className={`font-semibold ${
+                    item.fullWidth ? "whitespace-pre-wrap break-words leading-relaxed" : "break-words"
+                  }`}
+                >
+                  {item.value || "-"}
+                </div>
+              </div>
+            ))}
+          </div>
+          <DialogFooter>
+            <Button onClick={() => setViewDetail(null)}>Close</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <Dialog open={Boolean(editingInvoice)} onOpenChange={(open) => (!open ? closeEditDialog() : null)}>
         <DialogContent>
           <DialogHeader>
@@ -1118,4 +1305,3 @@ const FinanceInvoices = () => {
 };
 
 export default FinanceInvoices;
-

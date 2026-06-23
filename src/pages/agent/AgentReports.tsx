@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Eye } from "lucide-react";
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
 import { PageHeader } from "@/components/shared/PageHeader";
+import { PortalShipmentHistoryTable } from "@/components/shipments/PortalShipmentHistoryTable";
 import { DataTable, type Column } from "@/components/shared/DataTable";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -21,11 +22,8 @@ import {
   ChartTooltipContent,
 } from "@/components/ui/chart";
 import { useDefaultCurrency } from "@/hooks/useDefaultCurrency";
-import {
-  extractNoteValue,
-  getWarehouseTrackingNumber,
-  resolveTrackingByStatus,
-} from "@/lib/shipmentNotes";
+import { isSingleHandlingMethod } from "@/lib/parcelWorkflow";
+import { getWarehouseTrackingNumber } from "@/lib/shipmentNotes";
 import {
   DEFAULT_AGENT_COMMISSION_RATE_KG,
   DEFAULT_AGENT_COMMISSION_RATE_CBM,
@@ -33,7 +31,6 @@ import {
   fetchAgentShipments,
   formatAgentStatus,
   getCurrentAgentId,
-  getShipmentCommissionBase,
   getShipmentInvoiceTotal,
   getMonthKey,
   type AgentShipmentRow,
@@ -50,12 +47,222 @@ const formatDisplayDate = (
 };
 
 const getOutgoingAwareTrackingNumber = (
-  status: string,
   notes: string | null,
-  customTrackingNumber: string | null,
+  trackingCode?: string | null,
 ) =>
-  resolveTrackingByStatus(status, notes, customTrackingNumber) ||
+  getWarehouseTrackingNumber(notes)?.trim() ||
+  trackingCode?.trim() ||
   "Tracking pending";
+
+const SHIPMENT_HISTORY_STATUSES = new Set([
+  "requested_pickup",
+  "approved",
+  "assigned",
+  "supplied",
+  "delivered",
+  "closed",
+  "paid",
+  "unpaid",
+]);
+
+const CONSOLIDATION_HISTORY_STATUSES = new Set([
+  "submitted",
+  "confirmed",
+  "outgoing",
+  "in_transit",
+  "intransit",
+  "arrived",
+  "collected",
+  "requested",
+  "approved",
+  "assigned",
+  "supplied",
+  "delivered",
+  "closed",
+]);
+
+const consolidationStatusToShipmentStatus: Record<string, string> = {
+  submitted: "requested_pickup",
+  requested: "requested_pickup",
+  confirmed: "approved",
+  approved: "approved",
+  outgoing: "assigned",
+  assigned: "assigned",
+  in_transit: "supplied",
+  intransit: "supplied",
+  supplied: "supplied",
+  arrived: "delivered",
+  delivered: "delivered",
+  collected: "closed",
+  closed: "closed",
+};
+
+const normalizeStatus = (status: string | null | undefined) =>
+  (status || "").trim().toLowerCase();
+
+const isShipmentHistoryStatus = (status: string | null | undefined) =>
+  SHIPMENT_HISTORY_STATUSES.has(normalizeStatus(status));
+
+const isConsolidationHistoryStatus = (status: string | null | undefined) =>
+  CONSOLIDATION_HISTORY_STATUSES.has(normalizeStatus(status));
+
+const getLinkShipment = (link: { shipment?: AgentShipmentRow | AgentShipmentRow[] | null }) => {
+  if (Array.isArray(link.shipment)) return link.shipment[0] || null;
+  return link.shipment || null;
+};
+
+type ConsolidationReportRow = {
+  id: string;
+  code: string;
+  customer_id: string;
+  status: string;
+  notes: string | null;
+  total_cost: number | null;
+  total_weight: number | null;
+  total_cbm: number | null;
+  tracking_code: string | null;
+  collected_at: string | null;
+  created_at: string;
+  updated_at: string;
+  customer: {
+    code: string | null;
+    full_name: string | null;
+  } | null;
+  consolidation_shipments?: Array<{
+    shipment_id: string;
+    shipment?: AgentShipmentRow | AgentShipmentRow[] | null;
+  }> | null;
+};
+
+const getSharedReceiver = (shipments: AgentShipmentRow[]) => {
+  const receivers = shipments
+    .map((shipment) => shipment.receiver)
+    .filter((receiver): receiver is NonNullable<AgentShipmentRow["receiver"]> => !!receiver);
+
+  if (receivers.length === 0) return null;
+
+  const firstKey = JSON.stringify(receivers[0]);
+  return receivers.every((receiver) => JSON.stringify(receiver) === firstKey) ? receivers[0] : null;
+};
+
+const buildConsolidatedReportRow = (
+  consolidation: ConsolidationReportRow,
+): AgentShipmentRow | null => {
+  const links = consolidation.consolidation_shipments || [];
+  const childShipments = links
+    .map(getLinkShipment)
+    .filter((shipment): shipment is AgentShipmentRow => !!shipment);
+
+  if (childShipments.length === 0) return null;
+
+  const normalizedStatus = normalizeStatus(consolidation.status);
+  const status = consolidationStatusToShipmentStatus[normalizedStatus] || normalizedStatus;
+  const distinctServiceTypes = Array.from(
+    new Set(childShipments.map((shipment) => shipment.service_type).filter(Boolean)),
+  );
+  const description = childShipments
+    .map((shipment) => shipment.description || shipment.code)
+    .filter(Boolean)
+    .slice(0, 2)
+    .join(", ");
+  const latestEstimatedDelivery = childShipments
+    .map((shipment) => shipment.estimated_delivery_date)
+    .filter((value): value is string => !!value)
+    .sort()
+    .at(-1) || null;
+  const latestActualDelivery = childShipments
+    .map((shipment) => shipment.actual_delivery_date)
+    .filter((value): value is string => !!value)
+    .sort()
+    .at(-1) || null;
+
+  return {
+    id: `consolidation-${consolidation.id}`,
+    code: consolidation.code,
+    customer_id: consolidation.customer_id,
+    status,
+    payment_status: childShipments.every((shipment) => shipment.payment_status === "completed")
+      ? "completed"
+      : null,
+    paid_amount: childShipments.reduce((sum, shipment) => sum + Number(shipment.paid_amount || 0), 0),
+    total_cost: childShipments.reduce((sum, shipment) => sum + Number(shipment.total_cost || 0), 0),
+    shipping_cost: Number(
+      consolidation.total_cost ??
+      childShipments.reduce((sum, shipment) => sum + Number(shipment.shipping_cost || 0), 0),
+    ),
+    service_type: distinctServiceTypes.length === 1 ? distinctServiceTypes[0] : "mixed",
+    description: consolidation.notes || description || "Consolidated shipment",
+    notes: consolidation.notes,
+    custom_tracking_number: getOutgoingAwareTrackingNumber(consolidation.notes, consolidation.tracking_code),
+    handling_method: "consolidated",
+    created_at: consolidation.created_at,
+    updated_at: consolidation.updated_at,
+    weight: Number(
+      consolidation.total_weight ??
+      childShipments.reduce((sum, shipment) => sum + Number(shipment.weight || 0), 0),
+    ),
+    cbm: Number(
+      consolidation.total_cbm ??
+      childShipments.reduce((sum, shipment) => sum + Number(shipment.cbm || 0), 0),
+    ),
+    consolidation_id: consolidation.id,
+    estimated_delivery_date: latestEstimatedDelivery,
+    actual_delivery_date: consolidation.collected_at || latestActualDelivery,
+    customer: consolidation.customer,
+    receiver: getSharedReceiver(childShipments),
+  };
+};
+
+const fetchAgentShippingHistoryRows = async (
+  customerIds: string[],
+  rawShipments: AgentShipmentRow[],
+) => {
+  if (customerIds.length === 0) return [] as AgentShipmentRow[];
+
+  const { data, error } = await supabase
+    .from("consolidations")
+    .select(
+      "id, code, customer_id, status, notes, total_cost, total_weight, total_cbm, tracking_code, collected_at, created_at, updated_at, customer:customers(code, full_name), consolidation_shipments(shipment_id, shipment:shipments(id, code, customer_id, status, payment_status, paid_amount, total_cost, shipping_cost, service_type, description, notes, custom_tracking_number, handling_method, weight, cbm, created_at, updated_at, estimated_delivery_date, actual_delivery_date, consolidation_id, customer:customers(code, full_name), receiver:receivers(full_name, phone, address)))",
+    )
+    .in("customer_id", customerIds)
+    .order("updated_at", { ascending: false })
+    .limit(500);
+
+  if (error) throw error;
+
+  const allConsolidations = (data || []) as ConsolidationReportRow[];
+  const consolidations = allConsolidations.filter((row) =>
+    isConsolidationHistoryStatus(row.status),
+  );
+  const linkedShipmentIds = new Set<string>();
+  allConsolidations.forEach((consolidation) => {
+    (consolidation.consolidation_shipments || []).forEach((link) => {
+      if (link.shipment_id) linkedShipmentIds.add(link.shipment_id);
+      const shipment = getLinkShipment(link);
+      if (shipment?.id) linkedShipmentIds.add(shipment.id);
+    });
+  });
+
+  const singleShipments = rawShipments
+    .filter((shipment) => isShipmentHistoryStatus(shipment.status))
+    .filter((shipment) => !shipment.consolidation_id)
+    .filter((shipment) => !linkedShipmentIds.has(shipment.id))
+    .filter((shipment) => isSingleHandlingMethod(shipment))
+    .map((shipment) => ({
+      ...shipment,
+      custom_tracking_number: getOutgoingAwareTrackingNumber(shipment.notes),
+    }));
+
+  const consolidatedShipments = consolidations
+    .map(buildConsolidatedReportRow)
+    .filter((shipment): shipment is AgentShipmentRow => !!shipment);
+
+  return [...singleShipments, ...consolidatedShipments].sort(
+    (left, right) =>
+      new Date(right.updated_at || right.created_at).getTime() -
+      new Date(left.updated_at || left.created_at).getTime(),
+  );
+};
 
 type RevenueByClientRow = {
   id: string;
@@ -94,11 +301,12 @@ const AgentReports = () => {
           return;
         }
 
-        const [{ shipments: shipmentRows }, profileRes] = await Promise.all([
+        const [{ customerIds, shipments: shipmentRows }, profileRes] = await Promise.all([
           fetchAgentShipments(agentId, 500),
           supabase.from("profiles").select("commission_rate_kg, commission_rate_cbm").eq("user_id", agentId).single(),
         ]);
-        setShipments(shipmentRows);
+        const shipmentHistoryRows = await fetchAgentShippingHistoryRows(customerIds, shipmentRows);
+        setShipments(shipmentHistoryRows);
         setAgentProfile({
           commission_rate_kg: profileRes.data?.commission_rate_kg ?? DEFAULT_AGENT_COMMISSION_RATE_KG,
           commission_rate_cbm: profileRes.data?.commission_rate_cbm ?? DEFAULT_AGENT_COMMISSION_RATE_CBM,
@@ -219,7 +427,6 @@ const AgentReports = () => {
         id: shipment.id,
         client: shipment.customer?.full_name || "Client",
         trackingNumber: getOutgoingAwareTrackingNumber(
-          shipment.status,
           shipment.notes,
           shipment.custom_tracking_number,
         ),
@@ -370,105 +577,7 @@ const AgentReports = () => {
           <CardTitle>Shipping History</CardTitle>
         </CardHeader>
         <CardContent>
-          {isLoading ? (
-            <p className="text-sm text-muted-foreground">
-              Loading shipment history...
-            </p>
-          ) : shippingHistory.length === 0 ? (
-            <p className="text-sm text-muted-foreground">
-              No shipment history available yet.
-            </p>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="min-w-[980px] w-full text-sm">
-                <thead>
-                  <tr className="border-b bg-muted/40">
-                    <th className="p-3 text-left font-medium">Client</th>
-                    <th className="p-3 text-left font-medium">Tracking No.</th>
-                    <th className="p-3 text-left font-medium">Service Type</th>
-                    <th className="p-3 text-left font-medium">Description</th>
-                    <th className="p-3 text-left font-medium">Shipping Fee</th>
-                    <th className="p-3 text-left font-medium">Created</th>
-                    <th className="p-3 text-left font-medium">Status</th>
-                    <th className="p-3 text-left font-medium">Arrival Date</th>
-                    <th className="p-3 text-left font-medium">Action</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {shippingHistory
-                    .slice(
-                      (historyPage - 1) * HISTORY_PAGE_SIZE,
-                      historyPage * HISTORY_PAGE_SIZE,
-                    )
-                    .map((row) => (
-                      <tr key={row.id} className="border-b hover:bg-muted/20">
-                        <td className="p-3">{row.client}</td>
-                        <td className="p-3 font-mono text-xs">
-                          {row.trackingNumber}
-                        </td>
-                        <td className="p-3">{row.serviceType}</td>
-                        <td className="p-3">{row.description}</td>
-                        <td className="p-3">{formatAmount(row.shippingFee)}</td>
-                        <td className="p-3">
-                          {formatDisplayDate(row.createdAt)}
-                        </td>
-                        <td className="p-3">{row.status}</td>
-                        <td className="p-3">
-                          {formatDisplayDate(row.arrivalDate)}
-                        </td>
-                        <td className="p-3">
-                          <Button
-                            size="icon"
-                            variant="ghost"
-                            className="h-8 w-8 p-0"
-                            onClick={() => setSelectedShipment(row.shipment)}
-                            title="View details"
-                          >
-                            <Eye className="h-4 w-4 text-blue-600" />
-                          </Button>
-                        </td>
-                      </tr>
-                    ))}
-                </tbody>
-              </table>
-              {shippingHistory.length > HISTORY_PAGE_SIZE && (
-                <div className="flex items-center justify-between gap-3 border-t p-3 bg-muted/20">
-                  <p className="text-xs text-muted-foreground">
-                    Showing {(historyPage - 1) * HISTORY_PAGE_SIZE + 1}-
-                    {Math.min(
-                      historyPage * HISTORY_PAGE_SIZE,
-                      shippingHistory.length,
-                    )}{" "}
-                    of {shippingHistory.length} entries
-                  </p>
-                  <div className="flex items-center gap-2">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() =>
-                        setHistoryPage(Math.max(1, historyPage - 1))
-                      }
-                      disabled={historyPage === 1}
-                    >
-                      Previous
-                    </Button>
-                    <span className="text-xs font-medium">{historyPage}</span>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => setHistoryPage(historyPage + 1)}
-                      disabled={
-                        historyPage * HISTORY_PAGE_SIZE >=
-                        shippingHistory.length
-                      }
-                    >
-                      Next
-                    </Button>
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
+          <PortalShipmentHistoryTable scope="agent" />
         </CardContent>
       </Card>
 
@@ -493,7 +602,6 @@ const AgentReports = () => {
                 <p className="text-xs text-muted-foreground">Tracking No.</p>
                 <p className="font-medium">
                   {getOutgoingAwareTrackingNumber(
-                    selectedShipment.status,
                     selectedShipment.notes,
                     selectedShipment.custom_tracking_number,
                   )}
@@ -558,4 +666,3 @@ const AgentReports = () => {
 };
 
 export default AgentReports;
-

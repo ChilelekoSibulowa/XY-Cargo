@@ -28,6 +28,7 @@ import {
   getWarehouseTrackingNumber,
   resolveTrackingByParcelTab,
   resolveTrackingByStatus,
+  getAirwayBillNumber,
 } from "@/lib/shipmentNotes";
 import { replaceConsolidationShipmentLinks } from "@/lib/consolidationLinks";
 import { getPortalShipmentWorkflowStatus, isSingleHandlingMethod } from "@/lib/parcelWorkflow";
@@ -503,9 +504,21 @@ const filterUnifiedRows = (rows: UnifiedDashboardRow[], tab: TabKey) => {
           (row.rowType === "consolidation" || (row.rowType === "shipment" && isSingleHandlingMethod(row)))
       );
     case "unpaid":
-      return rows.filter((row) => row.payment_status !== "completed");
+      return rows.filter(
+        (row) =>
+          row.payment_status !== "completed" &&
+          !["saved_pickup", "saved_dropoff", "received"].includes(normalizeShipmentStatus(row.status)) &&
+          isShipmentStageStatus(row.status) &&
+          (row.rowType === "consolidation" || (row.rowType === "shipment" && isSingleHandlingMethod(row)))
+      );
     case "paid":
-      return rows.filter((row) => row.payment_status === "completed");
+      return rows.filter(
+        (row) =>
+          row.payment_status === "completed" &&
+          !["saved_pickup", "saved_dropoff", "received"].includes(normalizeShipmentStatus(row.status)) &&
+          isShipmentStageStatus(row.status) &&
+          (row.rowType === "consolidation" || (row.rowType === "shipment" && isSingleHandlingMethod(row)))
+      );
     default:
       return rows;
   }
@@ -2766,56 +2779,90 @@ const CustomerDashboard = () => {
               <DialogTitle>Shipment Details</DialogTitle>
             </DialogHeader>
 
-            <div className="space-y-3">
-              {viewRows.map((shipment) => {
-                const parsedPrice = Number(getUnitPrice(shipment));
-                const itemCost = !Number.isNaN(parsedPrice)
-                  ? parsedPrice
-                  : shipment.total_cost || shipment.shipping_cost || 0;
-
-                return (
-                  <div key={shipment.id} className="rounded-md border p-3 space-y-1 text-sm">
-                    {activeTab === "submitted" && viewRow?.rowType === "consolidation" ? (
-                      <label className="flex items-center gap-2 text-xs text-muted-foreground">
-                        <Checkbox
-                          checked={selectedConsolidationRemovalIds.has(shipment.id)}
-                          onCheckedChange={(checked) =>
-                            toggleConsolidationRemovalSelection(shipment.id, checked === true)
-                          }
-                        />
-                        Remove this item from consolidation
-                      </label>
-                    ) : null}
-                    <p className="font-semibold">{shipment.description || shipment.code}</p>
-                    <p className="text-xs font-mono text-muted-foreground">
-                      Tracking: {shipment.custom_tracking_number || "-"}
-                      {" | "}
-                      AWB/BL No.: {getAirwayBillNumber(shipment.notes) || "-"}
+            <div className="space-y-4">
+              {viewRow && (
+                <div className="rounded-lg border bg-slate-50 p-4 shadow-sm">
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="font-bold text-slate-900">
+                      {viewRow.rowType === "consolidation" ? "Consolidated Shipment" : "Single Shipment"}: {viewRow.code}
+                    </h3>
+                    <Badge variant="outline" className="bg-white">
+                      {statusLabel[viewRow.status] || viewRow.status}
+                    </Badge>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
+                    <p className="text-muted-foreground font-medium">
+                      Shipment Tracking:{" "}
+                      <span className="font-mono text-slate-900">
+                        {viewRow.rowType === "consolidation"
+                          ? resolveTrackingByStatus(viewRow.status, viewRow.sourceConsolidation?.notes || null, viewRow.sourceConsolidation?.tracking_code) || "Pending"
+                          : resolveTrackingByStatus(viewRow.status, viewRow.sourceShipment?.notes || null, viewRow.sourceShipment?.custom_tracking_number) || "Pending"}
+                      </span>
                     </p>
-                    <p>
-                      Service: {formatServiceType(shipment.service_type)}
-                      {" | "}
-                      Qty: {shipment.quantity || 1}
-                      {" | "}
-                      Weight: {(shipment.weight || 0).toFixed(2)} kg
-                      {" | "}
-                      CBM: {(getShipmentCbmValue(shipment) || 0).toFixed(4)}
-                      {" | "}
-                      Dimensions: {formatDims(
-                        shipment.length ?? null,
-                        shipment.width ?? null,
-                        shipment.height ?? null
-                      )}
-                    </p>
-                    <p>
-                      Item Cost: {formatAmount(itemCost)} | Shipping Fee: {formatAmount(shipment.shipping_cost || 0)}
+                    <p className="text-muted-foreground font-medium">
+                      AWB/BL No.:{" "}
+                      <span className="font-mono text-slate-900">
+                        {viewRow.rowType === "consolidation"
+                          ? getAirwayBillNumber(viewRow.sourceConsolidation?.notes || null) || "-"
+                          : getAirwayBillNumber(viewRow.sourceShipment?.notes || null) || "-"}
+                      </span>
                     </p>
                   </div>
-                );
-              })}
-              {viewRows.length === 0 ? (
-                <p className="text-sm text-muted-foreground">No shipment details found.</p>
-              ) : null}
+                </div>
+              )}
+
+              <div className="space-y-3">
+                <h4 className="text-sm font-semibold text-slate-700 px-1">Individual Parcel Items</h4>
+                {viewRows.map((shipment) => {
+                  const parsedPrice = Number(getUnitPrice(shipment));
+                  const itemCost = !Number.isNaN(parsedPrice)
+                    ? parsedPrice
+                    : shipment.total_cost || shipment.shipping_cost || 0;
+
+                  return (
+                    <div key={shipment.id} className="rounded-md border p-3 space-y-1 text-sm">
+                      {activeTab === "submitted" && viewRow?.rowType === "consolidation" ? (
+                        <label className="flex items-center gap-2 text-xs text-muted-foreground">
+                          <Checkbox
+                            checked={selectedConsolidationRemovalIds.has(shipment.id)}
+                            onCheckedChange={(checked) =>
+                              toggleConsolidationRemovalSelection(shipment.id, checked === true)
+                            }
+                          />
+                          Remove this item from consolidation
+                        </label>
+                      ) : null}
+                      <p className="font-semibold">{shipment.description || shipment.code}</p>
+                      <p className="text-xs font-mono text-muted-foreground">
+                        Tracking: {shipment.custom_tracking_number || "-"}
+                        {" | "}
+                        AWB/BL No.: {getAirwayBillNumber(shipment.notes) || "-"}
+                      </p>
+                      <p>
+                        Service: {formatServiceType(shipment.service_type)}
+                        {" | "}
+                        Qty: {shipment.quantity || 1}
+                        {" | "}
+                        Weight: {(shipment.weight || 0).toFixed(2)} kg
+                        {" | "}
+                        CBM: {(getShipmentCbmValue(shipment) || 0).toFixed(4)}
+                        {" | "}
+                        Dimensions: {formatDims(
+                          shipment.length ?? null,
+                          shipment.width ?? null,
+                          shipment.height ?? null
+                        )}
+                      </p>
+                      <p>
+                        Item Cost: {formatAmount(itemCost)} | Shipping Fee: {formatAmount(shipment.shipping_cost || 0)}
+                      </p>
+                    </div>
+                  );
+                })}
+                {viewRows.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">No shipment details found.</p>
+                ) : null}
+              </div>
             </div>
 
             <DialogFooter>

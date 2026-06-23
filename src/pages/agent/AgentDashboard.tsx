@@ -30,8 +30,10 @@ import {
   type AgentShipmentRow,
 } from "@/lib/agentPortal";
 import { getWarehouseTrackingNumber, resolveTrackingByStatus } from "@/lib/shipmentNotes";
-import { getPortalShipmentWorkflowStatus } from "@/lib/parcelWorkflow";
+import { getPortalShipmentWorkflowStatus, isUnconsolidatedConsolidationParcel, isSingleHandlingMethod } from "@/lib/parcelWorkflow";
+import { normalizeShipmentStatus, isShipmentStageStatus, mapConsolidationStatusToShipmentStatus } from "@/lib/warehouseTabFilters";
 import { toast } from "sonner";
+import { isFinanceInvoiceVisible, getInvoiceOutstandingBalance } from "@/lib/financePortal";
 
 type ConsolidationChildShipment = {
   id: string;
@@ -103,6 +105,7 @@ const AgentDashboard = () => {
   const [shipments, setShipments] = useState<AgentShipmentRow[]>([]);
   const [consolidations, setConsolidations] = useState<ConsolidationRow[]>([]);
   const [payments, setPayments] = useState<AgentPaymentRow[]>([]);
+  const [invoices, setInvoices] = useState<any[]>([]);
   const [notifications, setNotifications] = useState<AgentNotificationRow[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [walletBalance, setWalletBalance] = useState(0);
@@ -130,24 +133,29 @@ const AgentDashboard = () => {
         }
 
         const { customerIds, shipments: shipmentRows } = await fetchAgentShipments(agentId, 200);
-        const [paymentRows, notificationRows, profileRes, consolidationsRes] = await Promise.all([
+        const [paymentRows, notificationRows, profileRes, consolidationsRes, invoicesRes] = await Promise.all([
           fetchAgentPayments(customerIds, 100),
           fetchAgentNotifications(6),
           supabase.from("profiles").select("commission_rate_kg, commission_rate_cbm").eq("user_id", agentId).single(),
           customerIds.length
             ? supabase
-                .from("consolidations")
-                .select(
-                  "id, code, status, created_at, updated_at, notes, tracking_code, consolidation_shipments(shipment_id, shipment:shipments(id, code, status, created_at, updated_at, description, custom_tracking_number))"
-                )
-                .in("customer_id", customerIds)
-                .order("updated_at", { ascending: false })
-            : Promise.resolve({ data: [] as any, error: null }),
+              .from("consolidations")
+              .select("id, code, status, created_at, notes, item_count, total_weight, total_cost, consolidation_shipments(shipment_id, shipment:shipments(id, code, status, created_at, updated_at, description, custom_tracking_number, notes, total_cost, shipping_cost))")
+              .in("customer_id", customerIds)
+              .order("created_at", { ascending: false })
+            : Promise.resolve({ data: [], error: null }),
+          customerIds.length
+            ? supabase
+              .from("invoices")
+              .select("id, amount, status, shipment_id, shipment:shipments(paid_amount, total_cost, shipping_cost)")
+              .in("customer_id", customerIds)
+            : Promise.resolve({ data: [], error: null }),
         ]);
         const ownWalletBalance = await fetchAgentWalletBalance(agentId);
 
         setShipments(shipmentRows);
         setPayments(paymentRows);
+        setInvoices((invoicesRes as any)?.data || []);
         setNotifications(notificationRows);
         setConsolidations(((consolidationsRes as any)?.data || []) as ConsolidationRow[]);
         setWalletBalance(Number(ownWalletBalance || 0));
@@ -166,14 +174,30 @@ const AgentDashboard = () => {
   }, []);
 
   const metrics = useMemo(() => {
-    const visibleShipments = shipments.filter(s => !s.consolidation_id);
-    const activeShipments = visibleShipments.filter(
-      (shipment) => !["closed", "returned", "returned_stock", "returned_delivered"].includes(shipment.status),
-    );
+    const visibleShipments = shipments.filter(s => !s.consolidation_id && !isUnconsolidatedConsolidationParcel(s));
+    
+    const activeSingles = shipments.filter((s) => {
+      if (s.consolidation_id) return false;
+      if (!isSingleHandlingMethod(s)) return false;
+      const mappedStatus = getPortalShipmentWorkflowStatus(s, shipments);
+      const normalized = normalizeShipmentStatus(mappedStatus);
+      return !["saved_pickup", "saved_dropoff", "received"].includes(normalized) && isShipmentStageStatus(normalized);
+    });
+
+    const activeConsolidations = consolidations.filter((c) => {
+      const mappedStatus = mapConsolidationStatusToShipmentStatus[c.status?.toLowerCase() || ""] || c.status;
+      const normalized = normalizeShipmentStatus(mappedStatus);
+      return !["saved_pickup", "saved_dropoff", "received"].includes(normalized) && isShipmentStageStatus(normalized);
+    });
+
+    const activeShipmentsCount = activeSingles.length + activeConsolidations.length;
     const settledShipments = visibleShipments.filter((shipment) => shipment.payment_status === "completed");
-    const outstandingPayments = visibleShipments
-      .filter(isAgentBillableShipment)
-      .reduce((total, shipment) => total + getShipmentOutstandingBalance(shipment), 0);
+    const outstandingPayments = invoices
+      .filter((invoice) => isFinanceInvoiceVisible(invoice.status))
+      .reduce((total, invoice) => {
+        const shipment = Array.isArray(invoice.shipment) ? invoice.shipment[0] : invoice.shipment;
+        return total + getInvoiceOutstandingBalance(invoice, shipment);
+      }, 0);
     const rateKg = agentProfile?.commission_rate_kg ?? DEFAULT_AGENT_COMMISSION_RATE_KG;
     const rateCbm = agentProfile?.commission_rate_cbm ?? DEFAULT_AGENT_COMMISSION_RATE_CBM;
 
@@ -187,7 +211,7 @@ const AgentDashboard = () => {
       .reduce((total, shipment) => total + calculateAgentCommission(shipment, rateKg, rateCbm), 0);
 
     return {
-      activeShipments: activeShipments.length,
+      activeShipments: activeShipmentsCount,
       outstandingPayments,
       totalCommission,
       monthlyCommission,
@@ -207,7 +231,7 @@ const AgentDashboard = () => {
     ];
 
     shipments
-      .filter((shipment) => !shipment.consolidation_id)
+      .filter((shipment) => !shipment.consolidation_id && !isUnconsolidatedConsolidationParcel(shipment))
       .forEach((shipment) => {
         const workflowStatus = getPortalShipmentWorkflowStatus(shipment, shipments);
         if (workflowStatus === "requested_pickup") summary[0].total += 1;
@@ -223,7 +247,7 @@ const AgentDashboard = () => {
 
   const recentUpdates = useMemo<RecentUpdateRow[]>(() => {
     const shipmentRows: RecentUpdateRow[] = shipments
-      .filter((shipment) => !shipment.consolidation_id)
+      .filter((shipment) => !shipment.consolidation_id && !isUnconsolidatedConsolidationParcel(shipment))
       .map((shipment) => ({
         id: `shipment-${shipment.id}`,
         rowType: "shipment",

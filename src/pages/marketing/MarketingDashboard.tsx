@@ -7,6 +7,8 @@ import { useDefaultCurrency } from "@/hooks/useDefaultCurrency";
 import { TablePagination, paginate } from "@/components/shared/TablePagination";
 import {
   buildCampaignPerformanceRows,
+  isBlockedMarketingSource,
+  normalizeMarketingSource,
   type MarketingCampaignMetricSource,
   type MarketingLeadMetricSource,
 } from "@/lib/marketingMetrics";
@@ -73,7 +75,7 @@ const MarketingDashboard = () => {
   useEffect(() => {
     const fetchData = async () => {
       const [campaignRes, leadRes, analyticsRes, socialMetricRes, socialPostRes] = await Promise.all([
-        sb.from("marketing_campaigns").select("*"),
+        sb.from("marketing_campaigns").select("*").order("updated_at", { ascending: false }),
         sb.from("marketing_leads").select("id, full_name, email, phone, status, created_at, source, assigned_to"),
         sb.from("marketing_page_analytics").select("view_date, views, traffic_source"),
         sb.from("marketing_social_metrics").select("*"),
@@ -81,7 +83,7 @@ const MarketingDashboard = () => {
       ]);
 
       setCampaigns((campaignRes.data || []) as CampaignRow[]);
-      setLeads((leadRes.data || []) as LeadRow[]);
+      setLeads(((leadRes.data || []) as LeadRow[]).filter((lead) => !isBlockedMarketingSource(lead.source)));
       setAnalytics((analyticsRes.data || []) as AnalyticsRow[]);
       setSocialMetrics((socialMetricRes.data || []) as SocialMetricRow[]);
       setSocialPosts((socialPostRes.data || []) as SocialPostRow[]);
@@ -112,27 +114,22 @@ const MarketingDashboard = () => {
   const thirtyDaysAgo = new Date();
   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
-  const BLOCKED_SOURCES = ["internal"];
-  const isBlockedSource = (value: string | null | undefined) => {
-    const lower = (value || "").toLowerCase();
-    return BLOCKED_SOURCES.some((blocked) => lower.includes(blocked));
-  };
-
   const websiteTraffic = analytics
-    .filter((row) => new Date(row.view_date) >= thirtyDaysAgo && !isBlockedSource(row.traffic_source))
+    .filter((row) => new Date(row.view_date) >= thirtyDaysAgo && !isBlockedMarketingSource(row.traffic_source))
     .reduce((sum, row) => sum + (row.views || 0), 0);
 
   const websiteAnalyticsByPlatform = useMemo(() => {
     const viewsByPlatform = new Map<string, number>();
-    analytics.filter((row) => !isBlockedSource(row.traffic_source)).forEach((row) => {
-      const platform = (row.traffic_source || "Direct").trim() || "Direct";
+    analytics.filter((row) => !isBlockedMarketingSource(row.traffic_source)).forEach((row) => {
+      const platform = normalizeMarketingSource(row.traffic_source);
       viewsByPlatform.set(platform, (viewsByPlatform.get(platform) || 0) + Number(row.views || 0));
     });
 
     const clientsByPlatform = new Map<string, number>();
     leads.forEach((lead) => {
       if (lead.status !== "converted") return;
-      const platform = (lead.source || "Direct").trim() || "Direct";
+      if (isBlockedMarketingSource(lead.source)) return;
+      const platform = normalizeMarketingSource(lead.source);
       clientsByPlatform.set(platform, (clientsByPlatform.get(platform) || 0) + 1);
     });
 
@@ -164,61 +161,32 @@ const MarketingDashboard = () => {
     };
   }, [socialMetrics, socialPosts, leads]);
 
-  const metricOrFallback = (stored: number | null | undefined, fallback: number) => {
-    if (typeof stored === "number" && Number.isFinite(stored) && stored > 0) return stored;
-    return fallback;
-  };
+  const metricValue = (stored: number | null | undefined) =>
+    typeof stored === "number" && Number.isFinite(stored) ? stored : 0;
 
   const socialGrowthRows = useMemo(() => {
-    const postMap = new Map<string, { views: number; likes: number; reach: number; leads: number; engagements: number; clicks: number }>();
-
-    socialPosts.forEach((post) => {
-      const key = post.platform || "Unknown";
-      const current = postMap.get(key) || { views: 0, likes: 0, reach: 0, leads: 0, engagements: 0, clicks: 0 };
-      const engagements = Number(post.engagement_count || 0);
-      const clicks = Number(post.inquiry_count || 0);
-
-      current.engagements += engagements;
-      current.likes += Math.round(engagements * 0.55);
-      current.views += Math.max(engagements * 4, clicks * 10);
-      current.reach += Math.max(engagements * 5, clicks * 12);
-      current.clicks += clicks;
-      current.leads += Math.max(Math.round(clicks * 0.35), 0);
-      postMap.set(key, current);
-    });
-
     return socialMetrics.map((metric) => {
-      const postTotals = postMap.get(metric.platform || "Unknown") || {
-        views: 0,
-        likes: 0,
-        reach: 0,
-        leads: 0,
-        engagements: 0,
-        clicks: 0,
-      };
-
       return {
         platform: metric.platform || "Unknown",
         followers: Number(metric.followers || 0),
-        views: metricOrFallback(metric.views, postTotals.views),
-        likes: metricOrFallback(metric.likes, postTotals.likes),
-        reach: metricOrFallback(metric.reach, postTotals.reach),
-        leads: metricOrFallback(metric.leads, postTotals.leads),
-        engagements: metricOrFallback(metric.engagements, postTotals.engagements),
+        views: metricValue(metric.views),
+        likes: metricValue(metric.likes),
+        reach: metricValue(metric.reach),
+        leads: metricValue(metric.leads),
+        engagements: metricValue(metric.engagements),
         engagementRate: Number(metric.engagement_rate || 0),
-        clicks: metricOrFallback(metric.clicks, postTotals.clicks),
+        clicks: metricValue(metric.clicks),
         growthRate: Number(metric.growth_rate || 0),
         date: metric.recorded_at,
       };
     });
-  }, [socialMetrics, socialPosts]);
+  }, [socialMetrics]);
 
   const recentLeads = useMemo(
     () => [...leads].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()),
     [leads],
   );
 
-  const formatCampaignDerivedMetric = (leadCount: number, multiplier: number) => Math.round(leadCount * multiplier);
   const campaignMetaById = useMemo(() => {
     const map = new Map<string, CampaignRow>();
     campaigns.forEach((campaign) => map.set(campaign.id, campaign));
@@ -321,12 +289,12 @@ const MarketingDashboard = () => {
             <tbody>
               {paginate(campaignRows, campaignPage).map((row) => {
                 const meta = campaignMetaById.get(row.id);
-                const views = metricOrFallback(meta?.views, formatCampaignDerivedMetric(row.leadCount, 36));
-                const viewers = metricOrFallback(meta?.viewers, formatCampaignDerivedMetric(row.leadCount, 21));
-                const engagements = metricOrFallback(meta?.engagements, formatCampaignDerivedMetric(row.leadCount, 9));
-                const reach = metricOrFallback(meta?.reach, formatCampaignDerivedMetric(row.leadCount, 28));
-                const pageLikes = metricOrFallback(meta?.page_likes, formatCampaignDerivedMetric(row.leadCount, 5));
-                const linkClicks = metricOrFallback(meta?.link_clicks, formatCampaignDerivedMetric(row.leadCount, 4));
+                const views = metricValue(meta?.views);
+                const viewers = metricValue(meta?.viewers);
+                const engagements = metricValue(meta?.engagements);
+                const reach = metricValue(meta?.reach);
+                const pageLikes = metricValue(meta?.page_likes);
+                const linkClicks = metricValue(meta?.link_clicks);
 
                 return (
                 <tr key={row.id} className="border-b hover:bg-muted/30">

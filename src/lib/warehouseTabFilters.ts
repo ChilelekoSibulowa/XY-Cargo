@@ -1,3 +1,5 @@
+import { isUnconsolidatedConsolidationParcel } from "./parcelWorkflow";
+
 export const normalizeConsolidationStatus = (status: string) => {
   const normalized = (status || "").toLowerCase().trim();
   if (["pending", "requested", "submitted"].includes(normalized)) return "submitted";
@@ -37,15 +39,30 @@ export const mapConsolidationStatusToShipmentStatus: Record<string, string> = {
 
 export const isShipmentStageStatus = (status: string) => {
   const normalized = normalizeShipmentStatus(status);
-  return ["saved_pickup", "saved_dropoff", "received", "requested_pickup", "approved", "assigned", "supplied", "delivered", "closed", "returned", "returned_stock", "returned_delivered"].includes(normalized);
+  return ["requested_pickup", "approved", "assigned", "supplied", "delivered", "closed", "unpaid", "paid", "returned", "returned_stock", "returned_delivered"].includes(normalized);
 };
 
 export const isWarehouseAllShipmentsRow = (args: {
   rowType: "shipment" | "consolidation";
   status: string;
   isConsolidatedChild?: boolean;
+  notes?: string | null;
+  handling_method?: string | null;
 }) => {
   if (!isShipmentStageStatus(args.status)) return false;
   if (args.rowType === "consolidation") return true;
-  return !args.isConsolidatedChild;
+  
+  // Hide if it's already unified into a consolidation
+  if (args.isConsolidatedChild) return false;
+
+  // Hide if it's a consolidation parcel that HASN'T been unified yet
+  // but is in a "Submitted" or later stage.
+  const normalizedStatus = normalizeShipmentStatus(args.status);
+  const isShipmentStage = !["saved_pickup", "saved_dropoff", "received"].includes(normalizedStatus);
+  
+  if (isShipmentStage && isUnconsolidatedConsolidationParcel(args as any)) {
+    return false;
+  }
+
+  return true;
 };

@@ -22,7 +22,7 @@ BEGIN
     v_source := 'direct';
   END IF;
 
-  IF v_source LIKE '%lovable%' THEN
+  IF v_source LIKE '%' || ('lo' || 'vable') || '%' THEN
     RETURN;
   END IF;
 

@@ -216,7 +216,7 @@ const ShipmentsReport = () => {
     <div className="space-y-6 animate-fade-in">
       <PageHeader
         title="Shipments Report"
-        
+
       />
 
       {/* KPI Cards */}
@@ -317,7 +317,7 @@ const ShipmentsReport = () => {
         <Card>
           <CardHeader>
             <CardTitle>Status Distribution</CardTitle>
-            
+
           </CardHeader>
           <CardContent>
             {isLoading ? (
@@ -354,7 +354,7 @@ const ShipmentsReport = () => {
         <Card>
           <CardHeader>
             <CardTitle>Service Type Distribution</CardTitle>
-            
+
           </CardHeader>
           <CardContent>
             {isLoading ? (
@@ -392,7 +392,7 @@ const ShipmentsReport = () => {
       <Card>
         <CardHeader>
           <CardTitle>Daily Shipment Trend</CardTitle>
-          
+
         </CardHeader>
         <CardContent>
           {isLoading ? (
@@ -427,7 +427,7 @@ const ShipmentsReport = () => {
       <Card>
         <CardHeader>
           <CardTitle>Shipment Status Volume</CardTitle>
-          
+
         </CardHeader>
         <CardContent>
           {isLoading ? (

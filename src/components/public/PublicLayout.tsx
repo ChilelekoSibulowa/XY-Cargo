@@ -110,7 +110,6 @@ export const PublicLayout = () => {
 
   return (
     <div className="public-scope min-h-screen bg-white text-slate-900">
-      <div id="title-bar" className="hidden display-mode-window-controls-overlay:flex" />
       <header className="sticky top-0 z-50 w-full">
         <div className="bg-[#d8000d] text-white border-b border-white/5">
           <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-1.5 text-[11px] font-bold tracking-wide">

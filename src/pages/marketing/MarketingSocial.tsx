@@ -268,6 +268,8 @@ const MarketingSocial = () => {
       const { data, error } = await supabase.functions.invoke("sync-social-metrics");
       if (error) {
         toast.error(error.message || "Failed to sync social metrics.");
+      } else if (data?.success === false) {
+        toast.error(data?.error || "Failed to sync social metrics.");
       } else {
         const results = data?.results || [];
         toast.success(results.length > 0 ? results.join("; ") : "Sync completed.");
@@ -737,4 +739,3 @@ const MarketingSocial = () => {
 };
 
 export default MarketingSocial;
-

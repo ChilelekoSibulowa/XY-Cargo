@@ -4,9 +4,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { AlertTriangle, CheckCircle2, Clock, DollarSign, Package, TrendingUp } from "lucide-react";
+import { formatCurrencyDisplay, roundCurrencyAmount } from "@/lib/currencyDisplay";
 
 type ManualCustomsRecord = {
   id: string;
@@ -22,15 +26,43 @@ type ChargeRow = {
   charge_type: string;
   amount: number;
   currency: string;
+  created_at: string;
 };
 
-const formatChargeSummary = (charges: ChargeRow[], chargeType: string, convert: (amount: number, fromCode?: string) => number, formatAmount: (amount: number, fromCode?: string) => string) => {
-  const normalizedChargeType = chargeType === "custom_duty" ? "customs_duty" : chargeType;
-  const filtered = charges.filter(
-    (charge) => charge.charge_type === chargeType || charge.charge_type === normalizedChargeType
+const formatChargeSummary = (
+  charges: ChargeRow[],
+  chargeType: string,
+  convert: (amount: number, fromCode?: string) => number,
+  currencyCode: string,
+  currencySymbol: string,
+) => {
+  const aliases =
+    chargeType === "custom_duty"
+      ? new Set(["custom_duty", "customs_duty", "duty"])
+      : new Set([chargeType]);
+  const filtered = charges.filter((charge) => aliases.has((charge.charge_type || "").toLowerCase()));
+  const total = filtered.reduce(
+    (sum, charge) => sum + roundCurrencyAmount(convert(Number(charge.amount || 0), charge.currency)),
+    0,
   );
-  const total = filtered.reduce((sum, charge) => sum + convert(Number(charge.amount || 0), charge.currency), 0);
-  return formatAmount(total);
+  return formatCurrencyDisplay(total, currencyCode, currencySymbol);
+};
+
+const isWithinDateFilter = (value: string, fromDate: string, toDate: string) => {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return false;
+
+  if (fromDate) {
+    const start = new Date(`${fromDate}T00:00:00`);
+    if (date < start) return false;
+  }
+
+  if (toDate) {
+    const end = new Date(`${toDate}T23:59:59.999`);
+    if (date > end) return false;
+  }
+
+  return true;
 };
 
 const getStatusClasses = (status: ManualCustomsRecord["status"]) => {
@@ -43,6 +75,8 @@ const ComplianceDashboard = () => {
   const [manualRecords, setManualRecords] = useState<ManualCustomsRecord[]>([]);
   const [charges, setCharges] = useState<ChargeRow[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [fromDate, setFromDate] = useState("");
+  const [toDate, setToDate] = useState("");
 
   useEffect(() => {
     const fetchData = async (showLoading = true) => {
@@ -55,7 +89,7 @@ const ComplianceDashboard = () => {
           .order("created_at", { ascending: false }),
         supabase
           .from("compliance_charges")
-          .select("id, charge_type, amount, currency")
+          .select("id, charge_type, amount, currency, created_at")
           .order("created_at", { ascending: false }),
       ]);
 
@@ -102,19 +136,29 @@ const ComplianceDashboard = () => {
     };
   }, []);
 
+  const filteredManualRecords = useMemo(
+    () => manualRecords.filter((record) => isWithinDateFilter(record.created_at, fromDate, toDate)),
+    [manualRecords, fromDate, toDate],
+  );
+
+  const filteredCharges = useMemo(
+    () => charges.filter((charge) => isWithinDateFilter(charge.created_at, fromDate, toDate)),
+    [charges, fromDate, toDate],
+  );
+
   const latestUpdates = useMemo(() => {
-    return [...manualRecords]
+    return [...filteredManualRecords]
       .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
       .slice(0, 8);
-  }, [manualRecords]);
+  }, [filteredManualRecords]);
 
-  const pendingCustoms = manualRecords.filter((record) => record.status === "pending_customs").length;
-  const customsCleared = manualRecords.filter((record) => record.status === "customs_cleared").length;
-  const flaggedParcels = manualRecords.filter((record) => record.status === "flagged").length;
-  const totalShipments = manualRecords.length;
-  const { convert, formatAmount, code: selectedCurrency } = useDefaultCurrency();
-  const dutyCharges = formatChargeSummary(charges, "custom_duty", convert, formatAmount);
-  const miscCharges = formatChargeSummary(charges, "miscellaneous", convert, formatAmount);
+  const pendingCustoms = filteredManualRecords.filter((record) => record.status === "pending_customs").length;
+  const customsCleared = filteredManualRecords.filter((record) => record.status === "customs_cleared").length;
+  const flaggedParcels = filteredManualRecords.filter((record) => record.status === "flagged").length;
+  const totalShipments = filteredManualRecords.length;
+  const { convert, code: selectedCurrency, symbol: selectedCurrencySymbol } = useDefaultCurrency();
+  const dutyCharges = formatChargeSummary(filteredCharges, "custom_duty", convert, selectedCurrency, selectedCurrencySymbol);
+  const miscCharges = formatChargeSummary(filteredCharges, "miscellaneous", convert, selectedCurrency, selectedCurrencySymbol);
 
   const stats = [
     {
@@ -166,6 +210,43 @@ const ComplianceDashboard = () => {
       <PageHeader
         title="Compliance Dashboard"
       />
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Date Filters</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid gap-3 md:grid-cols-[1fr_1fr_auto] md:items-end">
+            <div className="space-y-2">
+              <Label htmlFor="compliance-from-date">From</Label>
+              <Input
+                id="compliance-from-date"
+                type="date"
+                value={fromDate}
+                onChange={(event) => setFromDate(event.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="compliance-to-date">To</Label>
+              <Input
+                id="compliance-to-date"
+                type="date"
+                value={toDate}
+                onChange={(event) => setToDate(event.target.value)}
+              />
+            </div>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setFromDate("");
+                setToDate("");
+              }}
+            >
+              Clear
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {stats.map(({ title, value, icon: Icon, color, bg }) => (

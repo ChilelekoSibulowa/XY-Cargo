@@ -22,15 +22,16 @@ import {
   openFinanceDetailWindow,
   toNumber,
 } from "@/lib/financePortal";
+import { formatCurrencyDisplay, removeMinorWholeAmountDrift, roundCurrencyAmount } from "@/lib/currencyDisplay";
 import { toast } from "sonner";
 import { Eye, Trash, Download } from "lucide-react";
 import { fetchLogo } from "@/hooks/useLogo";
 
-type TransactionRow = {
+type PaymentRow = {
   amount: number;
+  currency: string | null;
   created_at: string;
   status: string | null;
-  transaction_type: string;
 };
 
 type ShipmentRow = {
@@ -67,9 +68,9 @@ type SeriesRow = {
 };
 
 const FinanceReports = () => {
-  const { formatAmount, code, symbol, convertFromSelected } = useDefaultCurrency();
+  const { code, symbol, defaultCode, convert, convertFromSelected } = useDefaultCurrency();
   const { user } = useAuthContext();
-  const [transactions, setTransactions] = useState<TransactionRow[]>([]);
+  const [payments, setPayments] = useState<PaymentRow[]>([]);
   const [shipments, setShipments] = useState<ShipmentRow[]>([]);
   const [expenses, setExpenses] = useState<ExpenseRow[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -88,20 +89,26 @@ const FinanceReports = () => {
   const fetchData = async () => {
     setIsLoading(true);
 
-    const [transactionsRes, shipmentsRes, expensesRes] = await Promise.all([
-      supabase.from("transactions").select("amount, created_at, status, transaction_type"),
+    const [paymentsRes, shipmentsRes, expensesRes] = await Promise.all([
+      supabase
+        .from("payments")
+        .select("amount, currency, created_at, status")
+        .order("created_at", { ascending: false })
+        .range(0, 10000),
       supabase
         .from("shipments")
-        .select("total_cost, shipping_cost, paid_amount, payment_status"),
+        .select("total_cost, shipping_cost, paid_amount, payment_status")
+        .range(0, 10000),
       supabase
         .from("finance_expenses")
         .select("*")
-        .order("expense_date", { ascending: false }),
+        .order("expense_date", { ascending: false })
+        .range(0, 10000),
     ]);
 
-    if (transactionsRes.error || shipmentsRes.error || expensesRes.error) {
+    if (paymentsRes.error || shipmentsRes.error || expensesRes.error) {
       toast.error("Failed to load financial report data.");
-      setTransactions([]);
+      setPayments([]);
       setShipments([]);
       setExpenses([]);
       setIsLoading(false);
@@ -138,12 +145,12 @@ const FinanceReports = () => {
       );
     }
 
-    setTransactions(
-      ((transactionsRes.data || []) as any[]).map((row) => ({
+    setPayments(
+      ((paymentsRes.data || []) as any[]).map((row) => ({
         amount: toNumber(row.amount),
         created_at: row.created_at,
         status: row.status || null,
-        transaction_type: row.transaction_type,
+        currency: row.currency || null,
       })),
     );
     setShipments(
@@ -194,15 +201,15 @@ const FinanceReports = () => {
     return { start: startOfMonth(now), end: endOfMonth(now) };
   }, [dateFilterPreset, customFromDate, customToDate]);
 
-  const filteredTransactions = useMemo(() => {
-    return transactions.filter((row) => {
+  const filteredPayments = useMemo(() => {
+    return payments.filter((row) => {
       const value = new Date(row.created_at);
       if (Number.isNaN(value.getTime())) return false;
       if (activeDateRange.start && value < activeDateRange.start) return false;
       if (activeDateRange.end && value > activeDateRange.end) return false;
       return true;
     });
-  }, [transactions, activeDateRange]);
+  }, [payments, activeDateRange]);
 
   const filteredExpenses = useMemo(() => {
     return expenses.filter((row) => {
@@ -216,28 +223,40 @@ const FinanceReports = () => {
 
   const completedPayments = useMemo(
     () =>
-      filteredTransactions.filter(
-        (row) => row.status === "completed" && row.transaction_type === "payment",
+      filteredPayments.filter(
+        (row) => (row.status || "").toLowerCase() === "completed",
       ),
-    [filteredTransactions],
+    [filteredPayments],
   );
+
+  const getPaymentDisplayAmount = (row: PaymentRow) =>
+    roundCurrencyAmount(convert(row.amount, row.currency || defaultCode));
 
   const totalRevenue = useMemo(
-    () => completedPayments.reduce((sum, row) => sum + row.amount, 0),
-    [completedPayments],
+    () => roundCurrencyAmount(completedPayments.reduce((sum, row) => sum + getPaymentDisplayAmount(row), 0)),
+    [completedPayments, convert, defaultCode],
   );
 
+  const getExpenseDisplayAmount = (row: ExpenseRow) => {
+    if (row.original_amount != null && row.original_currency) {
+      return roundCurrencyAmount(convert(row.original_amount, row.original_currency));
+    }
+    return removeMinorWholeAmountDrift(convert(row.amount));
+  };
+
   const totalExpenses = useMemo(
-    () => filteredExpenses.reduce((sum, row) => sum + row.amount, 0),
-    [filteredExpenses],
+    () => roundCurrencyAmount(filteredExpenses.reduce((sum, row) => sum + getExpenseDisplayAmount(row), 0)),
+    [filteredExpenses, convert],
   );
 
   const monthlyExpense = useMemo(() => {
     const monthStart = startOfMonth(new Date());
-    return filteredExpenses
-      .filter((row) => new Date(row.expense_date) >= monthStart)
-      .reduce((sum, row) => sum + row.amount, 0);
-  }, [filteredExpenses]);
+    return roundCurrencyAmount(
+      filteredExpenses
+        .filter((row) => new Date(row.expense_date) >= monthStart)
+        .reduce((sum, row) => sum + getExpenseDisplayAmount(row), 0),
+    );
+  }, [filteredExpenses, convert]);
 
   const outstandingBalance = useMemo(
     () =>
@@ -247,26 +266,32 @@ const FinanceReports = () => {
     [shipments],
   );
 
+  const outstandingBalanceDisplay = useMemo(
+    () => removeMinorWholeAmountDrift(convert(outstandingBalance)),
+    [convert, outstandingBalance],
+  );
+
   const paymentReceivedAmount = useMemo(
-    () => completedPayments.reduce((sum, row) => sum + row.amount, 0),
-    [completedPayments],
+    () => totalRevenue,
+    [totalRevenue],
   );
 
   const paymentReceivedCount = completedPayments.length;
   const netProfit = totalRevenue - totalExpenses;
+  const netProfitDisplay = removeMinorWholeAmountDrift(netProfit);
 
   const monthlySeries = useMemo<SeriesRow[]>(() => {
     const revenueSeries = buildRecentMonthSeries(
       completedPayments.map((row) => ({
         created_at: row.created_at,
-        amount: row.amount,
+        amount: getPaymentDisplayAmount(row),
       })),
       6,
     );
     const expenseSeries = buildRecentMonthSeries(
       filteredExpenses.map((row) => ({
         created_at: `${row.expense_date}T00:00:00`,
-        amount: row.amount,
+        amount: getExpenseDisplayAmount(row),
       })),
       6,
     );
@@ -276,7 +301,7 @@ const FinanceReports = () => {
       revenue: row.amount,
       expenses: expenseSeries[index]?.amount || 0,
     }));
-  }, [completedPayments, filteredExpenses]);
+  }, [completedPayments, filteredExpenses, convert, defaultCode]);
 
   const handleSaveExpense = async () => {
     const amount = Number(expenseForm.amount);
@@ -332,7 +357,7 @@ const FinanceReports = () => {
         row.expense_date,
         row.expense_type,
         row.description || "-",
-        row.amount.toFixed(2),
+        String(getExpenseDisplayAmount(row)),
         row.approved_by_name,
       ]),
     );
@@ -344,12 +369,12 @@ const FinanceReports = () => {
       ["Metric", "Value"],
       [
         ["Total Revenue", totalRevenue.toFixed(2)],
-        ["Outstanding Balance", outstandingBalance.toFixed(2)],
+        ["Outstanding Balance", String(outstandingBalanceDisplay)],
         ["Payments Received Count", String(paymentReceivedCount)],
         ["Payments Received Amount", paymentReceivedAmount.toFixed(2)],
-        ["Total Expenses", totalExpenses.toFixed(2)],
-        ["Monthly Expense", monthlyExpense.toFixed(2)],
-        ["Net Profit", netProfit.toFixed(2)],
+        ["Total Expenses", String(totalExpenses)],
+        ["Monthly Expense", String(monthlyExpense)],
+        ["Net Profit", String(netProfitDisplay)],
       ],
     );
   };
@@ -382,36 +407,23 @@ const FinanceReports = () => {
       align: "center",
       render: (row) => {
         const hasOriginal = row.original_amount != null && row.original_currency;
-
-        // If we have an original amount, and it's in the same currency as what's selected (or equivalent like K/ZMW/ZK),
-        // we show the original amount directly to ensure perfect precision.
-        const isEquivalent = hasOriginal && (
-          row.original_currency === code ||
-          (row.original_currency === "ZMW" && (code === "ZK" || code === "K")) ||
-          (row.original_currency === "ZK" && (code === "ZMW" || code === "K")) ||
-          (row.original_currency === "K" && (code === "ZMW" || code === "ZK"))
-        );
-
-        if (hasOriginal && isEquivalent) {
-          return (
-            <div>
-              <p>{symbol}{toNumber(row.original_amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
-            </div>
-          );
-        }
-
-        // Otherwise, show the converted amount and the original as a sub-text if they differ
-        const isDifferent = hasOriginal && (
-          !isEquivalent ||
-          Math.abs(toNumber(row.amount) - toNumber(row.original_amount)) > 0.01
-        );
+        const displayAmount = getExpenseDisplayAmount(row);
+        const originalAmount = hasOriginal ? roundCurrencyAmount(row.original_amount) : null;
+        const originalText =
+          hasOriginal && originalAmount !== null
+            ? `${row.original_currency} ${originalAmount.toLocaleString(undefined, {
+                minimumFractionDigits: Math.abs(originalAmount - Math.trunc(originalAmount)) > 0.000001 ? 2 : 0,
+                maximumFractionDigits: 2,
+              })}`
+            : "";
+        const isDifferent = hasOriginal && row.original_currency !== code;
 
         return (
           <div>
-            <p>{formatAmount(row.amount)}</p>
+            <p>{formatCurrencyDisplay(displayAmount, code, symbol)}</p>
             {hasOriginal && isDifferent && (
               <p className="text-[10px] text-muted-foreground whitespace-nowrap">
-                Original: {formatAmount(row.original_amount!, row.original_currency!)}
+                Original: {originalText}
               </p>
             )}
           </div>
@@ -436,7 +448,7 @@ const FinanceReports = () => {
                 { label: "Expense Code", value: row.code },
                 { label: "Date", value: format(new Date(row.expense_date), "PP") },
                 { label: "Expense Type", value: row.expense_type },
-                { label: "Amount", value: formatAmount(row.amount) },
+                { label: "Amount", value: formatCurrencyDisplay(getExpenseDisplayAmount(row), code, symbol) },
                 { label: "Approved By", value: row.approved_by_name },
                 { label: "Description", value: row.description || "-" },
               ], undefined, await fetchLogo())
@@ -535,7 +547,7 @@ const FinanceReports = () => {
               </CardHeader>
               <CardContent className="min-w-0">
                 <p className="text-[clamp(1.25rem,2vw,1.875rem)] leading-tight font-semibold [overflow-wrap:anywhere]">
-                  {isLoading ? "..." : formatAmount(totalRevenue)}
+                  {isLoading ? "..." : formatCurrencyDisplay(totalRevenue, code, symbol)}
                 </p>
               </CardContent>
             </Card>
@@ -545,7 +557,7 @@ const FinanceReports = () => {
               </CardHeader>
               <CardContent className="min-w-0">
                 <p className="text-[clamp(1.25rem,2vw,1.875rem)] leading-tight font-semibold [overflow-wrap:anywhere]">
-                  {isLoading ? "..." : formatAmount(outstandingBalance)}
+                  {isLoading ? "..." : formatCurrencyDisplay(outstandingBalanceDisplay, code, symbol)}
                 </p>
               </CardContent>
             </Card>
@@ -556,7 +568,7 @@ const FinanceReports = () => {
               <CardContent className="min-w-0">
                 <p className="text-[clamp(1.25rem,2vw,1.875rem)] leading-tight font-semibold [overflow-wrap:anywhere]">{isLoading ? "..." : paymentReceivedCount}</p>
                 <p className="mt-1 text-xs text-muted-foreground">
-                  {isLoading ? "..." : formatAmount(paymentReceivedAmount)}
+                  {isLoading ? "..." : formatCurrencyDisplay(paymentReceivedAmount, code, symbol)}
                 </p>
               </CardContent>
             </Card>
@@ -566,7 +578,7 @@ const FinanceReports = () => {
               </CardHeader>
               <CardContent className="min-w-0">
                 <p className="text-[clamp(1.25rem,2vw,1.875rem)] leading-tight font-semibold [overflow-wrap:anywhere]">
-                  {isLoading ? "..." : formatAmount(totalExpenses)}
+                  {isLoading ? "..." : formatCurrencyDisplay(totalExpenses, code, symbol)}
                 </p>
               </CardContent>
             </Card>
@@ -576,7 +588,7 @@ const FinanceReports = () => {
               </CardHeader>
               <CardContent className="min-w-0">
                 <p className="text-[clamp(1.25rem,2vw,1.875rem)] leading-tight font-semibold [overflow-wrap:anywhere]">
-                  {isLoading ? "..." : formatAmount(monthlyExpense)}
+                  {isLoading ? "..." : formatCurrencyDisplay(monthlyExpense, code, symbol)}
                 </p>
               </CardContent>
             </Card>
@@ -586,7 +598,7 @@ const FinanceReports = () => {
               </CardHeader>
               <CardContent className="min-w-0">
                 <p className={`text-[clamp(1.25rem,2vw,1.875rem)] leading-tight font-semibold [overflow-wrap:anywhere] ${netProfit >= 0 ? "text-emerald-600" : "text-red-600"}`}>
-                  {isLoading ? "..." : formatAmount(netProfit)}
+                  {isLoading ? "..." : formatCurrencyDisplay(netProfitDisplay, code, symbol)}
                 </p>
               </CardContent>
             </Card>
@@ -609,7 +621,7 @@ const FinanceReports = () => {
                       cursor={false}
                       content={
                         <ChartTooltipContent
-                          formatter={(value) => formatAmount(Number(value))}
+                          formatter={(value) => formatCurrencyDisplay(Number(value), code, symbol)}
                         />
                       }
                     />
@@ -726,4 +738,3 @@ const FinanceReports = () => {
 };
 
 export default FinanceReports;
-

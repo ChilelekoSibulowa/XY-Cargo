@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { useDefaultCurrency } from "@/hooks/useDefaultCurrency";
 import { toast } from "sonner";
 import { getProductType, getShipmentCbmValue, resolveTrackingByStatus } from "@/lib/shipmentNotes";
+import { isUnconsolidatedConsolidationParcel } from "@/lib/parcelWorkflow";
 
 type Row = {
   id: string;
@@ -30,6 +31,7 @@ type Row = {
   customer_phone?: string;
   branch_name?: string | null;
   consolidation_id?: string | null;
+  handling_method?: string | null;
 };
 
 const pendingStatuses = ["saved_pickup", "saved_dropoff", "received", "requested_pickup", "approved"];
@@ -75,7 +77,7 @@ const WarehousePendingShipments = () => {
           supabase
             .from("shipments")
             .select(
-              "id, code, status, service_type, total_cost, shipping_cost, weight, cbm, payment_status, payment_method, pickup_date, estimated_delivery_date, custom_tracking_number, notes, description, created_at, branch_id, consolidation_id, customers(full_name, code, phone)"
+              "id, code, status, service_type, total_cost, shipping_cost, weight, cbm, payment_status, payment_method, pickup_date, estimated_delivery_date, custom_tracking_number, notes, description, created_at, branch_id, consolidation_id, handling_method, customers(full_name, code, phone)"
             )
             .in("status", pendingStatuses as any)
             .order("created_at", { ascending: false }),
@@ -121,7 +123,7 @@ const WarehousePendingShipments = () => {
         }
 
         const mappedShipments = ((data || []) as any[])
-          .filter((row) => !row.consolidation_id)
+          .filter((row) => !row.consolidation_id && !isUnconsolidatedConsolidationParcel(row))
           .map((d: any) => ({
             ...d,
             cbm: getShipmentCbmValue(d),
@@ -203,7 +205,7 @@ const WarehousePendingShipments = () => {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <PageHeader title="Pending Shipments"  />
+      <PageHeader title="Pending Shipments" />
       <DataTable
         columns={columns}
         data={rows}

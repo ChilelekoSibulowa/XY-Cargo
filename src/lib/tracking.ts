@@ -98,6 +98,7 @@ type TrackingShipmentFallbackRow = {
   id: string;
   code: string;
   status: string;
+  payment_status?: string | null;
   custom_tracking_number: string | null;
   awb_number: string | null;
   bl_number: string | null;
@@ -376,6 +377,123 @@ const getConsolidationTrackingReference = (
   cleanValue(getWarehouseTrackingNumber(consolidation.notes)) ||
   cleanValue(consolidation.tracking_code) ||
   cleanValue(consolidation.code);
+
+const getConsolidationWarehouseTrackingReference = (
+  consolidation: TrackingConsolidationFallbackRow,
+) =>
+  cleanValue(getWarehouseTrackingNumber(consolidation.notes)) ||
+  cleanValue(consolidation.tracking_code);
+
+const CONSOLIDATION_STAGE_ORDER = [
+  "submitted",
+  "confirmed",
+  "outgoing",
+  "in_transit",
+  "arrived",
+  "collected",
+];
+
+const CONSOLIDATION_STAGE_EVENT_COPY: Record<string, { title: string; message: string }> = {
+  submitted: {
+    title: "Shipment Submitted",
+    message: "Your parcels have been consolidated successfully.",
+  },
+  confirmed: {
+    title: "Confirm Shipment",
+    message: "Your shipment is awaiting confirmation.",
+  },
+  outgoing: {
+    title: "Shipment Confirmed",
+    message: "Your shipment has been confirmed successfully.",
+  },
+  in_transit: {
+    title: "Shipment In Transit",
+    message: "Your shipment is now in transit.",
+  },
+  arrived: {
+    title: "Ready for Collection",
+    message: "Your shipment has arrived at the destination warehouse and is awaiting collection.",
+  },
+  collected: {
+    title: "Shipment Collected",
+    message: "Your shipment has been collected successfully.",
+  },
+};
+
+const SHIPMENT_TO_CONSOLIDATION_STATUS: Record<string, string> = {
+  requested_pickup: "submitted",
+  approved: "confirmed",
+  assigned: "outgoing",
+  supplied: "in_transit",
+  delivered: "arrived",
+  closed: "collected",
+};
+
+const normalizeConsolidationTrackingStatus = (status: string | null | undefined) => {
+  const normalized = (status || "").toLowerCase().trim();
+  return SHIPMENT_TO_CONSOLIDATION_STATUS[normalized] || normalized;
+};
+
+const hasEventTitle = (events: TrackingEvent[], title: string) =>
+  events.some((event) => (event.title || "").toLowerCase().trim() === title.toLowerCase());
+
+const buildConsolidationStageEventMessage = (
+  baseMessage: string,
+  trackingReference: string | null,
+) =>
+  trackingReference
+    ? `Shipment ${trackingReference}: ${baseMessage}`
+    : `Consolidated shipment: ${baseMessage}`;
+
+const addConsolidationLifecycleEvents = (
+  events: TrackingEvent[],
+  consolidation: TrackingConsolidationFallbackRow,
+  shipments: TrackingShipmentFallbackRow[],
+  trackingReference: string | null,
+) => {
+  const normalizedStatus = normalizeConsolidationTrackingStatus(consolidation.status);
+  const currentStageIndex = CONSOLIDATION_STAGE_ORDER.indexOf(normalizedStatus);
+  if (currentStageIndex < 0) return events;
+
+  const nextEvents = [...events];
+  CONSOLIDATION_STAGE_ORDER.slice(0, currentStageIndex + 1).forEach((stage, index) => {
+    const copy = CONSOLIDATION_STAGE_EVENT_COPY[stage];
+    if (!copy || hasEventTitle(nextEvents, copy.title)) return;
+    nextEvents.push({
+      title: copy.title,
+      message: buildConsolidationStageEventMessage(copy.message, trackingReference),
+      created_at:
+        stage === normalizedStatus
+          ? consolidation.updated_at || consolidation.created_at
+          : index === 0
+            ? consolidation.created_at
+            : consolidation.updated_at || consolidation.created_at,
+    });
+  });
+
+  const paymentStatuses = shipments
+    .map((shipment) => (shipment.payment_status || "").toLowerCase().trim())
+    .filter(Boolean);
+  if (paymentStatuses.length > 0) {
+    const allPaid = paymentStatuses.every((status) => status === "completed" || status === "paid");
+    const paymentTitle = allPaid ? "Paid" : "Unpaid";
+    if (!hasEventTitle(nextEvents, paymentTitle)) {
+      nextEvents.push({
+        title: paymentTitle,
+        message: buildConsolidationStageEventMessage(
+          allPaid ? "Payment has been received successfully." : "Payment is pending.",
+          trackingReference,
+        ),
+        created_at: consolidation.updated_at || consolidation.created_at,
+      });
+    }
+  }
+
+  return nextEvents.sort(
+    (left, right) =>
+      new Date(left.created_at).getTime() - new Date(right.created_at).getTime(),
+  );
+};
 
 const deduplicateTrackingEvents = (
   events: TrackingEvent[] | undefined,
@@ -716,8 +834,13 @@ const buildConsolidationTrackingDetails = (
         new Date(right.created_at).getTime() ||
         left.code.localeCompare(right.code),
     );
-  const trackingReference = getConsolidationTrackingReference(consolidation) || consolidation.code;
-  const events = buildTrackingEvents(notifications, true, trackingReference);
+  const trackingReference = getConsolidationWarehouseTrackingReference(consolidation);
+  const events = addConsolidationLifecycleEvents(
+    buildTrackingEvents(notifications, true, trackingReference),
+    consolidation,
+    shipments,
+    trackingReference,
+  );
   const uniqueAirwayReference = getUniqueValue(
     shipments.map(getShipmentAirwayReference),
   );
@@ -734,8 +857,7 @@ const buildConsolidationTrackingDetails = (
     id: consolidation.id,
     code: consolidation.code,
     status: consolidation.status,
-    tracking_number:
-      getConsolidationTrackingReference(consolidation) || consolidation.code,
+    tracking_number: trackingReference || "",
     airway_bill_number: uniqueAirwayReference,
     created_at: consolidation.created_at,
     pickup_date:
@@ -810,8 +932,7 @@ const buildConsolidationTrackingDetails = (
       buildCombinedTrackingItem(sortedForItems, {
         id: `consolidation-${consolidation.id}`,
         code: consolidation.code || consolidation.id,
-        tracking_number:
-          getConsolidationTrackingReference(consolidation) || consolidation.code || consolidation.id,
+        tracking_number: trackingReference || "",
         airway_bill_number: uniqueAirwayReference,
         description:
           cleanValue(consolidation.notes) ||
@@ -822,7 +943,7 @@ const buildConsolidationTrackingDetails = (
     ],
     carrier_query:
       uniqueAirwayReference ||
-      getConsolidationTrackingReference(consolidation) ||
+      trackingReference ||
       cleanValue(consolidation.code),
     shipsgo_transport: uniqueTransport,
   };
@@ -916,6 +1037,7 @@ const findAuthenticatedTrackingFallback = async (
         id,
         code,
         status,
+        payment_status,
         custom_tracking_number,
         awb_number,
         bl_number,
@@ -1028,6 +1150,7 @@ const findAuthenticatedConsolidationTrackingFallback = async (
             id,
             code,
             status,
+            payment_status,
             custom_tracking_number,
             awb_number,
             bl_number,
@@ -1145,6 +1268,18 @@ export const lookupTrackingDetails = async (
   if (!trimmed) return null;
 
   const lookupCandidates = buildTrackingLookupCandidates(trimmed);
+  const normalizedRole = await resolveTrackingLookupRole(options?.userRole);
+
+  if (normalizedRole === "agent" || normalizedRole === "customer") {
+    const consolidationFallback = await findAuthenticatedConsolidationTrackingFallback(
+      trimmed,
+      lookupCandidates,
+      normalizedRole,
+    );
+    if (consolidationFallback) {
+      return consolidationFallback;
+    }
+  }
 
   for (const candidate of lookupCandidates) {
     const { data, error } = await supabase.rpc(
@@ -1316,7 +1451,6 @@ export const lookupTrackingDetails = async (
     console.warn("[tracking] public-tracking-lookup invoke failed", error);
   }
 
-  const normalizedRole = await resolveTrackingLookupRole(options?.userRole);
   if (normalizedRole === "agent" || normalizedRole === "customer") {
     const shipmentFallback = await findAuthenticatedTrackingFallback(
       trimmed,

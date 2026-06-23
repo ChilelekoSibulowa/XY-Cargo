@@ -51,9 +51,7 @@ export const toNumber = (value: unknown, fallback = 0) => {
 export const getShipmentBillingAmount = (
   shipment: Pick<FinanceShipmentLike, "total_cost" | "shipping_cost">,
 ) => {
-  const shippingFee = toNumber(shipment.shipping_cost);
-  if (shippingFee > 0) return shippingFee;
-  return toNumber(shipment.total_cost);
+  return toNumber(shipment.shipping_cost);
 };
 
 export const getShipmentInvoiceTotal = (shipment: Pick<FinanceShipmentLike, "total_cost" | "shipping_cost">) =>
@@ -115,6 +113,41 @@ export const getInvoicePaymentState = (
 
 export const isFinanceInvoiceVisible = (status: string | null | undefined) =>
   ["sent", "approved", "paid"].includes((status || "").toLowerCase());
+
+export const getCustomInvoiceNote = (
+  notes: string | null | undefined,
+  autoPrefixes: Array<string | null | undefined> = [],
+) => {
+  const text = notes?.trim();
+  if (!text || text === "Invoice raised by finance") return null;
+
+  const normalizedText = text.replace(/\r\n/g, "\n");
+  for (const prefix of autoPrefixes) {
+    const normalizedPrefix = prefix?.trim().replace(/\r\n/g, "\n");
+    if (!normalizedPrefix) continue;
+
+    if (normalizedText === normalizedPrefix) return null;
+    if (normalizedText.startsWith(`${normalizedPrefix}\n\n`)) {
+      return normalizedText.slice(normalizedPrefix.length).trim() || null;
+    }
+
+    const blankLineMatch = normalizedText.match(/\n\s*\n/);
+    if (blankLineMatch?.index) {
+      const firstBlock = normalizedText.slice(0, blankLineMatch.index).trim();
+      const remainingText = normalizedText.slice(blankLineMatch.index + blankLineMatch[0].length).trim();
+      if (
+        remainingText &&
+        (firstBlock === normalizedPrefix ||
+          firstBlock.includes(normalizedPrefix) ||
+          normalizedPrefix.includes(firstBlock))
+      ) {
+        return remainingText;
+      }
+    }
+  }
+
+  return text;
+};
 
 export const mapPortalInvoiceRow = (row: any): PortalInvoiceRow => ({
   amount:

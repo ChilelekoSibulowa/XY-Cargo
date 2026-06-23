@@ -21,6 +21,7 @@ import {
 import { Users, TrendingUp, Eye, Target, DollarSign, Package } from "lucide-react";
 import { format, startOfDay, subDays } from "date-fns";
 import { useCurrency } from "@/hooks/useCurrencyContext";
+import { isBlockedMarketingSource, normalizeMarketingSource } from "@/lib/marketingMetrics";
 
 interface LeadRow {
   status: string;
@@ -73,9 +74,9 @@ const MarketingReports = () => {
         sb.from("shipments").select("created_at"),
       ]);
 
-      setLeads((leadRes.data || []) as LeadRow[]);
+      setLeads(((leadRes.data || []) as LeadRow[]).filter((lead) => !isBlockedMarketingSource(lead.source)));
       setCampaigns((campaignRes.data || []) as CampaignRow[]);
-      setAnalytics((analyticsRes.data || []) as AnalyticsRow[]);
+      setAnalytics(((analyticsRes.data || []) as AnalyticsRow[]).filter((row) => !isBlockedMarketingSource(row.traffic_source)));
       setShipments((shipmentRes.data || []) as ShipmentRow[]);
       setIsLoading(false);
     };
@@ -173,7 +174,8 @@ const MarketingReports = () => {
 
   const trafficSourceData = useMemo(() => {
     const counts = analytics.reduce<Record<string, number>>((acc, row) => {
-      acc[row.traffic_source] = (acc[row.traffic_source] || 0) + row.views;
+      const source = normalizeMarketingSource(row.traffic_source);
+      acc[source] = (acc[source] || 0) + row.views;
       return acc;
     }, {});
 
@@ -477,4 +479,3 @@ const MarketingReports = () => {
 };
 
 export default MarketingReports;
-

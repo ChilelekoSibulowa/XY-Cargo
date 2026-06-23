@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useDefaultCurrency } from "@/hooks/useDefaultCurrency";
 import { supabase } from "@/integrations/supabase/client";
 import { PageHeader } from "@/components/shared/PageHeader";
@@ -31,6 +31,62 @@ type ChargeRow = {
   created_at: string;
 };
 
+type ComplianceQueueOption = {
+  id: string;
+  awb_bl_number: string;
+  service_type: string | null;
+  status: string | null;
+  compliance_notes: string | null;
+  created_at: string | null;
+};
+
+const activeQueueStatuses = new Set(["pending_customs", "flagged", "customs_cleared"]);
+const chargeTypeOptions = [
+  { value: "duty", label: "Duty" },
+  { value: "miscellaneous", label: "Miscellaneous" },
+] as const;
+
+const normalizeStatusLabel = (status: string | null | undefined) =>
+  status ? status.replace(/_/g, " ") : "";
+
+const normalizeQueueStatus = (status: string | null | undefined) =>
+  (status || "").trim().toLowerCase();
+
+const normalizeChargeTypeForForm = (value: string | null | undefined) => {
+  const normalized = (value || "").trim().toLowerCase();
+  if (["custom_duty", "customs_duty", "duty"].includes(normalized)) return "duty";
+  if (normalized === "miscellaneous") return "miscellaneous";
+  return "duty";
+};
+
+const formatChargeTypeLabel = (value: string | null | undefined) => {
+  const normalized = normalizeChargeTypeForForm(value);
+  return chargeTypeOptions.find((option) => option.value === normalized)?.label || "Duty";
+};
+
+const normalizeQueueRows = (data: unknown[] | null | undefined): ComplianceQueueOption[] => {
+  const seen = new Set<string>();
+
+  return ((data || []) as Array<Record<string, unknown>>)
+    .map((row) => ({
+      id: String(row.id || "").trim(),
+      awb_bl_number: String(row.awb_bl_number || "").trim(),
+      service_type: typeof row.service_type === "string" ? row.service_type.trim() : null,
+      status: normalizeQueueStatus(typeof row.status === "string" ? row.status : null),
+      compliance_notes: typeof row.compliance_notes === "string" ? row.compliance_notes.trim() : null,
+      created_at: typeof row.created_at === "string" ? row.created_at : null,
+    }))
+    .filter((row) => row.id && activeQueueStatuses.has(row.status || ""))
+    .filter((row) => {
+      if (seen.has(row.id)) return false;
+      seen.add(row.id);
+      return true;
+    });
+};
+
+const getQueueOptionLabel = (queue: ComplianceQueueOption) =>
+  queue.awb_bl_number || queue.compliance_notes || `Queue ${queue.id.slice(0, 8)}`;
+
 const normalizeChargeRows = (data: unknown[] | null | undefined): ChargeRow[] =>
   ((data || []) as Array<Record<string, unknown>>).map((row) => ({
     id: String(row.id || ""),
@@ -61,27 +117,66 @@ const ComplianceCharges = () => {
   const [editingCharge, setEditingCharge] = useState<ChargeRow | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { code: selectedCurrency, formatAmount } = useDefaultCurrency();
-  const [form, setForm] = useState({ charge_type: "custom_duty", amount: "", note: "", queue_id: "" });
-  const [queues, setQueues] = useState<{ id: string; awb_bl_number: string }[]>([]);
+  const [form, setForm] = useState({ charge_type: "duty", amount: "", note: "", queue_id: "" });
+  const [queues, setQueues] = useState<ComplianceQueueOption[]>([]);
+  const [isQueuesLoading, setIsQueuesLoading] = useState(false);
+
+  const fetchQueues = useCallback(async (showLoading = false) => {
+    if (showLoading) setIsQueuesLoading(true);
+
+    const { data, error } = await supabase
+      .from("manual_customs_records")
+      .select("id, awb_bl_number, service_type, status, compliance_notes, created_at")
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      console.error("fetch compliance queues error:", error);
+      toast.error(error.message || "Failed to load compliance queues.");
+      setQueues([]);
+      if (showLoading) setIsQueuesLoading(false);
+      return;
+    }
+
+    const normalizedQueues = normalizeQueueRows(data);
+    setQueues(normalizedQueues);
+    if (showLoading) setIsQueuesLoading(false);
+  }, []);
 
   useEffect(() => {
-    const fetchQueues = async () => {
-      const { data, error } = await supabase
-        .from("manual_customs_records")
-        .select("id, awb_bl_number")
-        .order("created_at", { ascending: false });
-      if (!error && data) setQueues(data);
+    void fetchQueues(true);
+
+    const queueChannel = supabase
+      .channel("compliance-sync-live")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "manual_customs_records" },
+        () => void fetchQueues(),
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(queueChannel);
     };
-    if (showAddDialog) fetchQueues();
-  }, [showAddDialog]);
+  }, [fetchQueues]);
+
+  useEffect(() => {
+    if (showAddDialog) {
+      void fetchQueues(true);
+    }
+  }, [fetchQueues, showAddDialog]);
 
   const queueSearchOptions = useMemo<SearchableSelectOption[]>(
     () =>
-      queues.map((q) => ({
-        value: q.id,
-        label: q.awb_bl_number,
-        keywords: q.awb_bl_number,
-      })),
+      queues.map((q) => {
+        const queueStatusLabel = normalizeStatusLabel(q.status);
+        const queueLabel = getQueueOptionLabel(q);
+        return {
+          value: q.id,
+          label: queueLabel,
+          keywords: `${queueLabel} ${q.awb_bl_number} ${q.id} ${queueStatusLabel} ${q.service_type || ""} ${q.compliance_notes || ""}`,
+          description: [q.service_type, queueStatusLabel].filter(Boolean).join(" | "),
+        };
+      }),
     [queues],
   );
 
@@ -170,15 +265,18 @@ const ComplianceCharges = () => {
 
     setIsSubmitting(true);
     // Fetch the selected queue details
-    let queueDetails = null;
+    let queueDetails: Pick<ComplianceQueueOption, "id" | "awb_bl_number" | "compliance_notes"> | null = null;
     try {
-      const { data: queueData, error: queueError } = await supabase
-        .from("manual_customs_records")
-        .select("id, awb_bl_number, compliance_notes")
-        .eq("id", form.queue_id)
-        .single();
-      if (!queueError && queueData) {
-        queueDetails = queueData;
+      queueDetails = queues.find((queue) => queue.id === form.queue_id) || null;
+      if (!queueDetails) {
+        const { data: queueData, error: queueError } = await supabase
+          .from("manual_customs_records")
+          .select("id, awb_bl_number, compliance_notes")
+          .eq("id", form.queue_id)
+          .single();
+        if (!queueError && queueData) {
+          queueDetails = queueData;
+        }
       }
     } catch (e) {
       // ignore, fallback to no details
@@ -200,8 +298,8 @@ const ComplianceCharges = () => {
     let insertError: { code?: string; message?: string } | null = null;
 
     const chargeTypeCandidates =
-      form.charge_type === "custom_duty"
-        ? ["customs_duty", "custom_duty", "duty"]
+      form.charge_type === "duty"
+        ? ["duty", "custom_duty", "customs_duty"]
         : [form.charge_type];
 
     for (const chargeType of chargeTypeCandidates) {
@@ -240,7 +338,7 @@ const ComplianceCharges = () => {
     }
 
     toast.success("Charge added successfully.");
-    setForm({ charge_type: "custom_duty", amount: "", note: "", queue_id: "" });
+    setForm({ charge_type: "duty", amount: "", note: "", queue_id: "" });
     setShowAddDialog(false);
     await fetchCharges(false);
     setIsSubmitting(false);
@@ -257,7 +355,7 @@ const ComplianceCharges = () => {
   const handleOpenEdit = (row: ChargeRow) => {
     setEditingCharge(row);
     setEditForm({
-      charge_type: row.charge_type,
+      charge_type: normalizeChargeTypeForForm(row.charge_type),
       amount: String(row.amount),
       note: row.notes || row.note || "",
     });
@@ -276,7 +374,7 @@ const ComplianceCharges = () => {
     const { error } = await supabase
       .from("compliance_charges")
       .update({
-        charge_type: editForm.charge_type,
+        charge_type: normalizeChargeTypeForForm(editForm.charge_type),
         amount,
         notes: editForm.note.trim() || null,
       } as any)
@@ -331,7 +429,7 @@ const ComplianceCharges = () => {
   };
 
   const columns: Column<ChargeRow>[] = [
-    { key: "charge_type", label: "Charge Type", render: (r) => r.charge_type.replace(/_/g, " ") },
+    { key: "charge_type", label: "Charge Type", render: (r) => formatChargeTypeLabel(r.charge_type) },
     { key: "amount", label: "Amount", align: "center", render: (r) => formatAmount(Number(r.amount || 0), r.currency) },
     { key: "note", label: "Note", render: (r) => r.notes || r.note || "-" },
     { key: "created_at", label: "Recorded", render: (r) => new Date(r.created_at).toLocaleString() },
@@ -378,9 +476,10 @@ const ComplianceCharges = () => {
                 value={form.queue_id}
                 onValueChange={(value) => setForm((prev) => ({ ...prev, queue_id: value }))}
                 options={queueSearchOptions}
-                placeholder="Select queue"
+                placeholder={isQueuesLoading ? "Loading queues..." : "Select queue"}
                 searchPlaceholder="Search by AWB/BL number..."
-                emptyMessage="No queues found."
+                emptyMessage={isQueuesLoading ? "Loading queues..." : "No compliance queues found."}
+                disabled={isQueuesLoading}
               />
             </div>
             <div className="space-y-2">
@@ -393,8 +492,11 @@ const ComplianceCharges = () => {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="custom_duty">Custom Duty</SelectItem>
-                  <SelectItem value="miscellaneous">Miscellaneous</SelectItem>
+                  {chargeTypeOptions.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -445,9 +547,11 @@ const ComplianceCharges = () => {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="custom_duty">Custom Duty</SelectItem>
-                  <SelectItem value="customs_duty">Customs Duty</SelectItem>
-                  <SelectItem value="miscellaneous">Miscellaneous</SelectItem>
+                  {chargeTypeOptions.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -486,4 +590,3 @@ const ComplianceCharges = () => {
 };
 
 export default ComplianceCharges;
-

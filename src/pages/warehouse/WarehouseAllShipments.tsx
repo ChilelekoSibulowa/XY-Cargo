@@ -17,6 +17,8 @@ import { useDefaultCurrency } from "@/hooks/useDefaultCurrency";
 import { toast } from "sonner";
 import { Eye, Pencil } from "lucide-react";
 import { getProductType, getShipmentCbmValue, getValueAddedServicesSummary, getWarehouseTrackingNumber, resolveTrackingByStatus } from "@/lib/shipmentNotes";
+import { isUnconsolidatedConsolidationParcel } from "@/lib/parcelWorkflow";
+import { isWarehouseAllShipmentsRow, normalizeConsolidationStatus, normalizeShipmentStatus } from "@/lib/warehouseTabFilters";
 
 type ShipmentRow = {
   id: string;
@@ -38,6 +40,7 @@ type ShipmentRow = {
   created_at: string;
   branch_id: string | null;
   consolidation_id?: string | null;
+  handling_method: string | null;
   customers: { full_name: string | null; code: string | null; phone: string | null } | null;
   receiver: { full_name: string | null; phone: string | null; address: string | null } | null;
 };
@@ -49,6 +52,7 @@ type ConsolidationRow = {
   item_count: number | null;
   total_weight: number | null;
   total_cost: number | null;
+  tracking_code: string | null;
   created_at: string;
   customers: { full_name: string | null; code: string | null; phone: string | null } | null;
   consolidation_shipments: {
@@ -106,30 +110,7 @@ const statusLabel: Record<string, string> = {
   supplied: "In Transit",
   delivered: "Ready for Collection",
   closed: "Collected",
-};
-
-const normalizeShipmentStatus = (status: string) => {
-  const normalized = (status || "").toLowerCase().trim();
-  const aliasMap: Record<string, string> = {
-    confirmed: "approved",
-    confirm_shipment: "approved",
-    outgoing: "assigned",
-    in_transit: "supplied",
-    arrived: "delivered",
-    collected: "closed",
-  };
-
-  return aliasMap[normalized] || normalized;
-};
-
-const normalizeConsolidationStatus = (status: string) => {
-  const normalized = (status || "").toLowerCase().trim();
-  if (["processed", "completed", "confirmed"].includes(normalized)) return "approved";
-  if (["outgoing", "assigned"].includes(normalized)) return "assigned";
-  if (["in_transit", "intransit", "supplied"].includes(normalized)) return "supplied";
-  if (["arrived", "delivered"].includes(normalized)) return "delivered";
-  if (["collected", "closed"].includes(normalized)) return "closed";
-  return "";
+  requested_pickup: "Submitted",
 };
 
 const isMissingConsolidationTotalsError = (error: { code?: string; message?: string } | null) =>
@@ -258,7 +239,7 @@ const WarehouseAllShipments = () => {
         let shipmentsError: { code?: string; message?: string } | null = null;
         const shipmentsRes = await supabase
           .from("shipments")
-          .select("id, code, status, service_type, total_cost, shipping_cost, weight, cbm, payment_status, payment_method, pickup_date, estimated_delivery_date, actual_delivery_date, custom_tracking_number, notes, description, created_at, branch_id, consolidation_id, customers(full_name, code, phone), receiver:receivers(full_name, phone, address)")
+          .select("id, code, status, service_type, total_cost, shipping_cost, weight, cbm, payment_status, payment_method, pickup_date, estimated_delivery_date, actual_delivery_date, custom_tracking_number, notes, description, created_at, branch_id, consolidation_id, handling_method, customers(full_name, code, phone), receiver:receivers(full_name, phone, address)")
           .order("created_at", { ascending: false });
 
         shipmentsData = (shipmentsRes.data || []) as ShipmentRow[];
@@ -289,7 +270,7 @@ const WarehouseAllShipments = () => {
 
         const consolidationsRes = await supabase
           .from("consolidations")
-          .select("id, code, status, item_count, total_weight, total_cost, created_at, customers(full_name, code, phone), consolidation_shipments(shipment_id, shipment:shipments(id, description, notes, payment_status, quantity, weight, total_cost, shipping_cost, branch_id, pickup_date, estimated_delivery_date, actual_delivery_date, receiver:receivers(full_name, phone, address)))")
+          .select("id, code, status, tracking_code, item_count, total_weight, total_cost, created_at, customers(full_name, code, phone), consolidation_shipments(shipment_id, shipment:shipments(id, description, notes, payment_status, quantity, weight, total_cost, shipping_cost, branch_id, pickup_date, estimated_delivery_date, actual_delivery_date, receiver:receivers(full_name, phone, address)))")
           .order("created_at", { ascending: false });
 
         let consolidationsData = consolidationsRes.data;
@@ -335,7 +316,15 @@ const WarehouseAllShipments = () => {
         }
 
         const mappedShipments: Row[] = shipmentRows
-          .filter((shipment) => !shipment.consolidation_id)
+          .filter((shipment) => 
+            isWarehouseAllShipmentsRow({
+              rowType: "shipment",
+              status: shipment.status,
+              isConsolidatedChild: !!shipment.consolidation_id,
+              notes: shipment.notes,
+              handling_method: shipment.handling_method
+            })
+          )
           .map((shipment) => ({
             id: shipment.id,
             code: shipment.code,
@@ -368,6 +357,7 @@ const WarehouseAllShipments = () => {
         const mappedConsolidations: Row[] = consolidations
           .map((consolidation) => {
             const normalizedStatus = normalizeConsolidationStatus(consolidation.status);
+            // Consolidation is a shipment-stage record by default
             if (!normalizedStatus) return null;
             const children = (consolidation.consolidation_shipments || []).map((entry) => entry.shipment).filter(Boolean);
             const paymentStatus = children.length > 0 && children.every((child) => child?.payment_status === "completed") ? "completed" : "pending";
@@ -391,7 +381,7 @@ const WarehouseAllShipments = () => {
               pickup_date: children[0]?.pickup_date || null,
               estimated_delivery_date: children[0]?.estimated_delivery_date || null,
               actual_delivery_date: children[0]?.actual_delivery_date || null,
-              custom_tracking_number: consolidation.code,
+              custom_tracking_number: consolidation.tracking_code?.trim() || consolidation.code,
               notes: null,
               description: `Consolidated shipment (${consolidation.item_count ?? children.length} items)`,
               created_at: consolidation.created_at,
@@ -445,7 +435,7 @@ const WarehouseAllShipments = () => {
     { key: "product_type", label: "Product Type", render: (r) => (r.service_type === "consolidated" ? (getProductType(r.notes) !== "-" ? getProductType(r.notes) : "Mixed Products") : getProductType(r.notes, r.description)) },
     { key: "service_type", label: "Service Type", render: (r) => formatServiceType(r.service_type) },
     { key: "value_added", label: "Value Added", render: (r) => getValueAddedServicesSummary(r.notes) },
-    { key: "tracking", label: "Tracking No.", render: (r) => <span className="font-mono text-xs">{resolveTrackingByStatus(r.status, r.notes, r.custom_tracking_number) || "Tracking pending"}</span> },
+    { key: "tracking", label: "Tracking No.", render: (r) => <span className="font-mono text-xs">{r.service_type === "consolidated" ? r.custom_tracking_number : (getWarehouseTrackingNumber(r.notes) || "Tracking pending")}</span> },
     { key: "weight", label: "WT", render: (r) => `${r.weight}kg` },
     { key: "cbm", label: "Cubic Meters (CBM)", render: (r) => (r.cbm == null ? "-" : r.cbm.toFixed(2)) },
     { key: "shipping_cost", label: "Shipping Cost", render: (r) => formatAmount(r.shipping_cost || 0) },
@@ -491,7 +481,7 @@ const WarehouseAllShipments = () => {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <PageHeader title="All Shipments"  />
+      <PageHeader title="All Shipments" />
       <DataTable columns={columns} data={rows} isLoading={isLoading} searchPlaceholder="Search shipped items..." />
 
       <Dialog open={!!viewRow} onOpenChange={(open) => { if (!open) setViewRow(null); }}>

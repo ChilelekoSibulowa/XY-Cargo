@@ -3,15 +3,35 @@ import { supabase } from "@/integrations/supabase/client";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 import { useDefaultCurrency } from "@/hooks/useDefaultCurrency";
 import {
   buildCampaignPerformanceRows,
+  isBlockedMarketingSource,
   type MarketingCampaignMetricSource,
   type MarketingLeadMetricSource,
 } from "@/lib/marketingMetrics";
+import { Plus } from "lucide-react";
+import { toast } from "sonner";
 
 type CampaignRow = MarketingCampaignMetricSource;
 type LeadRow = MarketingLeadMetricSource;
+
+const channels = ["Google Ads", "Facebook / Instagram", "TikTok", "Email", "SMS", "Other"];
+
+const manualCostDefaults = {
+  name: "",
+  channel: "Facebook / Instagram",
+  platform: "",
+  cost: "",
+  budget: "",
+  revenue_attributed: "",
+  notes: "",
+};
 
 const MarketingBudget = () => {
   const { formatAmount } = useDefaultCurrency();
@@ -20,21 +40,25 @@ const MarketingBudget = () => {
   const [leads, setLeads] = useState<LeadRow[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [budgetPage, setBudgetPage] = useState(1);
+  const [costDialogOpen, setCostDialogOpen] = useState(false);
+  const [costForm, setCostForm] = useState(manualCostDefaults);
+  const [isSavingCost, setIsSavingCost] = useState(false);
   const BUDGET_PAGE_SIZE = 10;
 
-  useEffect(() => {
-    const fetch = async () => {
-      const [campaignRes, leadRes] = await Promise.all([
-        sb.from("marketing_campaigns").select("id, name, channel, status, budget, spend, leads, revenue_attributed"),
+  const fetchData = async () => {
+    setIsLoading(true);
+    const [campaignRes, leadRes] = await Promise.all([
+      sb.from("marketing_campaigns").select("id, name, channel, platform, data_source, status, budget, spend, leads, revenue_attributed").order("updated_at", { ascending: false }),
         sb.from("marketing_leads").select("status, source"),
       ]);
 
       setCampaigns((campaignRes.data || []) as CampaignRow[]);
-      setLeads((leadRes.data || []) as LeadRow[]);
+      setLeads(((leadRes.data || []) as LeadRow[]).filter((lead) => !isBlockedMarketingSource(lead.source)));
       setIsLoading(false);
-    };
+  };
 
-    fetch();
+  useEffect(() => {
+    fetchData();
   }, [sb]);
 
   const campaignRows = useMemo(
@@ -63,11 +87,56 @@ const MarketingBudget = () => {
   const costPerLead = leadCount > 0 ? totalSpend / leadCount : 0;
   const roi = totalSpend > 0 ? ((revenueAttributed - totalSpend) / totalSpend) * 100 : 0;
 
+  const handleSaveManualCost = async () => {
+    const name = costForm.name.trim();
+    const cost = Number(costForm.cost);
+    if (!name) {
+      toast.error("Enter a campaign name.");
+      return;
+    }
+    if (!Number.isFinite(cost) || cost < 0) {
+      toast.error("Enter a valid campaign cost.");
+      return;
+    }
+
+    setIsSavingCost(true);
+    const payload = {
+      name,
+      channel: costForm.channel,
+      platform: costForm.platform.trim() || costForm.channel,
+      status: "active",
+      budget: Number(costForm.budget) || cost,
+      spend: cost,
+      leads: 0,
+      revenue_attributed: Number(costForm.revenue_attributed) || 0,
+      data_source: "manual_cost",
+      manual_cost_notes: costForm.notes.trim() || null,
+    };
+
+    const { error } = await sb.from("marketing_campaigns").insert(payload);
+    if (error) {
+      toast.error(error.message || "Failed to save campaign cost.");
+    } else {
+      toast.success("Campaign cost saved.");
+      setCostDialogOpen(false);
+      setCostForm(manualCostDefaults);
+      await fetchData();
+    }
+    setIsSavingCost(false);
+  };
+
   return (
     <div className="space-y-6 animate-fade-in">
-      <PageHeader title="Budget & ROI"  />
+      <PageHeader
+        title="Budget & ROI"
+        actions={
+          <Button size="sm" onClick={() => setCostDialogOpen(true)}>
+            <Plus className="mr-2 h-4 w-4" /> Add Campaign Cost
+          </Button>
+        }
+      />
 
-      <div className="grid gap-4 grid-cols-2 md:grid-cols-3 lg:grid-cols-5">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <Card className="border-l-4 border-l-green-500">
           <CardHeader>
             <CardTitle className="text-sm truncate">Marketing Spend Overview</CardTitle>
@@ -121,6 +190,7 @@ const MarketingBudget = () => {
               <tr className="border-b bg-muted/50">
                 <th className="p-3 text-left">Campaign</th>
                 <th className="p-3 text-left">Channel</th>
+                <th className="p-3 text-left">Data Source</th>
                 <th className="p-3 text-left">Cost</th>
                 <th className="p-3 text-left">Leads</th>
                 <th className="p-3 text-left">Cost per Lead</th>
@@ -136,6 +206,9 @@ const MarketingBudget = () => {
                     <div className="text-xs text-muted-foreground capitalize">{row.status || "draft"}</div>
                   </td>
                   <td className="p-3 text-muted-foreground">{row.channel}</td>
+                  <td className="p-3 text-muted-foreground">
+                    {row.data_source === "manual_cost" ? "Manual cost entry" : row.data_source === "meta" ? "Meta sync" : "Campaign record"}
+                  </td>
                   <td className="p-3">{formatAmount(row.cost)}</td>
                   <td className="p-3">{row.leadCount}</td>
                   <td className="p-3">{formatAmount(row.costPerLead)}</td>
@@ -145,7 +218,7 @@ const MarketingBudget = () => {
               ))}
               {campaignRows.length === 0 && !isLoading && (
                 <tr>
-                  <td colSpan={7} className="p-6 text-center text-muted-foreground">
+                  <td colSpan={8} className="p-6 text-center text-muted-foreground">
                     No campaign budget data found.
                   </td>
                 </tr>
@@ -180,9 +253,91 @@ const MarketingBudget = () => {
           )}
         </CardContent>
       </Card>
+
+      <Dialog open={costDialogOpen} onOpenChange={setCostDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add Campaign Cost</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-4 py-2">
+            <div className="space-y-2">
+              <Label htmlFor="manual-cost-campaign">Campaign *</Label>
+              <Input
+                id="manual-cost-campaign"
+                value={costForm.name}
+                onChange={(event) => setCostForm({ ...costForm, name: event.target.value })}
+              />
+            </div>
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="space-y-2">
+                <Label>Channel *</Label>
+                <Select value={costForm.channel} onValueChange={(value) => setCostForm({ ...costForm, channel: value })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {channels.map((channel) => (
+                      <SelectItem key={channel} value={channel}>{channel}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="manual-cost-platform">Platform</Label>
+                <Input
+                  id="manual-cost-platform"
+                  placeholder="Facebook, Instagram, Google, etc."
+                  value={costForm.platform}
+                  onChange={(event) => setCostForm({ ...costForm, platform: event.target.value })}
+                />
+              </div>
+            </div>
+            <div className="grid gap-4 md:grid-cols-3">
+              <div className="space-y-2">
+                <Label htmlFor="manual-cost-amount">Cost *</Label>
+                <Input
+                  id="manual-cost-amount"
+                  type="number"
+                  min="0"
+                  value={costForm.cost}
+                  onChange={(event) => setCostForm({ ...costForm, cost: event.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="manual-cost-budget">Budget</Label>
+                <Input
+                  id="manual-cost-budget"
+                  type="number"
+                  min="0"
+                  value={costForm.budget}
+                  onChange={(event) => setCostForm({ ...costForm, budget: event.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="manual-cost-revenue">Revenue</Label>
+                <Input
+                  id="manual-cost-revenue"
+                  type="number"
+                  min="0"
+                  value={costForm.revenue_attributed}
+                  onChange={(event) => setCostForm({ ...costForm, revenue_attributed: event.target.value })}
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="manual-cost-notes">Notes</Label>
+              <Textarea
+                id="manual-cost-notes"
+                value={costForm.notes}
+                onChange={(event) => setCostForm({ ...costForm, notes: event.target.value })}
+              />
+            </div>
+            <Button onClick={handleSaveManualCost} disabled={isSavingCost}>
+              {isSavingCost ? "Saving..." : "Save Cost Entry"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
 
 export default MarketingBudget;
-

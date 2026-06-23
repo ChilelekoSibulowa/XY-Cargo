@@ -35,9 +35,34 @@ const SearchableSelect = ({
 }: SearchableSelectProps) => {
   const [open, setOpen] = useState(false);
 
+  const normalizedOptions = useMemo(() => {
+    const seen = new Set<string>();
+
+    return (options || [])
+      .map((option) => {
+        const optionValue = String(option.value || "").trim();
+        const optionLabel = String(option.label || optionValue).trim();
+
+        return optionValue && optionLabel
+          ? {
+            ...option,
+            value: optionValue,
+            label: optionLabel,
+            keywords: option.keywords || "",
+            description: option.description || "",
+          }
+          : null;
+      })
+      .filter((option): option is SearchableSelectOption => {
+        if (!option || seen.has(option.value)) return false;
+        seen.add(option.value);
+        return true;
+      });
+  }, [options]);
+
   const selectedOption = useMemo(
-    () => options.find((option) => option.value === value) || null,
-    [options, value],
+    () => normalizedOptions.find((option) => option.value === value) || null,
+    [normalizedOptions, value],
   );
 
   return (
@@ -57,13 +82,13 @@ const SearchableSelect = ({
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
+      <PopoverContent className="z-[90] w-[var(--radix-popover-trigger-width)] p-0" align="start">
         <Command>
           <CommandInput placeholder={searchPlaceholder} />
           <CommandList>
             <CommandEmpty>{emptyMessage}</CommandEmpty>
             <CommandGroup>
-              {options.map((option) => (
+              {normalizedOptions.map((option) => (
                 <CommandItem
                   key={option.value}
                   value={`${option.label} ${option.keywords || ""}`}

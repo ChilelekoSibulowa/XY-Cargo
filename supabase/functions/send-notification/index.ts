@@ -23,7 +23,7 @@ interface NotificationRequest {
   email_body?: string;
   reference_id?: string;
   notification_type?: string;
-  channels?: ("sms" | "email" | "bell" | "push")[];
+  channels?: ("sms" | "email" | "bell")[];
 }
 
 const cleanValue = (v: unknown) => {
@@ -202,7 +202,7 @@ serve(async (req) => {
     const {
       title,
       message,
-      channels = ["sms", "email", "bell", "push"],
+      channels = ["sms", "email", "bell"],
     } = body;
     const event_type = cleanValue(body.event_type)
       || cleanValue(body.notification_type)
@@ -443,79 +443,6 @@ serve(async (req) => {
         };
       }
     }
-
-    // 4. Send Push Notification via Web Push
-    if (channels.includes("push") && targetUserId) {
-      try {
-        const { data: subs } = await supabase
-          .from("push_subscriptions")
-          .select("endpoint, p256dh, auth")
-          .eq("user_id", targetUserId);
-
-        if (subs && subs.length > 0) {
-          // Resolve VAPID keys
-          const { data: keys } = await supabase
-            .from("api_secrets")
-            .select("secret_key, secret_value")
-            .in("secret_key", ["VAPID_PUBLIC_KEY", "VAPID_PRIVATE_KEY"])
-            .eq("is_active", true);
-
-          const publicKey = keys?.find(k => k.secret_key === "VAPID_PUBLIC_KEY")?.secret_value;
-          const privateKey = keys?.find(k => k.secret_key === "VAPID_PRIVATE_KEY")?.secret_value;
-
-          if (publicKey && privateKey) {
-            // Send to each subscription
-            const pushPromises = subs.map(async (sub) => {
-              try {
-                // In a real production environment, you'd use a web-push library.
-                // For this implementation, we assume the existence of a helper or 
-                // we use a fetch to a dedicated push service if available, 
-                // or we use the 'web-push' library via esm.sh
-                
-                // For now, we will use a simplified fetch to a Web Push helper if you had one,
-                // BUT since I want to be thorough, I will use esm.sh/web-push
-                
-                const webpush = await import("https://esm.sh/web-push@3.6.7");
-                webpush.setVapidDetails(
-                  "mailto:info@xycargo.com",
-                  publicKey,
-                  privateKey
-                );
-
-                await webpush.sendNotification({
-                  endpoint: sub.endpoint,
-                  keys: {
-                    p256dh: sub.p256dh,
-                    auth: sub.auth
-                  }
-                }, JSON.stringify({
-                  title: title,
-                  body: message,
-                  icon: "https://xycargozm.com/icons/icon-192.png",
-                  badge: "https://xycargozm.com/icons/icon-192.png",
-                  url: "/customer/inbox"
-                }));
-                return { success: true };
-              } catch (err) {
-                console.error("Push error for sub:", sub.endpoint, err);
-                return { success: false, error: err.message };
-              }
-            });
-
-            const pushResults = await Promise.all(pushPromises);
-            results.push = { success: true, count: pushResults.filter(r => r.success).length };
-          } else {
-            results.push = { skipped: true, reason: "VAPID keys not configured" };
-          }
-        } else {
-          results.push = { skipped: true, reason: "No push subscriptions found for user" };
-        }
-      } catch (pushErr) {
-        console.error("Push notification overall error:", pushErr);
-        results.push = { error: pushErr.message };
-      }
-    }
-
 
     return new Response(JSON.stringify({ success: true, results }), {
       status: 200,

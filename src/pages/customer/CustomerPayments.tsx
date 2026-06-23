@@ -16,6 +16,7 @@ import { useCustomerRecord } from "@/hooks/useCustomerRecord";
 import { useDefaultCurrency } from "@/hooks/useDefaultCurrency";
 import { fetchLogo } from "@/hooks/useLogo";
 import {
+  getCustomInvoiceNote,
   getInvoiceOutstandingBalance,
   getInvoicePaidAmount,
   getInvoicePaymentState,
@@ -82,6 +83,17 @@ const hasUsablePhone = (value: string | null | undefined) => {
   const trimmed = value.trim();
   if (!trimmed || trimmed.toLowerCase() === "pending") return false;
   return trimmed.replace(/\D/g, "").length >= 9;
+};
+
+const renderInvoiceNotes = (notes: string | null | undefined, shipmentDescription?: string | null) => {
+  const text = getCustomInvoiceNote(notes, [shipmentDescription]);
+  if (!text) return null;
+
+  return (
+    <p className="max-w-2xl whitespace-pre-line text-xs leading-relaxed text-muted-foreground">
+      <span className="font-semibold text-foreground">Notes:</span> {text}
+    </p>
+  );
 };
 
 const getFunctionErrorMessage = async (error: any, fallback: string) => {
@@ -557,7 +569,7 @@ const CustomerPayments = () => {
         billTo: customer.full_name,
         billToId: customer.code,
         date: format(new Date(shipment.created_at), "PPP"),
-        description: shipment.notes || shipment.shipment_description || "Shipment",
+        description: shipment.shipment_description || "Shipment",
         amount: formatAmount(getInvoiceTotal(shipment)),
         paid: formatAmount(paidAmountNumber),
         balance: formatAmount(balance),
@@ -970,6 +982,7 @@ const CustomerPayments = () => {
                             <span className="flex items-center gap-1.5"><Clock className="h-3 w-3" /> {format(new Date(shipment.created_at), "dd MMM yyyy")}</span>
                             <span className="flex items-center gap-1.5"><Smartphone className="h-3 w-3" /> {getPaymentProgress(shipment)}</span>
                           </div>
+                          {renderInvoiceNotes(shipment.notes, shipment.shipment_description)}
                         </div>
                         <div className="flex flex-wrap items-center gap-4 justify-between md:justify-end shrink-0">
                           <div className="text-right">
@@ -1024,6 +1037,7 @@ const CustomerPayments = () => {
                             <Badge className="bg-emerald-100 text-emerald-700 hover:bg-emerald-100 border-emerald-200">Paid</Badge>
                           </div>
                           <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-medium">{format(new Date(shipment.created_at), "dd MMM yyyy")}</p>
+                          {renderInvoiceNotes(shipment.notes, shipment.shipment_description)}
                         </div>
                         <div className="flex flex-wrap items-center gap-4 justify-between md:justify-end shrink-0">
                           <div className="text-right">

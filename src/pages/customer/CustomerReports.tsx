@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from "react";
-import { escapeHtml } from "@/lib/financePortal";
 import { format } from "date-fns";
 import {
   Bar,
@@ -16,6 +15,7 @@ import {
 } from "recharts";
 import { BarChart3, Box, Download, Eye, FileText, Package, Ship, Weight } from "lucide-react";
 import { PageHeader } from "@/components/shared/PageHeader";
+import { PortalShipmentHistoryTable } from "@/components/shipments/PortalShipmentHistoryTable";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
@@ -243,30 +243,20 @@ const CustomerReports = () => {
     [shipments]
   );
 
+  const getShipmentHistoryTable = () =>
+    document.querySelector(
+      "table[data-portal-export='customer-all_shipments']",
+    ) as HTMLTableElement | null;
+
   const downloadCsv = () => {
-    const headers = [
-      "Tracking No.",
-      "Service Type",
-      "Product Type",
-      "Weight",
-      "CBM",
-      "Shipping Fee",
-      "Departure Date",
-      "Status",
-      "Arrival Date",
-    ];
-    const rows = historyRows.map((row) => [
-      row.trackingNumber,
-      row.serviceType,
-      row.productType,
-      row.weight.toFixed(2),
-      row.cbm.toFixed(4),
-      row.shippingFee.toFixed(2),
-      formatDateValue(row.departureDate),
-      row.status,
-      formatDateValue(row.arrivalDate),
-    ]);
-    const csv = [headers, ...rows].map((row) => row.join(",")).join("\n");
+    const table = getShipmentHistoryTable();
+    if (!table) return;
+    const rows = Array.from(table.querySelectorAll("tr")).map((tr) =>
+      Array.from(tr.querySelectorAll("th,td")).map((cell) =>
+        `"${(cell.textContent || "").replace(/"/g, '""').trim()}"`,
+      ),
+    );
+    const csv = rows.map((row) => row.join(",")).join("\n");
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
@@ -277,7 +267,8 @@ const CustomerReports = () => {
   };
 
   const downloadPdf = () => {
-    const safe = (v: string | null | undefined) => escapeHtml(v ?? "");
+    const table = getShipmentHistoryTable();
+    if (!table) return;
     const html = `
       <html>
         <head>
@@ -292,40 +283,7 @@ const CustomerReports = () => {
         <body>
           <h2>Shipment History Report</h2>
           <p>Total Shipments: ${stats.total}</p>
-          <table>
-            <thead>
-              <tr>
-                <th>Tracking No.</th>
-                <th>Service Type</th>
-                <th>Product Type</th>
-                <th>Weight</th>
-                <th>CBM</th>
-                <th>Shipping Fee</th>
-                <th>Departure Date</th>
-                <th>Status</th>
-                <th>Arrival Date</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${historyRows
-                .map(
-                  (row) => `
-                    <tr>
-                      <td>${safe(row.trackingNumber)}</td>
-                      <td>${safe(row.serviceType)}</td>
-                      <td>${safe(row.productType)}</td>
-                      <td>${row.weight.toFixed(2)}</td>
-                      <td>${row.cbm.toFixed(4)}</td>
-                      <td>${formatAmount(row.shippingFee)}</td>
-                      <td>${formatDateValue(row.departureDate)}</td>
-                      <td>${safe(row.status)}</td>
-                      <td>${formatDateValue(row.arrivalDate)}</td>
-                    </tr>
-                  `
-                )
-                .join("")}
-            </tbody>
-          </table>
+          ${table.outerHTML}
         </body>
       </html>`;
 
@@ -468,58 +426,7 @@ const CustomerReports = () => {
             </div>
           </CardHeader>
           <CardContent>
-            {isLoading ? (
-              <p className="text-muted-foreground">Loading report...</p>
-            ) : historyRows.length === 0 ? (
-              <p className="text-muted-foreground">No shipment history available.</p>
-            ) : (
-              <div className="-mx-4 overflow-x-auto sm:mx-0">
-                <table className="min-w-[1040px] w-full text-sm">
-                  <thead>
-                    <tr className="border-b bg-muted/50">
-                      <th className="p-3 text-left font-medium">Tracking No.</th>
-                      <th className="p-3 text-left font-medium">Service Type</th>
-                      <th className="p-3 text-left font-medium">Product Type</th>
-                      <th className="p-3 text-left font-medium">Weight</th>
-                      <th className="p-3 text-left font-medium">CBM</th>
-                      <th className="p-3 text-left font-medium">Shipping Fee</th>
-                      <th className="p-3 text-left font-medium">Departure Date</th>
-                      <th className="p-3 text-left font-medium">Status</th>
-                      <th className="p-3 text-left font-medium">Arrival Date</th>
-                      <th className="p-3 text-left font-medium">Action</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {historyRows.map((row) => (
-                      <tr key={row.id} className="border-b transition-colors hover:bg-muted/30">
-                        <td className="p-3 font-mono text-xs">{row.trackingNumber}</td>
-                        <td className="p-3">{row.serviceType}</td>
-                        <td className="p-3">{row.productType}</td>
-                        <td className="p-3">{row.weight.toFixed(2)} kg</td>
-                        <td className="p-3">{row.cbm.toFixed(4)}</td>
-                        <td className="p-3">
-                          {formatAmount(row.shippingFee)}
-                        </td>
-                        <td className="p-3">{formatDateValue(row.departureDate)}</td>
-                        <td className="p-3">{row.status}</td>
-                        <td className="p-3">{formatDateValue(row.arrivalDate)}</td>
-                        <td className="p-3">
-                          <Button
-                            size="icon"
-                            variant="ghost"
-                            className="h-8 w-8 p-0"
-                            onClick={() => setSelectedShipment(row.shipment)}
-                            title="View details"
-                          >
-                            <Eye className="h-4 w-4 text-blue-600" />
-                          </Button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
+            <PortalShipmentHistoryTable scope="customer" />
           </CardContent>
         </Card>
 
@@ -604,4 +511,3 @@ const CustomerReports = () => {
 };
 
 export default CustomerReports;
-

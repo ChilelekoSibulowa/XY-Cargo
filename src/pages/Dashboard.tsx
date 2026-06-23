@@ -10,19 +10,23 @@ import { StatusBadge } from "@/components/shared/StatusBadge";
 import { getRoleLandingRoute } from "@/lib/portalLanding";
 import { getActiveConsolidatedShipmentIds } from "@/lib/consolidationShipments";
 import {
+  isWarehouseAllShipmentsRow,
   mapConsolidationStatusToShipmentStatus,
   normalizeConsolidationStatus,
   normalizeShipmentStatus,
 } from "@/lib/warehouseTabFilters";
-import { extractNoteValue, getShipmentCbmValue, resolveTrackingByStatus } from "@/lib/shipmentNotes";
+import { extractNoteValue, getShipmentCbmValue, getWarehouseTrackingNumber, resolveTrackingByStatus } from "@/lib/shipmentNotes";
 import {
   formatFinancePaymentMethod,
   getInvoiceBillingAmount,
   getShipmentInvoiceTotal,
   getShipmentOutstandingBalance,
+  getInvoiceOutstandingBalance,
+  isFinanceInvoiceVisible,
   openFinanceDetailWindow,
   toNumber,
 } from "@/lib/financePortal";
+import { formatCurrencyDisplay, removeMinorWholeAmountDrift, roundCurrencyAmount } from "@/lib/currencyDisplay";
 import { fetchLogo } from "@/hooks/useLogo";
 import {
   Card,
@@ -101,6 +105,8 @@ type ExpenseRow = {
   expense_type: string;
   description: string | null;
   amount: number;
+  original_amount: number | null;
+  original_currency: string | null;
 };
 
 type RefundRow = {
@@ -193,7 +199,7 @@ const formatDashboardServiceType = (type: string | null) => {
 const Dashboard = () => {
   const { userRole, isLoading: isContextLoading } = useAuthContext();
   const navigate = useNavigate();
-  const { formatAmount } = useDefaultCurrency();
+  const { formatAmount, code, symbol, convert } = useDefaultCurrency();
 
   const [customerCount, setCustomerCount] = useState(0);
   const [driverCount, setDriverCount] = useState(0);
@@ -208,279 +214,279 @@ const Dashboard = () => {
   const fetchData = async (showLoading = true) => {
     if (showLoading) setIsLoading(true);
 
-    const [customersRes, driversRes, shipmentsRes, paymentsRes, invoicesRes, expensesRes, refundsRes, consolidationsRes, consolidatedIds] = await Promise.all([
-      supabase.from("customers").select("id", { count: "exact", head: true }),
-      supabase.from("drivers").select("id", { count: "exact", head: true }),
-      supabase
-        .from("shipments")
-        .select(
-          "id, code, custom_tracking_number, status, service_type, shipping_cost, payment_status, paid_amount, total_cost, customer_id, created_at, updated_at, weight, cbm, notes, customer:customers(full_name, code), branch:branches!shipments_branch_id_fkey(name)",
-        )
-        .order("updated_at", { ascending: false })
-        .limit(300),
-      supabase
-        .from("payments")
-        .select(
-          "id, code, amount, status, payment_provider, created_at, customer_id, shipment_id, customer:customers(full_name, code)",
-        )
-        .order("created_at", { ascending: false })
-        .limit(300),
-      supabase
-        .from("invoices")
-        .select(
-          "id, code, amount, status, created_at, due_date, customer_id, shipment_id, customer:customers(full_name, code), shipment:shipments(custom_tracking_number, notes, paid_amount, total_cost, shipping_cost, status)",
-        )
-        .order("created_at", { ascending: false })
-        .limit(300),
-      supabase
-        .from("finance_expenses")
-        .select("id, code, expense_date, expense_type, description, amount")
-        .order("expense_date", { ascending: false })
-        .limit(300),
-      supabase
-        .from("customer_claims")
-        .select("id, requested_amount, status, created_at")
-        .eq("request_type", "refund")
-        .in("status", ["approved", "refunded"] as any)
-        .order("created_at", { ascending: false })
-        .limit(300),
-      supabase
-        .from("consolidations")
-        .select(
-          "id, code, status, tracking_code, created_at, customers(full_name, code), consolidation_shipments(shipment_id, shipment:shipments(service_type, weight, cbm, notes, custom_tracking_number, status))",
-        )
-        .order("created_at", { ascending: false })
-        .limit(300),
-      getActiveConsolidatedShipmentIds(),
-    ]);
+    try {
+      const [shipmentsRes, paymentsRes, invoicesRes, expensesRes, refundsRes, consolidationsRes, consolidatedIds] = await Promise.all([
+        supabase
+          .from("shipments")
+          .select(
+            "id, code, custom_tracking_number, status, service_type, shipping_cost, payment_status, paid_amount, total_cost, customer_id, created_at, updated_at, weight, cbm, notes, customers(full_name, code), branches!shipments_branch_id_fkey(name)",
+          )
+          .order("updated_at", { ascending: false })
+          .limit(300),
+        supabase
+          .from("payments")
+          .select(
+            "id, code, amount, status, payment_provider, created_at, customer_id, shipment_id, customers(full_name, code)",
+          )
+          .order("created_at", { ascending: false })
+          .limit(300),
+        supabase
+          .from("invoices")
+          .select(
+            "id, code, amount, status, created_at, due_date, customer_id, shipment_id, customers(full_name, code), shipment:shipments(paid_amount, total_cost, shipping_cost, status)",
+          )
+          .order("created_at", { ascending: false })
+          .limit(300),
+        supabase
+          .from("finance_expenses")
+          .select("id, code, expense_date, expense_type, description, amount, original_amount, original_currency")
+          .order("expense_date", { ascending: false })
+          .limit(300),
+        supabase
+          .from("customer_claims")
+          .select("id, requested_amount, status, created_at")
+          .eq("request_type", "refund")
+          .in("status", ["approved", "refunded"] as any)
+          .order("created_at", { ascending: false })
+          .limit(300),
+        supabase
+          .from("consolidations")
+          .select(
+            "id, code, status, tracking_code, created_at, customers(full_name, code), consolidation_shipments(shipment_id, shipment:shipments(service_type, weight, cbm, notes, custom_tracking_number, status))",
+          )
+          .order("created_at", { ascending: false })
+          .limit(300),
+        getActiveConsolidatedShipmentIds(),
+      ]);
 
-    if (customersRes.error || driversRes.error || shipmentsRes.error || paymentsRes.error || invoicesRes.error || expensesRes.error || refundsRes.error || consolidationsRes.error) {
-      toast.error("Failed to load dashboard data.");
+      if (shipmentsRes.error) throw shipmentsRes.error;
+      if (paymentsRes.error) throw paymentsRes.error;
+      if (invoicesRes.error) throw invoicesRes.error;
+      if (expensesRes.error) throw expensesRes.error;
+      if (refundsRes.error) throw refundsRes.error;
+      if (consolidationsRes.error) throw consolidationsRes.error;
+
       setCustomerCount(0);
       setDriverCount(0);
-      setShipments([]);
-      setPayments([]);
-      setInvoices([]);
-      setExpenses([]);
-      setRefunds([]);
-      setParcels([]);
-      if (showLoading) setIsLoading(false);
-      return;
-    }
 
-    setCustomerCount(customersRes.count || 0);
-    setDriverCount(driversRes.count || 0);
-
-    const shipmentRows = ((shipmentsRes.data || []) as any[]).map((row) => ({
-      id: row.id,
-      code: row.code,
-      custom_tracking_number: row.custom_tracking_number || null,
-      status: row.status,
-      service_type: row.service_type || null,
-      shipping_cost: row.shipping_cost === null ? null : toNumber(row.shipping_cost),
-      payment_status: row.payment_status || null,
-      paid_amount: row.paid_amount === null ? null : toNumber(row.paid_amount),
-      total_cost: toNumber(row.total_cost),
-      customer_id: row.customer_id || null,
-      customer_name: Array.isArray(row.customer) ? row.customer[0]?.full_name || null : row.customer?.full_name || null,
-      customer_code: Array.isArray(row.customer) ? row.customer[0]?.code || null : row.customer?.code || null,
-      branch_name: Array.isArray(row.branch) ? row.branch[0]?.name || null : row.branch?.name || null,
-      created_at: row.created_at,
-      updated_at: row.updated_at,
-      weight: row.weight === null ? null : toNumber(row.weight),
-      cbm: row.cbm === null ? null : toNumber(row.cbm),
-      notes: row.notes || null,
-    })) as ShipmentRow[];
-
-    const allConsolidationShipmentIds = new Set<string>();
-    const activeConsolidationCodes = new Set<string>();
-    const shipmentsByConsolidationCode = new Map<string, ShipmentRow[]>();
-
-    shipmentRows.forEach((shipment) => {
-      const consolidationCode = extractNoteValue(shipment.notes, "Consolidation")?.trim().toLowerCase();
-      if (!consolidationCode) return;
-      const existing = shipmentsByConsolidationCode.get(consolidationCode) || [];
-      existing.push(shipment);
-      shipmentsByConsolidationCode.set(consolidationCode, existing);
-    });
-
-    ((consolidationsRes.data || []) as any[]).forEach((row) => {
-      const normalizedConsolidationStatus = normalizeConsolidationStatus(row.status);
-      if (normalizedConsolidationStatus !== "cancelled" && normalizedConsolidationStatus !== "canceled") {
-        activeConsolidationCodes.add((row.code || "").trim().toLowerCase());
-      }
-      (row.consolidation_shipments || []).forEach((entry: any) => {
-        if (entry.shipment_id) {
-          allConsolidationShipmentIds.add(entry.shipment_id);
-        }
-      });
-    });
-
-    const visibleShipmentParcels = shipmentRows.filter((shipment) => {
-      const consolidationCode = extractNoteValue(shipment.notes, "Consolidation")?.trim().toLowerCase();
-      return !consolidatedIds.has(shipment.id) && !(consolidationCode && activeConsolidationCodes.has(consolidationCode));
-    });
-
-    const consolidationParcels = ((consolidationsRes.data || []) as any[]).map((row) => {
-      const shipmentsInConsolidationById = new Map<string, any>();
-
-      (row.consolidation_shipments || [])
-        .map((entry: any) => entry.shipment)
-        .filter(Boolean)
-        .forEach((shipment: any) => shipmentsInConsolidationById.set(shipment.id, shipment));
-
-      (shipmentsByConsolidationCode.get((row.code || "").trim().toLowerCase()) || []).forEach((shipment) => {
-        if (!shipmentsInConsolidationById.has(shipment.id)) {
-          shipmentsInConsolidationById.set(shipment.id, shipment);
-        }
-      });
-
-      const shipmentsInConsolidation = Array.from(shipmentsInConsolidationById.values());
-
-      const serviceTypes = Array.from(
-        new Set(
-          shipmentsInConsolidation
-            .map((shipment: any) => (shipment.service_type || "").toLowerCase().trim())
-            .filter(Boolean),
-        ),
-      );
-
-      const serviceType =
-        serviceTypes.length === 1
-          ? serviceTypes[0]
-          : serviceTypes.length > 1
-            ? "mixed"
-            : null;
-
-      const totalWeight = shipmentsInConsolidation.reduce(
-        (sum: number, shipment: any) => sum + toNumber(shipment.weight || 0),
-        0,
-      );
-      const totalCbm = shipmentsInConsolidation.reduce(
-        (sum: number, shipment: any) => sum + toNumber(getShipmentCbmValue(shipment) || 0),
-        0,
-      );
-      const firstTracking = (() => {
-        for (const s of shipmentsInConsolidation) {
-          const wt = resolveTrackingByStatus(s.status || null, s.notes || null, s.custom_tracking_number || null);
-          if (wt) return wt;
-        }
-        return null;
-      })();
-      const mappedStatus = mapConsolidationStatusToShipmentStatus[normalizeConsolidationStatus(row.status)] || "requested_pickup";
-
-      return {
-        id: `consolidation-${row.id}`,
-        rowType: "consolidation",
-        customer_name: formatClientLabel(
-          Array.isArray(row.customers) ? row.customers[0]?.full_name : row.customers?.full_name,
-          Array.isArray(row.customers) ? row.customers[0]?.code : row.customers?.code,
-        ),
-        service_type: serviceType,
-        tracking: row.tracking_code?.trim() || firstTracking || null,
-        weight: totalWeight,
-        cbm: totalCbm,
-        status: mappedStatus,
-        created_at: row.created_at,
-        branch_name: null,
-        shipping_cost: 0,
-        invoice_total: 0,
-        payment_status: null,
-      } as ParcelRow;
-    });
-
-    setShipments(shipmentRows);
-
-    const shipmentParcelRows: ParcelRow[] = visibleShipmentParcels.map((shipment) => ({
-      id: shipment.id,
-      rowType: "shipment",
-      isConsolidatedChild: allConsolidationShipmentIds.has(shipment.id),
-      customer_name: formatClientLabel(shipment.customer_name, shipment.customer_code),
-      service_type: shipment.service_type,
-      tracking: resolveTrackingByStatus(shipment.status, shipment.notes, shipment.custom_tracking_number) || null,
-      weight: shipment.weight,
-      cbm: getShipmentCbmValue(shipment),
-      status: normalizeShipmentStatus(shipment.status),
-      created_at: shipment.created_at,
-      branch_name: shipment.branch_name || "-",
-      shipping_cost: shipment.shipping_cost || 0,
-      invoice_total: getShipmentInvoiceTotal(shipment),
-      payment_status: shipment.payment_status,
-    }));
-    const parcelRows = [...shipmentParcelRows, ...consolidationParcels].sort(
-      (left, right) => new Date(right.created_at).getTime() - new Date(left.created_at).getTime(),
-    );
-
-    setParcels(parcelRows);
-
-    setPayments(
-      ((paymentsRes.data || []) as any[]).map((row) => ({
+      const shipmentRows = ((shipmentsRes.data || []) as any[]).map((row) => ({
         id: row.id,
         code: row.code,
-        amount: toNumber(row.amount),
-        status: row.status || null,
-        payment_provider: row.payment_provider || "manual",
-        created_at: row.created_at,
+        custom_tracking_number: row.custom_tracking_number || null,
+        status: row.status,
+        service_type: row.service_type || null,
+        shipping_cost: row.shipping_cost === null ? null : toNumber(row.shipping_cost),
+        payment_status: row.payment_status || null,
+        paid_amount: row.paid_amount === null ? null : toNumber(row.paid_amount),
+        total_cost: toNumber(row.total_cost),
         customer_id: row.customer_id || null,
-        customer_name: Array.isArray(row.customer) ? row.customer[0]?.full_name || null : row.customer?.full_name || null,
-        customer_code: Array.isArray(row.customer) ? row.customer[0]?.code || null : row.customer?.code || null,
-        shipment_id: row.shipment_id || null,
-      })),
-    );
+        customer_name: Array.isArray(row.customers) ? row.customers[0]?.full_name || null : row.customers?.full_name || null,
+        customer_code: Array.isArray(row.customers) ? row.customers[0]?.code || null : row.customers?.code || null,
+        branch_name: Array.isArray(row.branches) ? row.branches[0]?.name || null : row.branches?.name || null,
+        created_at: row.created_at,
+        updated_at: row.updated_at,
+        weight: row.weight === null ? null : toNumber(row.weight),
+        cbm: row.cbm === null ? null : toNumber(row.cbm),
+        notes: row.notes || null,
+      })) as ShipmentRow[];
 
-    setInvoices(
-      ((invoicesRes.data || []) as any[]).map((row) => ({
-        id: row.id,
-        code: row.code,
-        amount: getInvoiceBillingAmount({
+      const allConsolidationShipmentIds = new Set<string>();
+      const activeConsolidationCodes = new Set<string>();
+      const shipmentsByConsolidationCode = new Map<string, ShipmentRow[]>();
+
+      shipmentRows.forEach((shipment) => {
+        const consolidationCode = extractNoteValue(shipment.notes, "Consolidation")?.trim().toLowerCase();
+        if (!consolidationCode) return;
+        const existing = shipmentsByConsolidationCode.get(consolidationCode) || [];
+        existing.push(shipment);
+        shipmentsByConsolidationCode.set(consolidationCode, existing);
+      });
+
+      ((consolidationsRes.data || []) as any[]).forEach((row) => {
+        const normalizedConsolidationStatus = normalizeConsolidationStatus(row.status);
+        if (normalizedConsolidationStatus !== "cancelled" && normalizedConsolidationStatus !== "canceled") {
+          activeConsolidationCodes.add((row.code || "").trim().toLowerCase());
+        }
+        (row.consolidation_shipments || []).forEach((entry: any) => {
+          if (entry.shipment_id) {
+            allConsolidationShipmentIds.add(entry.shipment_id);
+          }
+        });
+      });
+
+      const visibleShipmentParcels = shipmentRows.filter((shipment) => {
+        const consolidationCode = extractNoteValue(shipment.notes, "Consolidation")?.trim().toLowerCase();
+        const isExcludedByConsolidation = consolidatedIds.has(shipment.id) || (consolidationCode && activeConsolidationCodes.has(consolidationCode));
+
+        return !isExcludedByConsolidation && isWarehouseAllShipmentsRow({
+          rowType: "shipment",
+          status: shipment.status,
+          isConsolidatedChild: allConsolidationShipmentIds.has(shipment.id),
+          notes: shipment.notes,
+          handling_method: null // We don't have handling_method easily accessible here without extra join, but status filtering should suffice
+        });
+      });
+
+      const consolidationParcels = ((consolidationsRes.data || []) as any[]).map((row) => {
+        const shipmentsInConsolidationById = new Map<string, any>();
+
+        (row.consolidation_shipments || [])
+          .map((entry: any) => entry.shipment)
+          .filter(Boolean)
+          .forEach((shipment: any) => shipmentsInConsolidationById.set(shipment.id, shipment));
+
+        (shipmentsByConsolidationCode.get((row.code || "").trim().toLowerCase()) || []).forEach((shipment) => {
+          if (!shipmentsInConsolidationById.has(shipment.id)) {
+            shipmentsInConsolidationById.set(shipment.id, shipment);
+          }
+        });
+
+        const shipmentsInConsolidation = Array.from(shipmentsInConsolidationById.values());
+
+        const serviceTypes = Array.from(
+          new Set(
+            shipmentsInConsolidation
+              .map((shipment: any) => (shipment.service_type || "").toLowerCase().trim())
+              .filter(Boolean),
+          ),
+        );
+
+        const serviceType =
+          serviceTypes.length === 1
+            ? serviceTypes[0]
+            : serviceTypes.length > 1
+              ? "mixed"
+              : null;
+
+        const totalWeight = shipmentsInConsolidation.reduce(
+          (sum: number, shipment: any) => sum + toNumber(shipment.weight || 0),
+          0,
+        );
+        const totalCbm = shipmentsInConsolidation.reduce(
+          (sum: number, shipment: any) => sum + toNumber(getShipmentCbmValue(shipment) || 0),
+          0,
+        );
+        const firstTracking = (() => {
+          for (const s of shipmentsInConsolidation) {
+            const wt = getWarehouseTrackingNumber(s.notes || null);
+            if (wt) return wt;
+          }
+          return null;
+        })();
+        const mappedStatus = mapConsolidationStatusToShipmentStatus[normalizeConsolidationStatus(row.status)] || "requested_pickup";
+
+        return {
+          id: `consolidation-${row.id}`,
+          rowType: "consolidation",
+          customer_name: formatClientLabel(
+            Array.isArray(row.customers) ? row.customers[0]?.full_name : row.customers?.full_name,
+            Array.isArray(row.customers) ? row.customers[0]?.code : row.customers?.code,
+          ),
+          service_type: serviceType,
+          tracking: row.tracking_code?.trim() || firstTracking || null,
+          weight: totalWeight,
+          cbm: totalCbm,
+          status: mappedStatus,
+          created_at: row.created_at,
+          branch_name: null,
+          shipping_cost: 0,
+          invoice_total: 0,
+          payment_status: null,
+        } as ParcelRow;
+      });
+
+      setShipments(shipmentRows);
+
+      const shipmentParcelRows: ParcelRow[] = visibleShipmentParcels.map((shipment) => ({
+        id: shipment.id,
+        rowType: "shipment",
+        isConsolidatedChild: allConsolidationShipmentIds.has(shipment.id),
+        customer_name: formatClientLabel(shipment.customer_name, shipment.customer_code),
+        service_type: shipment.service_type,
+        tracking: getWarehouseTrackingNumber(shipment.notes) || "Tracking pending",
+        weight: shipment.weight,
+        cbm: getShipmentCbmValue(shipment),
+        status: normalizeShipmentStatus(shipment.status),
+        created_at: shipment.created_at,
+        branch_name: shipment.branch_name || "-",
+        shipping_cost: shipment.shipping_cost || 0,
+        invoice_total: getShipmentInvoiceTotal(shipment),
+        payment_status: shipment.payment_status,
+      }));
+      const parcelRows = [...shipmentParcelRows, ...consolidationParcels].sort(
+        (left, right) => new Date(right.created_at).getTime() - new Date(left.created_at).getTime(),
+      );
+
+      setParcels(parcelRows);
+
+      setPayments(
+        ((paymentsRes.data || []) as any[]).map((row) => ({
+          id: row.id,
+          code: row.code,
           amount: toNumber(row.amount),
-          shipment_total_cost: Array.isArray(row.shipment) ? row.shipment[0]?.total_cost ?? null : row.shipment?.total_cost ?? null,
-          shipment_shipping_cost: Array.isArray(row.shipment) ? row.shipment[0]?.shipping_cost ?? null : row.shipment?.shipping_cost ?? null,
-        }),
-        status: row.status || "draft",
-        created_at: row.created_at,
-        due_date: row.due_date || null,
-        customer_id: row.customer_id || null,
-        customer_name: Array.isArray(row.customer) ? row.customer[0]?.full_name || null : row.customer?.full_name || null,
-        customer_code: Array.isArray(row.customer) ? row.customer[0]?.code || null : row.customer?.code || null,
-        shipment_id: row.shipment_id || null,
-        shipment_tracking_no: (() => {
+          status: row.status || null,
+          payment_provider: row.payment_provider || "manual",
+          created_at: row.created_at,
+          customer_id: row.customer_id || null,
+          customer_name: Array.isArray(row.customers) ? row.customers[0]?.full_name || null : row.customers?.full_name || null,
+          customer_code: Array.isArray(row.customers) ? row.customers[0]?.code || null : row.customers?.code || null,
+          shipment_id: row.shipment_id || null,
+        })),
+      );
+
+      setInvoices(
+        ((invoicesRes.data || []) as any[]).map((row) => {
           const s = Array.isArray(row.shipment) ? row.shipment[0] : row.shipment;
-          return resolveTrackingByStatus(s?.status || null, s?.notes || null, s?.custom_tracking_number || null) || null;
-        })(),
-        shipment_paid_amount: Array.isArray(row.shipment)
-          ? row.shipment[0]?.paid_amount ?? null
-          : row.shipment?.paid_amount ?? null,
-        shipment_total_cost: Array.isArray(row.shipment)
-          ? row.shipment[0]?.total_cost ?? null
-          : row.shipment?.total_cost ?? null,
-        shipment_shipping_cost: Array.isArray(row.shipment)
-          ? row.shipment[0]?.shipping_cost ?? null
-          : row.shipment?.shipping_cost ?? null,
-      })),
-    );
+          return {
+            id: row.id,
+            code: row.code,
+            amount: getInvoiceBillingAmount({
+              amount: toNumber(row.amount),
+              shipment_total_cost: s?.total_cost ?? null,
+              shipment_shipping_cost: s?.shipping_cost ?? null,
+            }),
+            status: row.status || "draft",
+            created_at: row.created_at,
+            due_date: row.due_date || null,
+            customer_id: row.customer_id || null,
+            customer_name: Array.isArray(row.customers) ? row.customers[0]?.full_name || null : row.customers?.full_name || null,
+            customer_code: Array.isArray(row.customers) ? row.customers[0]?.code || null : row.customers?.code || null,
+            shipment_id: row.shipment_id || null,
+            shipment_tracking_no: null,
+            shipment_paid_amount: s?.paid_amount ?? null,
+            shipment_total_cost: s?.total_cost ?? null,
+            shipment_shipping_cost: s?.shipping_cost ?? null,
+            shipment: s, // Keep the raw shipment for easier calculation later
+          };
+        }),
+      );
 
-    setExpenses(
-      ((expensesRes.data || []) as any[]).map((row) => ({
-        id: row.id,
-        code: row.code,
-        expense_date: row.expense_date,
-        expense_type: row.expense_type,
-        description: row.description || null,
-        amount: toNumber(row.amount),
-      })),
-    );
+      setExpenses(
+        ((expensesRes.data || []) as any[]).map((row) => ({
+          id: row.id,
+          code: row.code,
+          expense_date: row.expense_date,
+          expense_type: row.expense_type,
+          description: row.description || null,
+          amount: toNumber(row.amount),
+          original_amount: row.original_amount == null ? null : toNumber(row.original_amount),
+          original_currency: row.original_currency || null,
+        })),
+      );
 
-    setRefunds(
-      ((refundsRes.data || []) as any[]).map((row) => ({
-        id: row.id,
-        requested_amount: toNumber(row.requested_amount),
-        status: row.status || null,
-        created_at: row.created_at,
-      })),
-    );
-
-    if (showLoading) setIsLoading(false);
+      setRefunds(
+        ((refundsRes.data || []) as any[]).map((row) => ({
+          id: row.id,
+          requested_amount: toNumber(row.requested_amount),
+          status: row.status || null,
+          created_at: row.created_at,
+        })),
+      );
+    } catch (err: any) {
+      toast.error(`Dashboard Error: ${err.message || "Unknown error"}`);
+    } finally {
+      if (showLoading) setIsLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -556,21 +562,41 @@ const Dashboard = () => {
     return next;
   }, [invoices]);
 
+  const getExpenseDisplayAmount = (row: ExpenseRow) => {
+    if (row.original_amount != null && row.original_currency) {
+      return roundCurrencyAmount(convert(row.original_amount, row.original_currency));
+    }
+    return removeMinorWholeAmountDrift(convert(row.amount));
+  };
+
+  const expenseDisplayAmount = useMemo(
+    () => roundCurrencyAmount(expenses.reduce((sum, row) => sum + getExpenseDisplayAmount(row), 0)),
+    [convert, expenses],
+  );
+
   const expenseAmount = useMemo(
-    () => expenses.reduce((sum, row) => sum + row.amount, 0),
+    () => roundCurrencyAmount(expenses.reduce((sum, row) => sum + row.amount, 0)),
     [expenses],
   );
 
   const refundExpenseAmount = useMemo(
-    () => refunds.reduce((sum, row) => sum + row.requested_amount, 0),
+    () => roundCurrencyAmount(refunds.reduce((sum, row) => sum + row.requested_amount, 0)),
     [refunds],
   );
 
-  const totalExpenses = expenseAmount + refundExpenseAmount;
+  const totalExpenses = expenseDisplayAmount;
 
-  const outstandingPayments = useMemo(
-    () => shipments.reduce((sum, shipment) => sum + getShipmentOutstandingBalance(shipment), 0),
-    [shipments],
+  const outstandingPayments = useMemo(() => {
+    return invoices
+      .filter((invoice) => isFinanceInvoiceVisible(invoice.status))
+      .reduce((sum, invoice) => {
+        return sum + getInvoiceOutstandingBalance(invoice, (invoice as any).shipment);
+      }, 0);
+  }, [invoices]);
+
+  const outstandingPaymentsDisplay = useMemo(
+    () => removeMinorWholeAmountDrift(convert(outstandingPayments)),
+    [convert, outstandingPayments],
   );
 
   const totalPayments = useMemo(
@@ -579,11 +605,13 @@ const Dashboard = () => {
   );
 
   const completedPaymentAmount = useMemo(
-    () => payments.filter((row) => row.status === "completed").reduce((sum, row) => sum + row.amount, 0),
+    () => roundCurrencyAmount(payments.filter((row) => row.status === "completed").reduce((sum, row) => sum + row.amount, 0)),
     [payments],
   );
 
-  const netProfit = completedPaymentAmount - totalExpenses;
+  // Synchronized with FinanceDashboard: Net Profit = Completed Payments - Refunds - Expenses
+  const netProfit = roundCurrencyAmount(completedPaymentAmount - refundExpenseAmount - expenseAmount);
+  const netProfitDisplay = removeMinorWholeAmountDrift(convert(netProfit));
 
   const recentTransactions = useMemo(() => payments.slice(0, 10), [payments]);
   const recentInvoices = useMemo(() => invoices.slice(0, 10), [invoices]);
@@ -630,21 +658,21 @@ const Dashboard = () => {
 
         <StatCard
           title="Net Profit"
-          value={formatAmount(netProfit)}
+          value={formatCurrencyDisplay(netProfitDisplay, code, symbol)}
           icon={<TrendingUp className="h-14 w-14" />}
           color="green"
           link="/finance/dashboard"
         />
         <StatCard
           title="Total Expenses"
-          value={formatAmount(totalExpenses)}
+          value={formatCurrencyDisplay(totalExpenses, code, symbol)}
           icon={<TrendingDown className="h-14 w-14" />}
           color="orange"
           link="/finance/reports"
         />
         <StatCard
           title="Outstanding Payments"
-          value={formatAmount(outstandingPayments)}
+          value={formatCurrencyDisplay(outstandingPaymentsDisplay, code, symbol)}
           icon={<DollarSign className="h-14 w-14" />}
           color="sky"
           link="/finance/dashboard"

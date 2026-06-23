@@ -223,14 +223,14 @@ const collectDriverReceivers = (
       country: receiver?.country || null,
     };
     const key = [
-        receiverRecord.full_name,
-        receiverRecord.phone,
-        receiverRecord.address,
-        receiverRecord.city,
-        receiverRecord.country,
-      ]
-        .map((value) => (value || "").trim().toLowerCase())
-        .join("|");
+      receiverRecord.full_name,
+      receiverRecord.phone,
+      receiverRecord.address,
+      receiverRecord.city,
+      receiverRecord.country,
+    ]
+      .map((value) => (value || "").trim().toLowerCase())
+      .join("|");
 
     if (!receivers.has(key)) {
       receivers.set(key, receiverRecord);
@@ -350,7 +350,7 @@ export const fetchDriverDeliveries = async (driverId: string, limit = 300) => {
 
   const allConsolidations = [...rawConsolidations, ...extraConsolidations];
   const allShipments = [...rawShipments, ...extraShipments];
-  
+
   const shipmentById = new Map(allShipments.map(s => [s.id, s]));
   const consolidationById = new Map(allConsolidations.map(c => [c.id, c]));
 
@@ -381,7 +381,7 @@ export const fetchDriverDeliveries = async (driverId: string, limit = 300) => {
     const combinedCbm = childShipments.reduce((sum, s) => sum + Number(s!.cbm || 0), 0);
     const combinedCost = childShipments.reduce((sum, s) => sum + Number(s!.total_cost || 0), 0);
     const combinedShipping = childShipments.reduce((sum, s) => sum + Number(s!.shipping_cost || 0), 0);
-    
+
     const serviceTypes = new Set(childShipments.map(s => (s!.service_type || "").toLowerCase().trim()).map(t => (t === "air" || t === "air freight" || t === "air_freight") ? "air" : (t === "sea" || t === "sea freight" || t === "sea_freight") ? "sea" : t).filter(Boolean));
     const receivers = collectDriverReceivers(childShipments.map(s => ({ receiver_id: s!.receiver_id, receiver: s!.receiver })));
 
@@ -424,18 +424,18 @@ export const fetchDriverDeliveries = async (driverId: string, limit = 300) => {
   // 2. Auto-Group Remaining Shipments by Tracking Number
   const remainingShipments = allShipments.filter(s => !consumedShipmentIds.has(s.id) && s.delivery_request_assigned_driver_id === driverId);
   const shipmentsByTracking = new Map<string, any[]>();
-  
+
   remainingShipments.forEach(s => {
     const displayTracking = resolveDisplayTrackingNumber(
       s.status,
       s.notes,
       s.custom_tracking_number
     );
-    
-    const trackingKey = displayTracking 
-      ? [s.customer_id, displayTracking.trim().toLowerCase()].join(":") 
+
+    const trackingKey = displayTracking
+      ? [s.customer_id, displayTracking.trim().toLowerCase()].join(":")
       : `single-${s.id}`;
-      
+
     const current = shipmentsByTracking.get(trackingKey) || [];
     current.push({ ...s, _resolvedTracking: displayTracking });
     shipmentsByTracking.set(trackingKey, current);
@@ -539,7 +539,7 @@ export const fetchDriverIncidents = async (userId: string, limit = 100) => {
     .limit(limit);
 
   if (error) throw error;
-  
+
   return (data || []).map((ticket: any) => ({
     ...ticket,
     shipment: ticket.shipment ? {

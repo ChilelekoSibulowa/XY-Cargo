@@ -1,0 +1,138 @@
+BEGIN;
+
+-- Compliance/Finance precision fix:
+-- - use only configured system currency rates for compliance charge finance sync
+-- - preserve the exact original duty/miscellaneous amount and currency
+-- - remove anti-drift heuristics that could create false converted values
+
+CREATE OR REPLACE FUNCTION public.sync_compliance_charge_to_finance_expense()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_code text;
+  v_note text;
+  v_description text;
+  v_expense_type text;
+  v_source_rate numeric;
+  v_default_rate numeric;
+  v_base_amount numeric;
+  v_expense_id uuid;
+  v_default_currency_code text;
+BEGIN
+  v_note := COALESCE(to_jsonb(NEW)->>'notes', to_jsonb(NEW)->>'note');
+  v_description := NULLIF(btrim(COALESCE(v_note, '')), '');
+  v_expense_type := CASE
+    WHEN NEW.charge_type IN ('custom_duty', 'customs_duty', 'duty') THEN 'Custom Duty'
+    WHEN NEW.charge_type = 'miscellaneous' THEN 'Miscellaneous'
+    ELSE 'Compliance Duty/Charge'
+  END;
+
+  SELECT code, COALESCE(exchange_rate, 1)
+    INTO v_default_currency_code, v_default_rate
+  FROM public.currencies
+  WHERE is_default = true AND is_active = true
+  LIMIT 1;
+
+  SELECT COALESCE(exchange_rate, 1)
+    INTO v_source_rate
+  FROM public.currencies
+  WHERE code = COALESCE(NEW.currency, '') AND is_active = true
+  LIMIT 1;
+
+  v_source_rate := COALESCE(NULLIF(v_source_rate, 0), 1);
+  v_default_rate := COALESCE(NULLIF(v_default_rate, 0), 1);
+
+  IF NEW.currency = v_default_currency_code OR v_source_rate = v_default_rate THEN
+    v_base_amount := NEW.amount;
+  ELSE
+    v_base_amount := ROUND((NEW.amount / v_source_rate) * v_default_rate, 2);
+  END IF;
+
+  IF NEW.finance_expense_id IS NOT NULL THEN
+    UPDATE public.finance_expenses
+    SET amount = v_base_amount,
+        original_amount = NEW.amount,
+        original_currency = NEW.currency,
+        description = v_description,
+        expense_type = v_expense_type,
+        expense_date = NEW.created_at::date
+    WHERE id = NEW.finance_expense_id;
+
+    RETURN NEW;
+  END IF;
+
+  BEGIN
+    SELECT public.generate_code('EXP') INTO v_code;
+  EXCEPTION WHEN OTHERS THEN
+    v_code := NULL;
+  END;
+
+  IF v_code IS NULL OR btrim(v_code) = '' THEN
+    v_code := 'EXP-' || to_char(now(), 'YYYYMMDDHH24MISSMS') || '-' || substr(replace(NEW.id::text, '-', ''), 1, 6);
+  END IF;
+
+  INSERT INTO public.finance_expenses (
+    code, expense_date, expense_type, description, amount, approved_by,
+    original_amount, original_currency
+  ) VALUES (
+    v_code, NEW.created_at::date, v_expense_type, v_description,
+    v_base_amount, NEW.entered_by_id,
+    NEW.amount, NEW.currency
+  )
+  RETURNING id INTO v_expense_id;
+
+  UPDATE public.compliance_charges
+  SET finance_expense_id = v_expense_id,
+      recorded_in_finance = true
+  WHERE id = NEW.id;
+
+  RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS trg_sync_compliance_charge_to_finance_expense ON public.compliance_charges;
+CREATE TRIGGER trg_sync_compliance_charge_to_finance_expense
+AFTER INSERT OR UPDATE OF amount, currency, charge_type, notes ON public.compliance_charges
+FOR EACH ROW
+EXECUTE FUNCTION public.sync_compliance_charge_to_finance_expense();
+
+WITH default_currency AS (
+  SELECT code, COALESCE(NULLIF(exchange_rate, 0), 1) AS exchange_rate
+  FROM public.currencies
+  WHERE is_default = true AND is_active = true
+  LIMIT 1
+),
+source_charges AS (
+  SELECT
+    cc.id,
+    cc.finance_expense_id,
+    cc.amount,
+    cc.currency,
+    cc.created_at,
+    cc.entered_by_id,
+    COALESCE(NULLIF(src.exchange_rate, 0), 1) AS source_rate,
+    dc.code AS default_code,
+    dc.exchange_rate AS default_rate,
+    CASE
+      WHEN cc.currency = dc.code OR COALESCE(NULLIF(src.exchange_rate, 0), 1) = dc.exchange_rate
+        THEN cc.amount
+      ELSE ROUND((cc.amount / COALESCE(NULLIF(src.exchange_rate, 0), 1)) * dc.exchange_rate, 2)
+    END AS synced_amount
+  FROM public.compliance_charges cc
+  CROSS JOIN default_currency dc
+  LEFT JOIN public.currencies src
+    ON src.code = COALESCE(cc.currency, '') AND src.is_active = true
+)
+UPDATE public.finance_expenses fe
+SET amount = source_charges.synced_amount,
+    original_amount = source_charges.amount,
+    original_currency = source_charges.currency,
+    expense_date = source_charges.created_at::date,
+    approved_by = COALESCE(fe.approved_by, source_charges.entered_by_id)
+FROM source_charges
+WHERE fe.id = source_charges.finance_expense_id;
+
+COMMIT;

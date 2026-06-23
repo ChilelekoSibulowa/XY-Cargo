@@ -1,10 +1,20 @@
 import { useEffect, useMemo, useState } from "react";
 import { useDefaultCurrency } from "@/hooks/useDefaultCurrency";
-import { Check } from "lucide-react";
+import { Calculator, Check } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useProductTypes } from "@/hooks/useProductTypes";
 import { supabase } from "@/integrations/supabase/client";
+import {
+  getRateBasis,
+  getRateValue,
+  getSystemProductTypeOptions,
+  mergeProductTypeOptions,
+  PublicShippingRate,
+  selectSystemShippingRate,
+} from "@/lib/publicShippingRates";
+import { fallbackProductTypeOptions } from "@/lib/publicProductTypeOptions";
 
 const serviceTypeOptions = [
   {
@@ -33,24 +43,18 @@ const toNumber = (value: string) => {
   return Number.isFinite(next) ? next : 0;
 };
 
-interface ShippingRate {
-  id: string;
-  name: string;
-  service_type: "air" | "sea";
-  rate_per_kg: number | null;
-  rate_per_cbm: number | null;
-  minimum_charge: number | null;
-}
 const PublicCalculator = () => {
   const { formatAmount } = useDefaultCurrency();
+  const { optionsByService, isLoading: isProductTypesLoading } = useProductTypes();
   const [serviceType, setServiceType] = useState("air-standard");
+  const [productType, setProductType] = useState("");
   const [origin, setOrigin] = useState("china-foshan");
   const [destination, setDestination] = useState("zambia-lusaka");
   const [weight, setWeight] = useState(10);
   const [length, setLength] = useState(40);
   const [width, setWidth] = useState(30);
   const [height, setHeight] = useState(25);
-  const [rates, setRates] = useState<ShippingRate[]>([]);
+  const [rates, setRates] = useState<PublicShippingRate[]>([]);
 
   useEffect(() => {
     const fetchRates = async () => {
@@ -61,39 +65,70 @@ const PublicCalculator = () => {
         .order("name");
 
       if (data) {
-        setRates(data as ShippingRate[]);
+        setRates(data as PublicShippingRate[]);
       }
     };
     fetchRates();
   }, []);
 
   const isSea = serviceType === "sea-freight";
-  const destinationKey = destination.includes("ndola")
-    ? "Ndola"
-    : destination.includes("livingstone")
-      ? "Livingstone"
-      : "Lusaka";
-
-  const serviceRates = rates.filter((rate) => rate.service_type === (isSea ? "sea" : "air"));
-  const selectedRate = (
-    serviceRates.find((rate) => rate.name.toLowerCase().includes(destinationKey.toLowerCase())) ||
-    serviceRates[0] ||
-    null
+  const productServiceType = isSea ? "sea" : "air";
+  const systemProductTypeOptions = useMemo(
+    () => getSystemProductTypeOptions(rates, productServiceType),
+    [productServiceType, rates]
   );
-  const rateValue = isSea ? (selectedRate?.rate_per_cbm || 0) : (selectedRate?.rate_per_kg || 0);
+  const configuredProductTypeOptions = optionsByService[productServiceType] || [];
+  const baseProductTypeOptions =
+    !isProductTypesLoading && configuredProductTypeOptions.length > 0
+      ? configuredProductTypeOptions
+      : fallbackProductTypeOptions[productServiceType];
+  const productTypeOptions = useMemo(
+    () => mergeProductTypeOptions(baseProductTypeOptions, systemProductTypeOptions),
+    [baseProductTypeOptions, systemProductTypeOptions]
+  );
+  const selectedRate = useMemo(
+    () => selectSystemShippingRate(rates, productServiceType, destination, productType),
+    [destination, productServiceType, productType, rates]
+  );
+  const rateBasis = getRateBasis(selectedRate, productServiceType);
+  const rateValue = getRateValue(selectedRate, productServiceType);
 
   const cbm = useMemo(() => (length * width * height) / 1000000, [height, length, width]);
 
-  const estimatedCost = useMemo(() => {
-    if (isSea) {
-      const cost = cbm * rateValue;
-      return Math.max(cost, selectedRate?.minimum_charge || 0);
-    }
-    const cost = weight * rateValue;
-    return Math.max(cost, selectedRate?.minimum_charge || 0);
-  }, [cbm, isSea, rateValue, weight, selectedRate]);
+  const rateUnit = rateBasis === "cbm" ? "CBM" : "kg";
+  const currentQuote = useMemo(() => {
+    const minimumCharge = selectedRate?.minimum_charge || 0;
+    const estimatedCost =
+      rateBasis === "cbm"
+        ? Math.max(cbm * rateValue, minimumCharge)
+        : Math.max(weight * rateValue, minimumCharge);
 
-  const rateUnit = isSea ? "CBM" : "kg";
+    return {
+      estimatedCost,
+      rateValue,
+      rateUnit,
+      detail: rateBasis === "cbm" ? `CBM: ${cbm.toFixed(3)}` : `Weight: ${weight.toFixed(1)} kg`,
+    };
+  }, [cbm, rateBasis, rateValue, weight, selectedRate]);
+  const [calculatedQuote, setCalculatedQuote] = useState(currentQuote);
+  const displayedQuote = calculatedQuote || currentQuote;
+  const handleCalculate = () => {
+    setCalculatedQuote(currentQuote);
+  };
+
+  useEffect(() => {
+    if (productTypeOptions.length === 0) {
+      if (productType) {
+        setProductType("");
+      }
+      return;
+    }
+
+    const hasSelectedType = productTypeOptions.some((option) => option.value === productType);
+    if (!hasSelectedType) {
+      setProductType(productTypeOptions[0].value);
+    }
+  }, [productType, productTypeOptions]);
 
   const dynamicPricingInfo = useMemo(() => {
     const info = rates.reduce((acc: any[], rate) => {
@@ -189,10 +224,30 @@ const PublicCalculator = () => {
           </div>
 
           <div className="space-y-4 rounded-2xl border border-slate-200/80 bg-white p-5">
-
+            <div className="space-y-2">
+              <Label className="text-sm font-semibold text-slate-700">Product Type</Label>
+              <Select value={productType} onValueChange={setProductType} disabled={productTypeOptions.length === 0}>
+                <SelectTrigger className="rounded-full border-slate-200">
+                  <SelectValue placeholder="Select product type" />
+                </SelectTrigger>
+                <SelectContent>
+                  {productTypeOptions.length === 0 ? (
+                    <SelectItem value="no-product-types" disabled>
+                      No product types configured
+                    </SelectItem>
+                  ) : (
+                    productTypeOptions.map((option) => (
+                      <SelectItem key={option.id} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))
+                  )}
+                </SelectContent>
+              </Select>
+            </div>
 
             <div className="grid gap-4 md:grid-cols-2">
-              {!isSea && (
+              {rateBasis === "kg" && (
                 <div className="space-y-2">
                   <Label className="text-sm font-semibold text-slate-700">Weight (kg)</Label>
                   <Input
@@ -205,7 +260,7 @@ const PublicCalculator = () => {
                   />
                 </div>
               )}
-              {isSea && (
+              {rateBasis === "cbm" && (
                 <>
                   <div className="space-y-2">
                     <Label className="text-sm font-semibold text-slate-700">Length (cm)</Label>
@@ -244,17 +299,26 @@ const PublicCalculator = () => {
               )}
             </div>
 
+            <button
+              type="button"
+              onClick={handleCalculate}
+              className="w-full rounded-full bg-[#d8000d] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#b8000b]"
+            >
+              <Calculator className="mr-2 inline h-4 w-4 align-[-2px]" />
+              Calculate
+            </button>
+
             <div className="rounded-2xl border border-slate-200/70 bg-slate-50 p-4">
               <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Estimated Total</p>
               <div className="mt-2 flex items-end gap-3">
-                <p className="text-2xl font-semibold text-slate-900">{formatAmount(estimatedCost)}</p>
+                <p className="text-2xl font-semibold text-slate-900">{formatAmount(displayedQuote.estimatedCost)}</p>
                 <p className="text-xs text-slate-500">Based on current rates</p>
               </div>
               <div className="mt-3 grid gap-2 text-xs text-slate-500 md:grid-cols-2">
                 <div>
-                  Rate: {formatAmount(rateValue)} / {rateUnit}
+                  Rate: {formatAmount(displayedQuote.rateValue)} / {displayedQuote.rateUnit}
                 </div>
-                <div>{isSea ? `CBM: ${cbm.toFixed(3)}` : `Weight: ${weight.toFixed(1)} kg`}</div>
+                <div>{displayedQuote.detail}</div>
               </div>
             </div>
           </div>

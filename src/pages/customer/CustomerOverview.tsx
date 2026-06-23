@@ -15,11 +15,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { CustomerProfileGate } from "@/components/customer/CustomerProfileGate";
 import { useCustomerRecord } from "@/hooks/useCustomerRecord";
 import { useDefaultCurrency } from "@/hooks/useDefaultCurrency";
-import { getPortalShipmentWorkflowStatus } from "@/lib/parcelWorkflow";
+import { getPortalShipmentWorkflowStatus, isSingleHandlingMethod } from "@/lib/parcelWorkflow";
+import { normalizeShipmentStatus, isShipmentStageStatus, mapConsolidationStatusToShipmentStatus } from "@/lib/warehouseTabFilters";
 import { remapNotificationsToWarehouseTracking } from "@/lib/notifications";
-import { getWarehouseTrackingNumber, resolveTrackingByStatus } from "@/lib/shipmentNotes";
+import { getWarehouseTrackingNumber, resolveTrackingByStatus, getAirwayBillNumber } from "@/lib/shipmentNotes";
 import { Loader2, Bell, Package, CreditCard, QrCode, Eye } from "lucide-react";
 import { format } from "date-fns";
+import { isFinanceInvoiceVisible, getInvoiceOutstandingBalance } from "@/lib/financePortal";
 
 const statusLabel: Record<string, string> = {
   saved_pickup: "Created",
@@ -74,6 +76,10 @@ type ConsolidationRow = {
   updated_at: string;
   notes: string | null;
   tracking_code: string | null;
+  total_cost: number | null;
+  total_weight: number | null;
+  total_cbm: number | null;
+  item_count: number | null;
   consolidation_shipments: ConsolidationShipmentRow[];
 };
 
@@ -104,6 +110,7 @@ const CustomerOverview = () => {
   const { formatAmount } = useDefaultCurrency();
   const [shipments, setShipments] = useState<ShipmentRow[]>([]);
   const [consolidations, setConsolidations] = useState<ConsolidationRow[]>([]);
+  const [invoices, setInvoices] = useState<any[]>([]);
   const [notifications, setNotifications] = useState<NotificationRow[]>([]);
   const [viewUpdate, setViewUpdate] = useState<RecentUpdateRow | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -140,31 +147,36 @@ const CustomerOverview = () => {
         data: { user },
       } = await supabase.auth.getUser();
 
-      const [shipmentsRes, consolidationsRes, notificationsRes] = await Promise.all([
+      const [shipmentsRes, consolidationsRes, notificationsRes, invoicesRes] = await Promise.all([
         supabase
           .from("shipments")
-          .select("id, code, status, created_at, updated_at, total_cost, payment_status, service_type, description, custom_tracking_number, notes, consolidation_id")
+          .select("id, code, status, created_at, updated_at, total_cost, shipping_cost, payment_status, service_type, description, custom_tracking_number, notes, consolidation_id")
           .eq("customer_id", customer.id)
           .order("updated_at", { ascending: false }),
         supabase
           .from("consolidations")
           .select(
-            "id, code, status, created_at, updated_at, notes, tracking_code, consolidation_shipments(shipment_id, shipment:shipments(id, code, status, created_at, updated_at, description, custom_tracking_number))"
+            "id, code, status, created_at, updated_at, notes, tracking_code, total_cost, total_weight, total_cbm, item_count, consolidation_shipments(shipment_id, shipment:shipments(id, code, status, created_at, updated_at, description, custom_tracking_number, payment_status, total_cost, shipping_cost, notes))"
           )
           .eq("customer_id", customer.id)
           .order("updated_at", { ascending: false }),
         user?.id
           ? supabase
-              .from("notifications")
+            .from("notifications")
             .select("id, title, message, created_at, reference_id")
-              .eq("user_id", user.id)
-              .order("created_at", { ascending: false })
-              .limit(6)
+            .eq("user_id", user.id)
+            .order("created_at", { ascending: false })
+            .limit(6)
           : Promise.resolve({ data: [], error: null }),
+        supabase
+          .from("invoices")
+          .select("id, amount, status, shipment_id, shipment:shipments(paid_amount, total_cost, shipping_cost)")
+          .eq("customer_id", customer.id)
       ]);
 
       setShipments((shipmentsRes.data || []) as ShipmentRow[]);
       setConsolidations((consolidationsRes.data || []) as unknown as ConsolidationRow[]);
+      setInvoices((invoicesRes.data || []) as any[]);
       const normalizedNotifications = await remapNotificationsToWarehouseTracking(
         (notificationsRes.data || []) as NotificationRow[],
       );
@@ -190,37 +202,70 @@ const CustomerOverview = () => {
       paid: 0,
     };
 
+    // 1. Process individual shipments (that are not part of a consolidation)
     shipments.forEach((s) => {
-      // Hide shipments that are part of a consolidation in stages where the consolidation record should take over
-      if (s.consolidation_id) return;
+      // For status counts, only count if NOT part of a consolidation
+      if (!s.consolidation_id) {
+        const workflowStatus = getPortalShipmentWorkflowStatus(s, shipments);
+        const status = (s.status || "").toLowerCase().trim();
 
-      const workflowStatus = getPortalShipmentWorkflowStatus(s, shipments);
-      const status = (s.status || "").toLowerCase().trim();
-      
-      if (status === "saved_pickup" || status === "created") result.created += 1;
-      if (status === "saved_dropoff" || status === "incoming") result.incoming += 1;
-      if (workflowStatus === "received") result.needAction += 1;
-      if (workflowStatus === "requested_pickup") result.submitted += 1;
-      if (status === "approved") result.confirm += 1;
-      if (status === "assigned") result.outgoing += 1;
-      if (status === "supplied") result.intransit += 1;
-      if (status === "delivered") result.arrived += 1;
-      if (status === "closed") result.collected += 1;
-      
+        if (status === "saved_pickup" || status === "created") result.created += 1;
+        else if (status === "saved_dropoff" || status === "incoming") result.incoming += 1;
+        else if (workflowStatus === "received") result.needAction += 1;
+        else if (workflowStatus === "requested_pickup") result.submitted += 1;
+        else if (status === "approved") result.confirm += 1;
+        else if (status === "assigned") result.outgoing += 1;
+        else if (status === "supplied" || status === "in_transit" || status === "intransit") result.intransit += 1;
+        else if (status === "delivered") result.arrived += 1;
+        else if (status === "closed") result.collected += 1;
+      }
+
+      // Payment counts: count EVERY individual parcel record
       if (s.payment_status === "completed") result.paid += 1;
       else result.unpaid += 1;
     });
 
+    // 2. Process consolidations for status counts
+    consolidations.forEach((c) => {
+      const status = (c.status || "").toLowerCase().trim();
+
+      if (status === "submitted" || status === "requested" || status === "requested_pickup") result.submitted += 1;
+      else if (status === "approved" || status === "confirmed") result.confirm += 1;
+      else if (status === "assigned" || status === "outgoing") result.outgoing += 1;
+      else if (status === "supplied" || status === "in_transit" || status === "intransit") result.intransit += 1;
+      else if (status === "delivered" || status === "arrived") result.arrived += 1;
+      else if (status === "closed" || status === "collected") result.collected += 1;
+    });
+
     return result;
-  }, [shipments]);
+  }, [shipments, consolidations]);
 
-  const activeShipments = shipments.filter(
-    (s) => !["closed", "returned", "returned_stock", "returned_delivered"].includes(s.status)
-  );
+  const activeShipments = useMemo(() => {
+    const activeSingles = shipments.filter((s) => {
+      if (s.consolidation_id) return false;
+      if (!isSingleHandlingMethod(s)) return false;
+      const mappedStatus = getPortalShipmentWorkflowStatus(s, shipments);
+      const normalized = normalizeShipmentStatus(mappedStatus);
+      return !["saved_pickup", "saved_dropoff", "received"].includes(normalized) && isShipmentStageStatus(normalized);
+    });
 
-  const outstandingTotal = shipments
-    .filter((s) => s.payment_status !== "completed")
-    .reduce((sum, s) => sum + (s.total_cost || 0), 0);
+    const activeConsolidations = consolidations.filter((c) => {
+      const mappedStatus = mapConsolidationStatusToShipmentStatus[c.status?.toLowerCase() || ""] || c.status;
+      const normalized = normalizeShipmentStatus(mappedStatus);
+      return !["saved_pickup", "saved_dropoff", "received"].includes(normalized) && isShipmentStageStatus(normalized);
+    });
+
+    return { length: activeSingles.length + activeConsolidations.length };
+  }, [shipments, consolidations]);
+
+  const outstandingTotal = useMemo(() => {
+    return invoices
+      .filter((invoice) => isFinanceInvoiceVisible(invoice.status))
+      .reduce((sum, invoice) => {
+        const shipment = Array.isArray(invoice.shipment) ? invoice.shipment[0] : invoice.shipment;
+        return sum + getInvoiceOutstandingBalance(invoice, shipment);
+      }, 0);
+  }, [invoices]);
 
   const recentUpdates = useMemo<RecentUpdateRow[]>(() => {
     const consolidatedChildIds = new Set<string>();
@@ -241,7 +286,7 @@ const CustomerOverview = () => {
         status: shipment.status,
         created_at: shipment.created_at,
         updated_at: shipment.updated_at,
-        trackingNumber: shipment.custom_tracking_number?.trim() || resolveTrackingByStatus(shipment.status, shipment.notes, shipment.custom_tracking_number) || "Not provided",
+        trackingNumber: shipment.custom_tracking_number?.trim() || getWarehouseTrackingNumber(shipment.notes) || shipment.code,
         description: shipment.description || "Shipment",
         notes: shipment.notes,
         code: shipment.code,
@@ -261,7 +306,7 @@ const CustomerOverview = () => {
         status: consolidation.status,
         created_at: consolidation.created_at,
         updated_at: consolidation.updated_at,
-        trackingNumber: consolidation.tracking_code?.trim() || warehouseTracking || "Not provided",
+        trackingNumber: consolidation.tracking_code?.trim() || getWarehouseTrackingNumber(consolidation.notes) || consolidation.code,
         description:
           childShipments.length > 1
             ? "Mixed Products"
@@ -331,7 +376,7 @@ const CustomerOverview = () => {
             </CardHeader>
             <CardContent>
               <p className="text-xl font-bold">{isLoading ? "..." : activeShipments.length}</p>
-              <p className="text-sm text-muted-foreground mt-1">Shipments in progress</p>
+              <p className="text-sm text-muted-foreground mt-1">Unified shipments in progress</p>
             </CardContent>
           </Card>
           <Card>
@@ -340,7 +385,7 @@ const CustomerOverview = () => {
             </CardHeader>
             <CardContent>
               <p className="text-xl font-bold">{isLoading ? "..." : formatAmount(outstandingTotal)}</p>
-              <p className="text-sm text-muted-foreground mt-1">Unpaid shipment balance</p>
+              <p className="text-sm text-muted-foreground mt-1">Total unpaid balance</p>
             </CardContent>
           </Card>
         </div>
@@ -468,17 +513,43 @@ const CustomerOverview = () => {
         <Dialog open={!!viewUpdate} onOpenChange={(open) => !open && setViewUpdate(null)}>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>
-                {viewUpdate?.rowType === "consolidation" ? "Consolidated Update Details" : "Shipment Update Details"}
-              </DialogTitle>
-              
+              <DialogTitle>Update Details</DialogTitle>
             </DialogHeader>
+
+            {viewUpdate && (
+              <div className="rounded-lg border bg-slate-50 p-4 shadow-sm mb-4">
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="font-bold text-slate-900">
+                    {viewUpdate.rowType === "consolidation" ? "Consolidated Shipment" : "Single Shipment"}: {viewUpdate.code}
+                  </h3>
+                  <Badge variant="outline" className="bg-white">
+                    {viewUpdate.rowType === "consolidation" ? getConsolidationStatusLabel(viewUpdate.status) : statusLabel[viewUpdate.status] || viewUpdate.status}
+                  </Badge>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
+                  <p className="text-muted-foreground font-medium">
+                    Shipment Tracking:{" "}
+                    <span className="font-mono text-slate-900">
+                      {viewUpdate.trackingNumber}
+                    </span>
+                  </p>
+                  <p className="text-muted-foreground font-medium">
+                    AWB/BL No.:{" "}
+                    <span className="font-mono text-slate-900">
+                      {getAirwayBillNumber(viewUpdate.notes) || "-"}
+                    </span>
+                  </p>
+                </div>
+              </div>
+            )}
 
             {viewUpdate ? (
               <div className="space-y-3 text-sm">
-                <div className="rounded-md border p-3">
-                  <p className="text-xs text-muted-foreground">Tracking Number</p>
-                  <p className="font-medium font-mono">{viewUpdate.trackingNumber}</p>
+                <div className="hidden">
+                  <div className="rounded-md border p-3">
+                    <p className="text-xs text-muted-foreground">Tracking Number</p>
+                    <p className="font-medium font-mono">{viewUpdate.trackingNumber}</p>
+                  </div>
                 </div>
                 <div className="grid gap-2 sm:grid-cols-2">
                   <div className="rounded-md border p-3">
@@ -513,7 +584,7 @@ const CustomerOverview = () => {
                       ) : (
                         viewUpdate.childShipments.map((shipment) => (
                           <div key={shipment.id} className="rounded border p-2">
-                            <p className="text-xs font-medium font-mono">{resolveTrackingByStatus(shipment.status, null, shipment.custom_tracking_number) || shipment.code}</p>
+                            <p className="text-xs font-medium font-mono">Tracking: {shipment.custom_tracking_number || "-"}</p>
                             <p className="text-xs text-muted-foreground">{shipment.description || "Shipment"}</p>
                           </div>
                         ))

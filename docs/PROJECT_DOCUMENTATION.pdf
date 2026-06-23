@@ -1,0 +1,4085 @@
+%PDF-1.3
+%ºß¬à
+3 0 obj
+<</Type /Page
+/Parent 1 0 R
+/Resources 2 0 R
+/MediaBox [0 0 595.2799999999999727 841.8899999999999864]
+/Contents 4 0 R
+>>
+endobj
+4 0 obj
+<<
+/Length 4611
+>>
+stream
+0.200025 w
+0 G
+BT
+/F2 20 Tf
+23. TL
+0 g
+48. 793.8899999999999864 Td
+(XY Cargo Zambia Project Documentation) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+48. 749.8899999999999864 Td
+(Date: 2026-05-28) Tj
+ET
+BT
+/F2 14 Tf
+16.0999999999999979 TL
+0 g
+48. 723.8899999999999864 Td
+(1. Project Overview) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+48. 691.8899999999999864 Td
+(XY Cargo Zambia is a React and Supabase freight operations platform. It combines a public marketing website) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+48. 677.8899999999999864 Td
+(with authenticated portals for customers, agents, warehouse staff, drivers, finance, compliance, marketing,) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+48. 663.8899999999999864 Td
+(support, and administrators.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+48. 637.8899999999999864 Td
+(The application supports the full shipment lifecycle:) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 611.8899999999999864 Td
+(? Public visitors can view services, pricing, tracking, support, and company information.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 594.8899999999999864 Td
+(? Customers can place orders, request deliveries, track parcels, manage payments, raise claims, and contact) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 580.8899999999999864 Td
+(support.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 563.8899999999999864 Td
+(? Agents can manage customers, shipments, payments, commissions, sourcing, and supplier requests.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 546.8899999999999864 Td
+(? Warehouse users can receive parcels, manage inspections, consolidate shipments, update parcel status,) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 532.8899999999999864 Td
+(and coordinate deliveries.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 515.8899999999999864 Td
+(? Drivers can view deliveries, report incidents, and track performance.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 498.8899999999999864 Td
+(? Finance users can manage payments, invoices, accounts receivable, wallets, commissions, COD) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 484.8899999999999864 Td
+(settlements, billing, reconciliation, and reports.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 467.8899999999999864 Td
+(? Compliance users can review queues and record compliance charges.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 450.8899999999999864 Td
+(? Support users can manage tickets, escalations, customer profiles, SLAs, claims, knowledge base records,) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 436.8899999999999864 Td
+(bulk SMS, and problem parcels.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 419.8899999999999864 Td
+(? Marketing users can manage campaigns, leads, analytics, content, promotions, social activity, email,) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 405.8899999999999864 Td
+(budgets, sales, and reports.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 388.8899999999999864 Td
+(? Admin users can manage users, roles, branches, customers, drivers, receivers, missions, transactions,) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 374.8899999999999864 Td
+(settings, and reports.) Tj
+ET
+BT
+/F2 14 Tf
+16.0999999999999979 TL
+0 g
+48. 351.8899999999999864 Td
+(2. Technology Stack) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 319.8899999999999864 Td
+(? Vite for development and production builds.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 302.8899999999999864 Td
+(? React 18 with TypeScript.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 285.8899999999999864 Td
+(? React Router for client-side routing.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 268.8899999999999864 Td
+(? TanStack Query for async data fetching and caching.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 251.8899999999999864 Td
+(? Supabase for authentication, database, generated database types, storage, and edge functions.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 234.8899999999999864 Td
+(? Tailwind CSS for styling.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 217.8899999999999864 Td
+(? shadcn/ui style components built on Radix UI primitives.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 200.8899999999999864 Td
+(? Lucide React for icons.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 183.8899999999999864 Td
+(? Recharts for charts.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 166.8899999999999864 Td
+(? React Hook Form and Zod for forms and validation.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 149.8899999999999864 Td
+(? jsPDF and jsPDF AutoTable for PDF generation.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 132.8899999999999864 Td
+(? XLSX for spreadsheet import or export workflows.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 115.8899999999999864 Td
+(? Vitest and Testing Library for tests.) Tj
+ET
+BT
+/F2 14 Tf
+16.0999999999999979 TL
+0 g
+48. 92.8899999999999864 Td
+(3. Repository Structure) Tj
+ET
+BT
+/F1 8 Tf
+9.1999999999999993 TL
+0 g
+48. 24. Td
+(XY Cargo Zambia Project Documentation - Page 1 of 14) Tj
+ET
+endstream
+endobj
+5 0 obj
+<</Type /Page
+/Parent 1 0 R
+/Resources 2 0 R
+/MediaBox [0 0 595.2799999999999727 841.8899999999999864]
+/Contents 6 0 R
+>>
+endobj
+6 0 obj
+<<
+/Length 5693
+>>
+stream
+0.200025 w
+0 G
+BT
+/F5 8 Tf
+9.1999999999999993 TL
+0 g
+48. 793.8899999999999864 Td
+(.) Tj
+ET
+BT
+/F5 8 Tf
+9.1999999999999993 TL
+0 g
+48. 781.8899999999999864 Td
+(|-- src/) Tj
+ET
+BT
+/F5 8 Tf
+9.1999999999999993 TL
+0 g
+48. 769.8899999999999864 Td
+(|   |-- assets/                 Static frontend assets imported by React) Tj
+ET
+BT
+/F5 8 Tf
+9.1999999999999993 TL
+0 g
+48. 757.8899999999999864 Td
+(|   |-- components/             Shared UI, layout, auth, public, and domain components) Tj
+ET
+BT
+/F5 8 Tf
+9.1999999999999993 TL
+0 g
+48. 745.8899999999999864 Td
+(|   |-- content/                CMS defaults and public content defaults) Tj
+ET
+BT
+/F5 8 Tf
+9.1999999999999993 TL
+0 g
+48. 733.8899999999999864 Td
+(|   |-- hooks/                  Shared React hooks) Tj
+ET
+BT
+/F5 8 Tf
+9.1999999999999993 TL
+0 g
+48. 721.8899999999999864 Td
+(|   |-- integrations/supabase/  Supabase client and generated database types) Tj
+ET
+BT
+/F5 8 Tf
+9.1999999999999993 TL
+0 g
+48. 709.8899999999999864 Td
+(|   |-- lib/                    Business logic helpers and portal data utilities) Tj
+ET
+BT
+/F5 8 Tf
+9.1999999999999993 TL
+0 g
+48. 697.8899999999999864 Td
+(|   |-- pages/                  Route-level pages grouped by portal/domain) Tj
+ET
+BT
+/F5 8 Tf
+9.1999999999999993 TL
+0 g
+48. 685.8899999999999864 Td
+(|   `-- test/                   Test helpers and test setup) Tj
+ET
+BT
+/F5 8 Tf
+9.1999999999999993 TL
+0 g
+48. 673.8899999999999864 Td
+(|-- supabase/) Tj
+ET
+BT
+/F5 8 Tf
+9.1999999999999993 TL
+0 g
+48. 661.8899999999999864 Td
+(|   |-- functions/              Supabase Edge Functions) Tj
+ET
+BT
+/F5 8 Tf
+9.1999999999999993 TL
+0 g
+48. 649.8899999999999864 Td
+(|   |-- migrations/             Database schema and data migrations) Tj
+ET
+BT
+/F5 8 Tf
+9.1999999999999993 TL
+0 g
+48. 637.8899999999999864 Td
+(|   |-- manual/                 Manual database scripts) Tj
+ET
+BT
+/F5 8 Tf
+9.1999999999999993 TL
+0 g
+48. 625.8899999999999864 Td
+(|   `-- manual_scripts/         Additional manual database utilities) Tj
+ET
+BT
+/F5 8 Tf
+9.1999999999999993 TL
+0 g
+48. 613.8899999999999864 Td
+(|-- public/                     Static public files served by Vite) Tj
+ET
+BT
+/F5 8 Tf
+9.1999999999999993 TL
+0 g
+48. 601.8899999999999864 Td
+(|-- docs/                       Project documentation) Tj
+ET
+BT
+/F5 8 Tf
+9.1999999999999993 TL
+0 g
+48. 589.8899999999999864 Td
+(|-- dist/                       Production build output) Tj
+ET
+BT
+/F5 8 Tf
+9.1999999999999993 TL
+0 g
+48. 577.8899999999999864 Td
+(|-- package.json                Scripts and dependencies) Tj
+ET
+BT
+/F5 8 Tf
+9.1999999999999993 TL
+0 g
+48. 565.8899999999999864 Td
+(|-- vite.config.ts              Vite configuration) Tj
+ET
+BT
+/F5 8 Tf
+9.1999999999999993 TL
+0 g
+48. 553.8899999999999864 Td
+(|-- tailwind.config.ts          Tailwind configuration) Tj
+ET
+BT
+/F5 8 Tf
+9.1999999999999993 TL
+0 g
+48. 541.8899999999999864 Td
+(`-- README.md                  Quick start summary) Tj
+ET
+BT
+/F2 14 Tf
+16.0999999999999979 TL
+0 g
+48. 515.8899999999999864 Td
+(4. Runtime Architecture) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+48. 483.8899999999999864 Td
+(The frontend is a single-page application. src/App.tsx owns the top-level providers, routing tree, lazy-loaded) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+48. 469.8899999999999864 Td
+(pages, public layout, authenticated dashboard layout, role guards, and redirects.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+48. 443.8899999999999864 Td
+(Core runtime layers:) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 417.8899999999999864 Td
+(? Public site layer: `PublicLayout` wraps public marketing and service pages.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 400.8899999999999864 Td
+(? Auth layer: login, register, reset password, and shared auth context.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 383.8899999999999864 Td
+(? Protected app layer: `DashboardLayout` wraps authenticated operational routes.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 366.8899999999999864 Td
+(? Role guard layer: `RequireRole` and `RequireNonCustomer` restrict portal access.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 349.8899999999999864 Td
+(? Data layer: Supabase client, generated database types, domain helpers in `src/lib`, and React Query usage) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 335.8899999999999864 Td
+(inside pages and components.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 318.8899999999999864 Td
+(? UI layer: shared components in `src/components`, Tailwind utilities, Radix/shadcn primitives, and Lucide) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 304.8899999999999864 Td
+(icons.) Tj
+ET
+BT
+/F2 14 Tf
+16.0999999999999979 TL
+0 g
+48. 281.8899999999999864 Td
+(5. Environment and Configuration) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+48. 249.8899999999999864 Td
+(The Supabase client is configured in:) Tj
+ET
+BT
+/F5 8 Tf
+9.1999999999999993 TL
+0 g
+48. 219.8899999999999864 Td
+(src/integrations/supabase/client.ts) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+48. 193.8899999999999864 Td
+(The app reads:) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 167.8899999999999864 Td
+(? `VITE_SUPABASE_URL`) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 150.8899999999999864 Td
+(? `VITE_SUPABASE_PUBLISHABLE_KEY`) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+48. 127.8899999999999864 Td
+(The current client also includes fallback Supabase project values so the app can run when those environment) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+48. 113.8899999999999864 Td
+(variables are not set. Sensitive service role keys and third-party API secrets should not be committed into) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+48. 99.8899999999999864 Td
+(frontend code. Runtime secrets belong in Supabase Edge Function secrets or secured database settings.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+48. 73.8899999999999864 Td
+(Useful commands:) Tj
+ET
+BT
+/F1 8 Tf
+9.1999999999999993 TL
+0 g
+48. 24. Td
+(XY Cargo Zambia Project Documentation - Page 2 of 14) Tj
+ET
+endstream
+endobj
+7 0 obj
+<</Type /Page
+/Parent 1 0 R
+/Resources 2 0 R
+/MediaBox [0 0 595.2799999999999727 841.8899999999999864]
+/Contents 8 0 R
+>>
+endobj
+8 0 obj
+<<
+/Length 3670
+>>
+stream
+0.200025 w
+0 G
+BT
+/F5 8 Tf
+9.1999999999999993 TL
+0 g
+48. 793.8899999999999864 Td
+(npm install) Tj
+ET
+BT
+/F5 8 Tf
+9.1999999999999993 TL
+0 g
+48. 781.8899999999999864 Td
+(npm run dev) Tj
+ET
+BT
+/F5 8 Tf
+9.1999999999999993 TL
+0 g
+48. 769.8899999999999864 Td
+(npm run build) Tj
+ET
+BT
+/F5 8 Tf
+9.1999999999999993 TL
+0 g
+48. 757.8899999999999864 Td
+(npm run preview) Tj
+ET
+BT
+/F5 8 Tf
+9.1999999999999993 TL
+0 g
+48. 745.8899999999999864 Td
+(npm run lint) Tj
+ET
+BT
+/F5 8 Tf
+9.1999999999999993 TL
+0 g
+48. 733.8899999999999864 Td
+(npm run test) Tj
+ET
+BT
+/F2 14 Tf
+16.0999999999999979 TL
+0 g
+48. 707.8899999999999864 Td
+(6. Authentication and Roles) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+48. 675.8899999999999864 Td
+(Authentication is Supabase-based. The shared auth context is defined in:) Tj
+ET
+BT
+/F5 8 Tf
+9.1999999999999993 TL
+0 g
+48. 645.8899999999999864 Td
+(src/components/auth/AuthContext.tsx) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+48. 619.8899999999999864 Td
+(The app uses role-aware routing. Major role groups include:) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 593.8899999999999864 Td
+(? Customer) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 576.8899999999999864 Td
+(? Agent) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 559.8899999999999864 Td
+(? Driver) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 542.8899999999999864 Td
+(? Warehouse) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 525.8899999999999864 Td
+(? Finance) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 508.8899999999999864 Td
+(? Compliance) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 491.8899999999999864 Td
+(? Marketing) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 474.8899999999999864 Td
+(? Support) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 457.8899999999999864 Td
+(? Admin or non-customer staff) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+48. 434.8899999999999864 Td
+(Route protection is handled in the routing tree and shared auth components. Customer-only routes are separated) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+48. 420.8899999999999864 Td
+(from internal staff routes. Non-customer users are routed through the dashboard layout and role-specific) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+48. 406.8899999999999864 Td
+(sections.) Tj
+ET
+BT
+/F2 14 Tf
+16.0999999999999979 TL
+0 g
+48. 380.8899999999999864 Td
+(7. Public Website) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+48. 348.8899999999999864 Td
+(The public website is the customer-facing entry point for XY Cargo Zambia. It includes:) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 322.8899999999999864 Td
+(? Home page.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 305.8899999999999864 Td
+(? Services overview.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 288.8899999999999864 Td
+(? Product sourcing service.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 271.8899999999999864 Td
+(? Supplier payment facilitation.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 254.8899999999999864 Td
+(? Customs clearance.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 237.8899999999999864 Td
+(? Export service.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 220.8899999999999864 Td
+(? How it works.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 203.8899999999999864 Td
+(? Gallery.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 186.8899999999999864 Td
+(? Podcast.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 169.8899999999999864 Td
+(? Blog.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 152.8899999999999864 Td
+(? Privacy policy.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 135.8899999999999864 Td
+(? Terms.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 118.8899999999999864 Td
+(? Refund policy.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 101.8899999999999864 Td
+(? FAQ.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 84.8899999999999864 Td
+(? Public calculator.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 67.8899999999999864 Td
+(? Pricing.) Tj
+ET
+BT
+/F1 8 Tf
+9.1999999999999993 TL
+0 g
+48. 24. Td
+(XY Cargo Zambia Project Documentation - Page 3 of 14) Tj
+ET
+endstream
+endobj
+9 0 obj
+<</Type /Page
+/Parent 1 0 R
+/Resources 2 0 R
+/MediaBox [0 0 595.2799999999999727 841.8899999999999864]
+/Contents 10 0 R
+>>
+endobj
+10 0 obj
+<<
+/Length 3269
+>>
+stream
+0.200025 w
+0 G
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 793.8899999999999864 Td
+(? Locations.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 776.8899999999999864 Td
+(? Public tracking.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 759.8899999999999864 Td
+(? Support.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 742.8899999999999864 Td
+(? About.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 725.8899999999999864 Td
+(? Join us.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 708.8899999999999864 Td
+(? Shop.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 691.8899999999999864 Td
+(? Language page.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+48. 668.8899999999999864 Td
+(Public content defaults live in:) Tj
+ET
+BT
+/F5 8 Tf
+9.1999999999999993 TL
+0 g
+48. 638.8899999999999864 Td
+(src/content/cmsDefaults.ts) Tj
+ET
+BT
+/F5 8 Tf
+9.1999999999999993 TL
+0 g
+48. 626.8899999999999864 Td
+(src/lib/cmsContent.ts) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+48. 600.8899999999999864 Td
+(The CMS editor route allows internal users to manage editable public content.) Tj
+ET
+BT
+/F2 14 Tf
+16.0999999999999979 TL
+0 g
+48. 574.8899999999999864 Td
+(8. Customer Portal) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+48. 542.8899999999999864 Td
+(Customer routes cover day-to-day customer self-service:) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 516.8899999999999864 Td
+(? Dashboard and overview.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 499.8899999999999864 Td
+(? Inbox.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 482.8899999999999864 Td
+(? Shipments.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 465.8899999999999864 Td
+(? Place order.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 448.8899999999999864 Td
+(? Request delivery.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 431.8899999999999864 Td
+(? Tracking.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 414.8899999999999864 Td
+(? Problem parcels.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 397.8899999999999864 Td
+(? Claims.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 380.8899999999999864 Td
+(? Refunds.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 363.8899999999999864 Td
+(? Warehouse address.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 346.8899999999999864 Td
+(? Saved addresses.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 329.8899999999999864 Td
+(? Pay on behalf.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 312.8899999999999864 Td
+(? Payments.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 295.8899999999999864 Td
+(? Profile and security.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 278.8899999999999864 Td
+(? Support tickets and ticket detail.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 261.8899999999999864 Td
+(? Reports.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 244.8899999999999864 Td
+(? Sourcing.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 227.8899999999999864 Td
+(? Supplier requests.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 210.8899999999999864 Td
+(? Custom payment.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+48. 187.8899999999999864 Td
+(Key route files are under:) Tj
+ET
+BT
+/F5 8 Tf
+9.1999999999999993 TL
+0 g
+48. 157.8899999999999864 Td
+(src/pages/customer/) Tj
+ET
+BT
+/F2 14 Tf
+16.0999999999999979 TL
+0 g
+48. 131.8899999999999864 Td
+(9. Agent Portal) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+48. 99.8899999999999864 Td
+(Agents can create and manage customer work on behalf of clients. Agent features include:) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 73.8899999999999864 Td
+(? Agent dashboard.) Tj
+ET
+BT
+/F1 8 Tf
+9.1999999999999993 TL
+0 g
+48. 24. Td
+(XY Cargo Zambia Project Documentation - Page 4 of 14) Tj
+ET
+endstream
+endobj
+11 0 obj
+<</Type /Page
+/Parent 1 0 R
+/Resources 2 0 R
+/MediaBox [0 0 595.2799999999999727 841.8899999999999864]
+/Contents 12 0 R
+>>
+endobj
+12 0 obj
+<<
+/Length 3498
+>>
+stream
+0.200025 w
+0 G
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 793.8899999999999864 Td
+(? Shipments.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 776.8899999999999864 Td
+(? Request delivery.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 759.8899999999999864 Td
+(? Customer list and customer creation.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 742.8899999999999864 Td
+(? Place order.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 725.8899999999999864 Td
+(? Payments.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 708.8899999999999864 Td
+(? Commissions.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 691.8899999999999864 Td
+(? Pricing.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 674.8899999999999864 Td
+(? Tracking.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 657.8899999999999864 Td
+(? Refunds.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 640.8899999999999864 Td
+(? Reports.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 623.8899999999999864 Td
+(? Sourcing.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 606.8899999999999864 Td
+(? Support and ticket detail.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 589.8899999999999864 Td
+(? Settings.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 572.8899999999999864 Td
+(? Withdrawals.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 555.8899999999999864 Td
+(? Supplier requests.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 538.8899999999999864 Td
+(? Custom payment.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+48. 515.8899999999999864 Td
+(Admin-facing agent management also includes agent list, commissions, and reports.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+48. 489.8899999999999864 Td
+(Key files:) Tj
+ET
+BT
+/F5 8 Tf
+9.1999999999999993 TL
+0 g
+48. 459.8899999999999864 Td
+(src/pages/agent/) Tj
+ET
+BT
+/F5 8 Tf
+9.1999999999999993 TL
+0 g
+48. 447.8899999999999864 Td
+(src/pages/agents/) Tj
+ET
+BT
+/F5 8 Tf
+9.1999999999999993 TL
+0 g
+48. 435.8899999999999864 Td
+(src/lib/agentPortal.ts) Tj
+ET
+BT
+/F2 14 Tf
+16.0999999999999979 TL
+0 g
+48. 409.8899999999999864 Td
+(10. Warehouse Portal) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+48. 377.8899999999999864 Td
+(Warehouse operations manage parcel intake, movement, consolidation, status updates, and delivery handoff.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+48. 351.8899999999999864 Td
+(Warehouse features include:) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 325.8899999999999864 Td
+(? Warehouse dashboard.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 308.8899999999999864 Td
+(? All parcels.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 291.8899999999999864 Td
+(? All shipments.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 274.8899999999999864 Td
+(? Pending shipments.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 257.8899999999999864 Td
+(? Receive parcel.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 240.8899999999999864 Td
+(? Status updates.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 223.8899999999999864 Td
+(? Problem parcels.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 206.8899999999999864 Td
+(? Consolidation.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 189.8899999999999864 Td
+(? Inspection uploads.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 172.8899999999999864 Td
+(? Outgoing containers.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 155.8899999999999864 Td
+(? Warehouse customers.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 138.8899999999999864 Td
+(? Warehouse staff.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 121.8899999999999864 Td
+(? Warehouse drivers.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 104.8899999999999864 Td
+(? Deliveries.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 87.8899999999999864 Td
+(? Delivery requests.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 70.8899999999999864 Td
+(? Create shipment.) Tj
+ET
+BT
+/F1 8 Tf
+9.1999999999999993 TL
+0 g
+48. 24. Td
+(XY Cargo Zambia Project Documentation - Page 5 of 14) Tj
+ET
+endstream
+endobj
+13 0 obj
+<</Type /Page
+/Parent 1 0 R
+/Resources 2 0 R
+/MediaBox [0 0 595.2799999999999727 841.8899999999999864]
+/Contents 14 0 R
+>>
+endobj
+14 0 obj
+<<
+/Length 3632
+>>
+stream
+0.200025 w
+0 G
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+48. 793.8899999999999864 Td
+(Key files:) Tj
+ET
+BT
+/F5 8 Tf
+9.1999999999999993 TL
+0 g
+48. 763.8899999999999864 Td
+(src/pages/warehouse/) Tj
+ET
+BT
+/F5 8 Tf
+9.1999999999999993 TL
+0 g
+48. 751.8899999999999864 Td
+(src/lib/warehouseTabFilters.ts) Tj
+ET
+BT
+/F5 8 Tf
+9.1999999999999993 TL
+0 g
+48. 739.8899999999999864 Td
+(src/lib/parcelWorkflow.ts) Tj
+ET
+BT
+/F5 8 Tf
+9.1999999999999993 TL
+0 g
+48. 727.8899999999999864 Td
+(src/lib/shipmentNotes.ts) Tj
+ET
+BT
+/F2 14 Tf
+16.0999999999999979 TL
+0 g
+48. 701.8899999999999864 Td
+(11. Driver Portal) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+48. 669.8899999999999864 Td
+(Driver routes focus on delivery execution and field reporting:) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 643.8899999999999864 Td
+(? Driver dashboard.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 626.8899999999999864 Td
+(? Delivery updates.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 609.8899999999999864 Td
+(? Performance.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 592.8899999999999864 Td
+(? Incidents.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 575.8899999999999864 Td
+(? Settings.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+48. 552.8899999999999864 Td
+(Key files:) Tj
+ET
+BT
+/F5 8 Tf
+9.1999999999999993 TL
+0 g
+48. 522.8899999999999864 Td
+(src/pages/driver/) Tj
+ET
+BT
+/F5 8 Tf
+9.1999999999999993 TL
+0 g
+48. 510.8899999999999864 Td
+(src/pages/drivers/) Tj
+ET
+BT
+/F5 8 Tf
+9.1999999999999993 TL
+0 g
+48. 498.8899999999999864 Td
+(src/lib/driverPortal.ts) Tj
+ET
+BT
+/F2 14 Tf
+16.0999999999999979 TL
+0 g
+48. 472.8899999999999864 Td
+(12. Finance Portal) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+48. 440.8899999999999864 Td
+(Finance manages money movement, reporting, statements, and settlement workflows.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+48. 414.8899999999999864 Td
+(Finance features include:) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 388.8899999999999864 Td
+(? Finance dashboard.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 371.8899999999999864 Td
+(? Payments.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 354.8899999999999864 Td
+(? Claims.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 337.8899999999999864 Td
+(? Invoices.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 320.8899999999999864 Td
+(? COD settlements.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 303.8899999999999864 Td
+(? Commissions.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 286.8899999999999864 Td
+(? Reports.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 269.8899999999999864 Td
+(? Payment history.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 252.8899999999999864 Td
+(? Accounts receivable.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 235.8899999999999864 Td
+(? Reconciliation.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 218.8899999999999864 Td
+(? Billing.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 201.8899999999999864 Td
+(? Client statements.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 184.8899999999999864 Td
+(? Wallets.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 167.8899999999999864 Td
+(? Settings.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+48. 144.8899999999999864 Td
+(Important finance files:) Tj
+ET
+BT
+/F5 8 Tf
+9.1999999999999993 TL
+0 g
+48. 114.8899999999999864 Td
+(src/pages/finance/) Tj
+ET
+BT
+/F5 8 Tf
+9.1999999999999993 TL
+0 g
+48. 102.8899999999999864 Td
+(src/lib/financePortal.ts) Tj
+ET
+BT
+/F5 8 Tf
+9.1999999999999993 TL
+0 g
+48. 90.8899999999999864 Td
+(src/lib/currencyDisplay.ts) Tj
+ET
+BT
+/F5 8 Tf
+9.1999999999999993 TL
+0 g
+48. 78.8899999999999864 Td
+(supabase/migrations/20260515113000_fix_compliance_currency_finance_precision.sql) Tj
+ET
+BT
+/F5 8 Tf
+9.1999999999999993 TL
+0 g
+48. 66.8899999999999864 Td
+(supabase/migrations/20260528124000_fix_default_currency_expense_amount_drift.sql) Tj
+ET
+BT
+/F1 8 Tf
+9.1999999999999993 TL
+0 g
+48. 24. Td
+(XY Cargo Zambia Project Documentation - Page 6 of 14) Tj
+ET
+endstream
+endobj
+15 0 obj
+<</Type /Page
+/Parent 1 0 R
+/Resources 2 0 R
+/MediaBox [0 0 595.2799999999999727 841.8899999999999864]
+/Contents 16 0 R
+>>
+endobj
+16 0 obj
+<<
+/Length 3670
+>>
+stream
+0.200025 w
+0 G
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+48. 793.8899999999999864 Td
+(Finance precision handling:) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 767.8899999999999864 Td
+(? Compliance charge finance sync preserves original amount and original currency.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 750.8899999999999864 Td
+(? Default-currency expenses should not be converted against their own exchange rate.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 733.8899999999999864 Td
+(? Dashboard and report displays use shared currency display helpers to remove small historical decimal drift) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 719.8899999999999864 Td
+(from whole-number amounts.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 702.8899999999999864 Td
+(? See `docs/FINANCE_PRECISION_FIX.md` for the detailed fix notes.) Tj
+ET
+BT
+/F2 14 Tf
+16.0999999999999979 TL
+0 g
+48. 679.8899999999999864 Td
+(13. Compliance Portal) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+48. 647.8899999999999864 Td
+(Compliance users handle shipment compliance review and charge recording.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+48. 621.8899999999999864 Td
+(Compliance features include:) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 595.8899999999999864 Td
+(? Compliance dashboard.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 578.8899999999999864 Td
+(? Compliance queue.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 561.8899999999999864 Td
+(? Compliance charges.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+48. 538.8899999999999864 Td
+(Key files:) Tj
+ET
+BT
+/F5 8 Tf
+9.1999999999999993 TL
+0 g
+48. 508.8899999999999864 Td
+(src/pages/compliance/) Tj
+ET
+BT
+/F5 8 Tf
+9.1999999999999993 TL
+0 g
+48. 496.8899999999999864 Td
+(supabase/migrations/20260515113000_fix_compliance_currency_finance_precision.sql) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+48. 470.8899999999999864 Td
+(Compliance charge records can sync into finance expenses. The sync function stores:) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 444.8899999999999864 Td
+(? Base finance amount.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 427.8899999999999864 Td
+(? Original amount.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 410.8899999999999864 Td
+(? Original currency.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 393.8899999999999864 Td
+(? Expense type.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 376.8899999999999864 Td
+(? Expense date.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 359.8899999999999864 Td
+(? Description.) Tj
+ET
+BT
+/F2 14 Tf
+16.0999999999999979 TL
+0 g
+48. 336.8899999999999864 Td
+(14. Support Portal) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+48. 304.8899999999999864 Td
+(Support users manage customer issues, internal notes, escalations, and operational support.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+48. 278.8899999999999864 Td
+(Support features include:) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 252.8899999999999864 Td
+(? Dashboard.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 235.8899999999999864 Td
+(? Tickets.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 218.8899999999999864 Td
+(? Ticket detail.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 201.8899999999999864 Td
+(? Department queues.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 184.8899999999999864 Td
+(? My tickets.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 167.8899999999999864 Td
+(? Create ticket.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 150.8899999999999864 Td
+(? Escalated tickets.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 133.8899999999999864 Td
+(? Customer profiles.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 116.8899999999999864 Td
+(? SLA monitoring.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 99.8899999999999864 Td
+(? Reports.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 82.8899999999999864 Td
+(? Problem parcels.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 65.8899999999999864 Td
+(? Sourcing requests.) Tj
+ET
+BT
+/F1 8 Tf
+9.1999999999999993 TL
+0 g
+48. 24. Td
+(XY Cargo Zambia Project Documentation - Page 7 of 14) Tj
+ET
+endstream
+endobj
+17 0 obj
+<</Type /Page
+/Parent 1 0 R
+/Resources 2 0 R
+/MediaBox [0 0 595.2799999999999727 841.8899999999999864]
+/Contents 18 0 R
+>>
+endobj
+18 0 obj
+<<
+/Length 3310
+>>
+stream
+0.200025 w
+0 G
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 793.8899999999999864 Td
+(? Claims.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 776.8899999999999864 Td
+(? Internal notes.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 759.8899999999999864 Td
+(? Knowledge base.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 742.8899999999999864 Td
+(? Bulk SMS.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 725.8899999999999864 Td
+(? Supplier requests.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+48. 702.8899999999999864 Td
+(Key files:) Tj
+ET
+BT
+/F5 8 Tf
+9.1999999999999993 TL
+0 g
+48. 672.8899999999999864 Td
+(src/pages/support/) Tj
+ET
+BT
+/F5 8 Tf
+9.1999999999999993 TL
+0 g
+48. 660.8899999999999864 Td
+(src/lib/supportTickets.ts) Tj
+ET
+BT
+/F2 14 Tf
+16.0999999999999979 TL
+0 g
+48. 634.8899999999999864 Td
+(15. Marketing Portal) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+48. 602.8899999999999864 Td
+(Marketing covers campaigns, analytics, leads, sales, social media, and reporting.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+48. 576.8899999999999864 Td
+(Marketing features include:) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 550.8899999999999864 Td
+(? Dashboard.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 533.8899999999999864 Td
+(? Campaigns.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 516.8899999999999864 Td
+(? Leads.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 499.8899999999999864 Td
+(? Content.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 482.8899999999999864 Td
+(? Analytics.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 465.8899999999999864 Td
+(? Promotions.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 448.8899999999999864 Td
+(? Social.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 431.8899999999999864 Td
+(? Email.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 414.8899999999999864 Td
+(? Budget and ROI.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 397.8899999999999864 Td
+(? Sales.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 380.8899999999999864 Td
+(? Reports.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 363.8899999999999864 Td
+(? Settings.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+48. 340.8899999999999864 Td
+(Key files:) Tj
+ET
+BT
+/F5 8 Tf
+9.1999999999999993 TL
+0 g
+48. 310.8899999999999864 Td
+(src/pages/marketing/) Tj
+ET
+BT
+/F5 8 Tf
+9.1999999999999993 TL
+0 g
+48. 298.8899999999999864 Td
+(src/lib/marketingMetrics.ts) Tj
+ET
+BT
+/F5 8 Tf
+9.1999999999999993 TL
+0 g
+48. 286.8899999999999864 Td
+(supabase/migrations/20260515102000_fix_marketing_accuracy_and_cost_entries.sql) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+48. 260.8899999999999864 Td
+(Marketing analytics excludes preview-builder traffic. Campaign records support manual cost entries and) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+48. 246.8899999999999864 Td
+(Meta-synced campaign rows.) Tj
+ET
+BT
+/F2 14 Tf
+16.0999999999999979 TL
+0 g
+48. 220.8899999999999864 Td
+(16. Admin and Settings) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+48. 188.8899999999999864 Td
+(Administrative routes cover core management areas:) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 162.8899999999999864 Td
+(? Dashboard.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 145.8899999999999864 Td
+(? Profile.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 128.8899999999999864 Td
+(? CMS content settings.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 111.8899999999999864 Td
+(? Customers.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 94.8899999999999864 Td
+(? Drivers.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 77.8899999999999864 Td
+(? Receivers.) Tj
+ET
+BT
+/F1 8 Tf
+9.1999999999999993 TL
+0 g
+48. 24. Td
+(XY Cargo Zambia Project Documentation - Page 8 of 14) Tj
+ET
+endstream
+endobj
+19 0 obj
+<</Type /Page
+/Parent 1 0 R
+/Resources 2 0 R
+/MediaBox [0 0 595.2799999999999727 841.8899999999999864]
+/Contents 20 0 R
+>>
+endobj
+20 0 obj
+<<
+/Length 3585
+>>
+stream
+0.200025 w
+0 G
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 793.8899999999999864 Td
+(? Missions.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 776.8899999999999864 Td
+(? Transactions.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 759.8899999999999864 Td
+(? Users.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 742.8899999999999864 Td
+(? Roles.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 725.8899999999999864 Td
+(? Staff portal assignments.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 708.8899999999999864 Td
+(? Reports.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 691.8899999999999864 Td
+(? Branches.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 674.8899999999999864 Td
+(? Warehouses.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 657.8899999999999864 Td
+(? General system settings.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+48. 634.8899999999999864 Td
+(Settings routes include:) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 608.8899999999999864 Td
+(? Shipping rates.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 591.8899999999999864 Td
+(? Shipping.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 574.8899999999999864 Td
+(? Payments.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 557.8899999999999864 Td
+(? General.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 540.8899999999999864 Td
+(? Covered places.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 523.8899999999999864 Td
+(? Areas.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 506.8899999999999864 Td
+(? Delivery time.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 489.8899999999999864 Td
+(? Packages.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 472.8899999999999864 Td
+(? Product types.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 455.8899999999999864 Td
+(? Pickup destinations.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 438.8899999999999864 Td
+(? Currencies.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 421.8899999999999864 Td
+(? Localization.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 404.8899999999999864 Td
+(? Notifications.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 387.8899999999999864 Td
+(? Google settings.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 370.8899999999999864 Td
+(? Backup.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 353.8899999999999864 Td
+(? Themes.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 336.8899999999999864 Td
+(? Theme settings.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 319.8899999999999864 Td
+(? API secrets.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 302.8899999999999864 Td
+(? Currency management.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+48. 279.8899999999999864 Td
+(Key files:) Tj
+ET
+BT
+/F5 8 Tf
+9.1999999999999993 TL
+0 g
+48. 249.8899999999999864 Td
+(src/pages/settings/) Tj
+ET
+BT
+/F5 8 Tf
+9.1999999999999993 TL
+0 g
+48. 237.8899999999999864 Td
+(src/pages/users/) Tj
+ET
+BT
+/F5 8 Tf
+9.1999999999999993 TL
+0 g
+48. 225.8899999999999864 Td
+(src/pages/roles/) Tj
+ET
+BT
+/F5 8 Tf
+9.1999999999999993 TL
+0 g
+48. 213.8899999999999864 Td
+(src/pages/customers/) Tj
+ET
+BT
+/F5 8 Tf
+9.1999999999999993 TL
+0 g
+48. 201.8899999999999864 Td
+(src/pages/drivers/) Tj
+ET
+BT
+/F5 8 Tf
+9.1999999999999993 TL
+0 g
+48. 189.8899999999999864 Td
+(src/pages/receivers/) Tj
+ET
+BT
+/F5 8 Tf
+9.1999999999999993 TL
+0 g
+48. 177.8899999999999864 Td
+(src/pages/missions/) Tj
+ET
+BT
+/F5 8 Tf
+9.1999999999999993 TL
+0 g
+48. 165.8899999999999864 Td
+(src/pages/transactions/) Tj
+ET
+BT
+/F5 8 Tf
+9.1999999999999993 TL
+0 g
+48. 153.8899999999999864 Td
+(src/pages/reports/) Tj
+ET
+BT
+/F2 14 Tf
+16.0999999999999979 TL
+0 g
+48. 127.8899999999999864 Td
+(17. Supabase Backend) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+48. 95.8899999999999864 Td
+(The Supabase folder contains database migrations, manual scripts, and edge functions.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+48. 69.8899999999999864 Td
+(Important folders:) Tj
+ET
+BT
+/F1 8 Tf
+9.1999999999999993 TL
+0 g
+48. 24. Td
+(XY Cargo Zambia Project Documentation - Page 9 of 14) Tj
+ET
+endstream
+endobj
+21 0 obj
+<</Type /Page
+/Parent 1 0 R
+/Resources 2 0 R
+/MediaBox [0 0 595.2799999999999727 841.8899999999999864]
+/Contents 22 0 R
+>>
+endobj
+22 0 obj
+<<
+/Length 4131
+>>
+stream
+0.200025 w
+0 G
+BT
+/F5 8 Tf
+9.1999999999999993 TL
+0 g
+48. 793.8899999999999864 Td
+(supabase/migrations/) Tj
+ET
+BT
+/F5 8 Tf
+9.1999999999999993 TL
+0 g
+48. 781.8899999999999864 Td
+(supabase/functions/) Tj
+ET
+BT
+/F5 8 Tf
+9.1999999999999993 TL
+0 g
+48. 769.8899999999999864 Td
+(supabase/manual/) Tj
+ET
+BT
+/F5 8 Tf
+9.1999999999999993 TL
+0 g
+48. 757.8899999999999864 Td
+(supabase/manual_scripts/) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+48. 731.8899999999999864 Td
+(Migrations define and adjust database tables, functions, policies, indexes, sync logic, and data cleanup. Before) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+48. 717.8899999999999864 Td
+(deploying frontend changes that depend on database changes, apply the relevant migrations to the target) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+48. 703.8899999999999864 Td
+(Supabase project.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+48. 677.8899999999999864 Td
+(Generated database types are stored in:) Tj
+ET
+BT
+/F5 8 Tf
+9.1999999999999993 TL
+0 g
+48. 647.8899999999999864 Td
+(src/integrations/supabase/types.ts) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+48. 621.8899999999999864 Td
+(If schema changes are made, regenerate or update these types so TypeScript stays aligned with the database.) Tj
+ET
+BT
+/F2 14 Tf
+16.0999999999999979 TL
+0 g
+48. 595.8899999999999864 Td
+(18. Supabase Edge Functions) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+48. 563.8899999999999864 Td
+(Current edge functions:) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 537.8899999999999864 Td
+(? `admin-create-user`: Staff/admin user creation workflow.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 520.8899999999999864 Td
+(? `admin-delete-user`: Staff/admin user deletion workflow.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 503.8899999999999864 Td
+(? `lipila-callback`: Lipila payment callback handler.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 486.8899999999999864 Td
+(? `lipila-payment`: Lipila payment initiation.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 469.8899999999999864 Td
+(? `marketing-automation-trigger`: Marketing automation trigger.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 452.8899999999999864 Td
+(? `public-tracking-lookup`: Public tracking lookup endpoint.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 435.8899999999999864 Td
+(? `publish-social-post`: Social post publishing.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 418.8899999999999864 Td
+(? `send-email`: Email delivery.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 401.8899999999999864 Td
+(? `send-notification`: App notification delivery.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 384.8899999999999864 Td
+(? `send-sms`: SMS delivery.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 367.8899999999999864 Td
+(? `shipsgo-tracking`: ShipsGo tracking integration.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 350.8899999999999864 Td
+(? `sms-diagnostic`: SMS diagnostics.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 333.8899999999999864 Td
+(? `sync-social-metrics`: Social metrics sync.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 316.8899999999999864 Td
+(? `update-exchange-rates`: Currency exchange rate updates.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 299.8899999999999864 Td
+(? `verify-recaptcha`: reCAPTCHA verification.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 282.8899999999999864 Td
+(? `wallet-payment`: Wallet payment handling.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+48. 259.8899999999999864 Td
+(Edge functions live under:) Tj
+ET
+BT
+/F5 8 Tf
+9.1999999999999993 TL
+0 g
+48. 229.8899999999999864 Td
+(supabase/functions/) Tj
+ET
+BT
+/F2 14 Tf
+16.0999999999999979 TL
+0 g
+48. 203.8899999999999864 Td
+(19. External Integrations) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+48. 171.8899999999999864 Td
+(The project integrates with several external systems:) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 145.8899999999999864 Td
+(? Supabase Auth and database.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 128.8899999999999864 Td
+(? Lipila for payment processing.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 111.8899999999999864 Td
+(? ShipsGo for tracking.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 94.8899999999999864 Td
+(? SMS provider through Supabase functions.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 77.8899999999999864 Td
+(? Email provider through Supabase functions.) Tj
+ET
+BT
+/F1 8 Tf
+9.1999999999999993 TL
+0 g
+48. 24. Td
+(XY Cargo Zambia Project Documentation - Page 10 of 14) Tj
+ET
+endstream
+endobj
+23 0 obj
+<</Type /Page
+/Parent 1 0 R
+/Resources 2 0 R
+/MediaBox [0 0 595.2799999999999727 841.8899999999999864]
+/Contents 24 0 R
+>>
+endobj
+24 0 obj
+<<
+/Length 3884
+>>
+stream
+0.200025 w
+0 G
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 793.8899999999999864 Td
+(? Social publishing and metrics sync.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 776.8899999999999864 Td
+(? reCAPTCHA verification.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 759.8899999999999864 Td
+(? Exchange-rate update workflow.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 742.8899999999999864 Td
+(? Google and analytics settings.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+48. 719.8899999999999864 Td
+(Integration secrets should be configured outside frontend source code. Use Supabase Edge Function secrets or) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+48. 705.8899999999999864 Td
+(secured settings pages where the app already provides that pattern.) Tj
+ET
+BT
+/F2 14 Tf
+16.0999999999999979 TL
+0 g
+48. 679.8899999999999864 Td
+(20. Currency and Financial Data Rules) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+48. 647.8899999999999864 Td
+(The system supports multiple currencies and keeps a default system currency. Finance records may store:) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 621.8899999999999864 Td
+(? `amount`: base/default currency amount used in finance totals.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 604.8899999999999864 Td
+(? `original_amount`: original entered amount.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 587.8899999999999864 Td
+(? `original_currency`: original entered currency.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+48. 564.8899999999999864 Td
+(Rules:) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 538.8899999999999864 Td
+(? If the entered currency is the default currency, store and display the exact entered amount.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 521.8899999999999864 Td
+(? If the source currency rate equals the default rate, do not convert.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 504.8899999999999864 Td
+(? If conversion is needed, use configured active currency rates.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 487.8899999999999864 Td
+(? Preserve original amount and currency for auditability.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 470.8899999999999864 Td
+(? Use shared display helpers for totals that may have legacy minor drift.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+48. 447.8899999999999864 Td
+(Relevant files:) Tj
+ET
+BT
+/F5 8 Tf
+9.1999999999999993 TL
+0 g
+48. 417.8899999999999864 Td
+(src/lib/currencyDisplay.ts) Tj
+ET
+BT
+/F5 8 Tf
+9.1999999999999993 TL
+0 g
+48. 405.8899999999999864 Td
+(src/hooks/useCurrencyContext.tsx) Tj
+ET
+BT
+/F5 8 Tf
+9.1999999999999993 TL
+0 g
+48. 393.8899999999999864 Td
+(src/pages/Dashboard.tsx) Tj
+ET
+BT
+/F5 8 Tf
+9.1999999999999993 TL
+0 g
+48. 381.8899999999999864 Td
+(src/pages/finance/FinanceDashboard.tsx) Tj
+ET
+BT
+/F5 8 Tf
+9.1999999999999993 TL
+0 g
+48. 369.8899999999999864 Td
+(src/pages/finance/FinanceReports.tsx) Tj
+ET
+BT
+/F2 14 Tf
+16.0999999999999979 TL
+0 g
+48. 343.8899999999999864 Td
+(21. Build and Deployment) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+48. 311.8899999999999864 Td
+(Development:) Tj
+ET
+BT
+/F5 8 Tf
+9.1999999999999993 TL
+0 g
+48. 281.8899999999999864 Td
+(npm install) Tj
+ET
+BT
+/F5 8 Tf
+9.1999999999999993 TL
+0 g
+48. 269.8899999999999864 Td
+(npm run dev) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+48. 243.8899999999999864 Td
+(Production build:) Tj
+ET
+BT
+/F5 8 Tf
+9.1999999999999993 TL
+0 g
+48. 213.8899999999999864 Td
+(npm run build) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+48. 187.8899999999999864 Td
+(Preview built output:) Tj
+ET
+BT
+/F5 8 Tf
+9.1999999999999993 TL
+0 g
+48. 157.8899999999999864 Td
+(npm run preview) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+48. 131.8899999999999864 Td
+(Deployment checklist:) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 105.8899999999999864 Td
+(? Install dependencies with the lockfile in the target environment.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 88.8899999999999864 Td
+(? Apply required Supabase migrations.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 71.8899999999999864 Td
+(? Confirm required Supabase environment variables and secrets.) Tj
+ET
+BT
+/F1 8 Tf
+9.1999999999999993 TL
+0 g
+48. 24. Td
+(XY Cargo Zambia Project Documentation - Page 11 of 14) Tj
+ET
+endstream
+endobj
+25 0 obj
+<</Type /Page
+/Parent 1 0 R
+/Resources 2 0 R
+/MediaBox [0 0 595.2799999999999727 841.8899999999999864]
+/Contents 26 0 R
+>>
+endobj
+26 0 obj
+<<
+/Length 3832
+>>
+stream
+0.200025 w
+0 G
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 793.8899999999999864 Td
+(? Run lint and tests where practical.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 776.8899999999999864 Td
+(? Run `npm run build`.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 759.8899999999999864 Td
+(? Deploy the generated `dist/` output.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 742.8899999999999864 Td
+(? Verify public routes, login, role-based dashboards, payment flows, tracking, and key finance totals.) Tj
+ET
+BT
+/F2 14 Tf
+16.0999999999999979 TL
+0 g
+48. 719.8899999999999864 Td
+(22. Testing and Quality Checks) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+48. 687.8899999999999864 Td
+(Available commands:) Tj
+ET
+BT
+/F5 8 Tf
+9.1999999999999993 TL
+0 g
+48. 657.8899999999999864 Td
+(npm run lint) Tj
+ET
+BT
+/F5 8 Tf
+9.1999999999999993 TL
+0 g
+48. 645.8899999999999864 Td
+(npm run test) Tj
+ET
+BT
+/F5 8 Tf
+9.1999999999999993 TL
+0 g
+48. 633.8899999999999864 Td
+(npm run build) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+48. 607.8899999999999864 Td
+(Recommended manual smoke checks:) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 581.8899999999999864 Td
+(? Public home page loads.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 564.8899999999999864 Td
+(? Public tracking page loads.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 547.8899999999999864 Td
+(? Login works.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 530.8899999999999864 Td
+(? Customer dashboard loads.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 513.8899999999999864 Td
+(? Admin dashboard loads.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 496.8899999999999864 Td
+(? Finance dashboard totals render correctly.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 479.8899999999999864 Td
+(? Warehouse receive and status pages load.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 462.8899999999999864 Td
+(? Support ticket pages load.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 445.8899999999999864 Td
+(? Marketing analytics excludes preview-builder traffic.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 428.8899999999999864 Td
+(? Mobile view has no removed PWA/mobile-bottom-navigation artifacts.) Tj
+ET
+BT
+/F2 14 Tf
+16.0999999999999979 TL
+0 g
+48. 405.8899999999999864 Td
+(23. PWA Status) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+48. 373.8899999999999864 Td
+(PWA features have been removed from the project. The app should behave as a standard responsive web) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+48. 359.8899999999999864 Td
+(application.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+48. 333.8899999999999864 Td
+(Removed or deprecated PWA areas include:) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 307.8899999999999864 Td
+(? Web app manifests.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 290.8899999999999864 Td
+(? Service worker.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 273.8899999999999864 Td
+(? Push notification prompt.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 256.8899999999999864 Td
+(? PWA manager utilities.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 239.8899999999999864 Td
+(? PWA icon and splash artifacts.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 222.8899999999999864 Td
+(? Mobile sticky bottom navigation component.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+48. 199.8899999999999864 Td
+(When adding new public assets, avoid reintroducing service worker registration, push prompts, manifest links, or) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+48. 185.8899999999999864 Td
+(install banners unless the PWA feature is intentionally restored.) Tj
+ET
+BT
+/F2 14 Tf
+16.0999999999999979 TL
+0 g
+48. 159.8899999999999864 Td
+(24. Documentation Files) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+48. 127.8899999999999864 Td
+(Existing documentation:) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 101.8899999999999864 Td
+(? `docs/AUTOMATIC_PDF_DOWNLOAD.md`) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 84.8899999999999864 Td
+(? `docs/FINANCE_PRECISION_FIX.md`) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 67.8899999999999864 Td
+(? `docs/INVOICE_LOGO_IMPLEMENTATION.md`) Tj
+ET
+BT
+/F1 8 Tf
+9.1999999999999993 TL
+0 g
+48. 24. Td
+(XY Cargo Zambia Project Documentation - Page 12 of 14) Tj
+ET
+endstream
+endobj
+27 0 obj
+<</Type /Page
+/Parent 1 0 R
+/Resources 2 0 R
+/MediaBox [0 0 595.2799999999999727 841.8899999999999864]
+/Contents 28 0 R
+>>
+endobj
+28 0 obj
+<<
+/Length 4024
+>>
+stream
+0.200025 w
+0 G
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 793.8899999999999864 Td
+(? `docs/PROJECT_DOCUMENTATION.md`) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+48. 770.8899999999999864 Td
+(Generated PDF documentation:) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 744.8899999999999864 Td
+(? `docs/FINANCE_PRECISION_FIX.pdf`) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 727.8899999999999864 Td
+(? `docs/PROJECT_DOCUMENTATION.pdf`) Tj
+ET
+BT
+/F2 14 Tf
+16.0999999999999979 TL
+0 g
+48. 704.8899999999999864 Td
+(25. Maintenance Notes) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 672.8899999999999864 Td
+(? Keep route documentation aligned with `src/App.tsx`.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 655.8899999999999864 Td
+(? Keep backend documentation aligned with `supabase/functions/` and `supabase/migrations/`.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 638.8899999999999864 Td
+(? Regenerate Supabase TypeScript types after schema changes.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 621.8899999999999864 Td
+(? Update finance documentation whenever currency conversion, display formatting, or expense sync logic) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 607.8899999999999864 Td
+(changes.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 590.8899999999999864 Td
+(? Update deployment notes if the hosting provider, environment variable strategy, or build output changes.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 573.8899999999999864 Td
+(? Avoid editing unrelated pending files when making targeted fixes.) Tj
+ET
+BT
+/F2 14 Tf
+16.0999999999999979 TL
+0 g
+48. 550.8899999999999864 Td
+(26. Troubleshooting) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+48. 518.8899999999999864 Td
+(If the app fails to start:) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 492.8899999999999864 Td
+(? Run `npm install`.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 475.8899999999999864 Td
+(? Confirm Node.js and npm are installed.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 458.8899999999999864 Td
+(? Confirm Vite can read the project root.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 441.8899999999999864 Td
+(? Check TypeScript errors in the terminal.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+48. 418.8899999999999864 Td
+(If Supabase data does not load:) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 392.8899999999999864 Td
+(? Confirm Supabase URL and publishable key.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 375.8899999999999864 Td
+(? Confirm the target database has the latest migrations.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 358.8899999999999864 Td
+(? Check row level security policies.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 341.8899999999999864 Td
+(? Check browser console network errors.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+48. 318.8899999999999864 Td
+(If role routes redirect unexpectedly:) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 292.8899999999999864 Td
+(? Confirm the logged-in user's role.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 275.8899999999999864 Td
+(? Confirm role assignment records and portal assignment records.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 258.8899999999999864 Td
+(? Check route guards in `src/App.tsx`.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+48. 235.8899999999999864 Td
+(If finance totals look wrong:) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 209.8899999999999864 Td
+(? Check the default currency configuration.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 192.8899999999999864 Td
+(? Check active currency exchange rates.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 175.8899999999999864 Td
+(? Check `finance_expenses.amount`, `original_amount`, and `original_currency`.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 158.8899999999999864 Td
+(? Confirm the latest finance precision migrations have been applied.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 141.8899999999999864 Td
+(? Confirm frontend display helpers are used by the affected dashboard or report.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+48. 118.8899999999999864 Td
+(If edge functions fail:) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 92.8899999999999864 Td
+(? Check Supabase function logs.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 75.8899999999999864 Td
+(? Confirm function secrets are configured.) Tj
+ET
+BT
+/F1 8 Tf
+9.1999999999999993 TL
+0 g
+48. 24. Td
+(XY Cargo Zambia Project Documentation - Page 13 of 14) Tj
+ET
+endstream
+endobj
+29 0 obj
+<</Type /Page
+/Parent 1 0 R
+/Resources 2 0 R
+/MediaBox [0 0 595.2799999999999727 841.8899999999999864]
+/Contents 30 0 R
+>>
+endobj
+30 0 obj
+<<
+/Length 361
+>>
+stream
+0.200025 w
+0 G
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 793.8899999999999864 Td
+(? Confirm request payloads match function expectations.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0 g
+62. 776.8899999999999864 Td
+(? Confirm CORS handling where browser calls are involved.) Tj
+ET
+BT
+/F1 8 Tf
+9.1999999999999993 TL
+0 g
+48. 24. Td
+(XY Cargo Zambia Project Documentation - Page 14 of 14) Tj
+ET
+endstream
+endobj
+1 0 obj
+<</Type /Pages
+/Kids [3 0 R 5 0 R 7 0 R 9 0 R 11 0 R 13 0 R 15 0 R 17 0 R 19 0 R 21 0 R 23 0 R 25 0 R 27 0 R 29 0 R ]
+/Count 14
+>>
+endobj
+31 0 obj
+<<
+/Type /Font
+/BaseFont /Helvetica
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+32 0 obj
+<<
+/Type /Font
+/BaseFont /Helvetica-Bold
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+33 0 obj
+<<
+/Type /Font
+/BaseFont /Helvetica-Oblique
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+34 0 obj
+<<
+/Type /Font
+/BaseFont /Helvetica-BoldOblique
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+35 0 obj
+<<
+/Type /Font
+/BaseFont /Courier
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+36 0 obj
+<<
+/Type /Font
+/BaseFont /Courier-Bold
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+37 0 obj
+<<
+/Type /Font
+/BaseFont /Courier-Oblique
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+38 0 obj
+<<
+/Type /Font
+/BaseFont /Courier-BoldOblique
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+39 0 obj
+<<
+/Type /Font
+/BaseFont /Times-Roman
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+40 0 obj
+<<
+/Type /Font
+/BaseFont /Times-Bold
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+41 0 obj
+<<
+/Type /Font
+/BaseFont /Times-Italic
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+42 0 obj
+<<
+/Type /Font
+/BaseFont /Times-BoldItalic
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+43 0 obj
+<<
+/Type /Font
+/BaseFont /ZapfDingbats
+/Subtype /Type1
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+44 0 obj
+<<
+/Type /Font
+/BaseFont /Symbol
+/Subtype /Type1
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+2 0 obj
+<<
+/ProcSet [/PDF /Text /ImageB /ImageC /ImageI]
+/Font <<
+/F1 31 0 R
+/F2 32 0 R
+/F3 33 0 R
+/F4 34 0 R
+/F5 35 0 R
+/F6 36 0 R
+/F7 37 0 R
+/F8 38 0 R
+/F9 39 0 R
+/F10 40 0 R
+/F11 41 0 R
+/F12 42 0 R
+/F13 43 0 R
+/F14 44 0 R
+>>
+/XObject <<
+>>
+>>
+endobj
+45 0 obj
+<<
+/Producer (jsPDF 4.2.1)
+/CreationDate (D:20260528135215+03'00')
+>>
+endobj
+46 0 obj
+<<
+/Type /Catalog
+/Pages 1 0 R
+/OpenAction [3 0 R /FitH null]
+/PageLayout /OneColumn
+>>
+endobj
+xref
+0 47
+0000000000 65535 f 
+0000053862 00000 n 
+0000055773 00000 n 
+0000000015 00000 n 
+0000000152 00000 n 
+0000004815 00000 n 
+0000004952 00000 n 
+0000010697 00000 n 
+0000010834 00000 n 
+0000014556 00000 n 
+0000014694 00000 n 
+0000018016 00000 n 
+0000018155 00000 n 
+0000021706 00000 n 
+0000021845 00000 n 
+0000025530 00000 n 
+0000025669 00000 n 
+0000029392 00000 n 
+0000029531 00000 n 
+0000032894 00000 n 
+0000033033 00000 n 
+0000036671 00000 n 
+0000036810 00000 n 
+0000040994 00000 n 
+0000041133 00000 n 
+0000045070 00000 n 
+0000045209 00000 n 
+0000049094 00000 n 
+0000049233 00000 n 
+0000053310 00000 n 
+0000053449 00000 n 
+0000054008 00000 n 
+0000054134 00000 n 
+0000054265 00000 n 
+0000054399 00000 n 
+0000054537 00000 n 
+0000054661 00000 n 
+0000054790 00000 n 
+0000054922 00000 n 
+0000055058 00000 n 
+0000055186 00000 n 
+0000055313 00000 n 
+0000055442 00000 n 
+0000055575 00000 n 
+0000055677 00000 n 
+0000056026 00000 n 
+0000056112 00000 n 
+trailer
+<<
+/Size 47
+/Root 46 0 R
+/Info 45 0 R
+/ID [ <FC0C96686FD0F05463BCDF0ECB7108CB> <FC0C96686FD0F05463BCDF0ECB7108CB> ]
+>>
+startxref
+56216
+%%EOF

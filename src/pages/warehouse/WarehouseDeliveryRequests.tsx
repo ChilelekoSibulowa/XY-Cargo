@@ -87,8 +87,8 @@ type Row = ShipmentDetail & {
 
 type DriverRow = {
   id: string;
-  code: string;
-  full_name: string;
+  code: string | null;
+  full_name: string | null;
   is_active: boolean | null;
 };
 
@@ -111,6 +111,30 @@ const normalizeTrackingNumber = (value: string | null | undefined) => {
   const trimmed = (value || "").trim();
   return trimmed || null;
 };
+
+const normalizeDriverRows = (data: unknown[] | null | undefined): DriverRow[] => {
+  const seen = new Set<string>();
+
+  return ((data || []) as Array<Record<string, unknown>>)
+    .map((driver) => ({
+      id: String(driver.id || "").trim(),
+      code: typeof driver.code === "string" ? driver.code.trim() : null,
+      full_name: typeof driver.full_name === "string" ? driver.full_name.trim() : null,
+      is_active: typeof driver.is_active === "boolean" ? driver.is_active : null,
+    }))
+    .filter((driver) => driver.id && driver.is_active !== false)
+    .filter((driver) => {
+      if (seen.has(driver.id)) return false;
+      seen.add(driver.id);
+      return true;
+    })
+    .sort((left, right) =>
+      (left.full_name || left.code || left.id).localeCompare(right.full_name || right.code || right.id),
+    );
+};
+
+const getDriverLabel = (driver: DriverRow) =>
+  `${driver.full_name || driver.code || "Unnamed Driver"} (${driver.code || "No Code"})`;
 
 const resolveDisplayTrackingNumber = (
   notes: string | null | undefined,
@@ -323,7 +347,6 @@ const WarehouseDeliveryRequests = () => {
         supabase
           .from("drivers")
           .select("id, code, full_name, is_active")
-          .eq("is_active", true)
           .order("full_name", { ascending: true }),
         supabase
           .from("consolidations")
@@ -337,8 +360,9 @@ const WarehouseDeliveryRequests = () => {
           .order("delivery_request_requested_at", { ascending: false }),
       ]);
 
+      const driverRows = normalizeDriverRows(driversRes.data);
       const driversMap = new Map<string, { full_name: string | null; code: string | null }>();
-      (driversRes.data || []).forEach((driver: DriverRow) => {
+      driverRows.forEach((driver) => {
         driversMap.set(driver.id, { full_name: driver.full_name, code: driver.code });
       });
 
@@ -475,7 +499,7 @@ const WarehouseDeliveryRequests = () => {
 
       setActiveRows(buildGroupedRows(mergedActiveShipments, links, consolidations, driversMap));
       setHistoryRows(buildGroupedRows(mergedHistoryShipments, links, consolidations, driversMap));
-      setDrivers((driversRes.data || []) as DriverRow[]);
+      setDrivers(driverRows);
 
       if (queryErrors.length > 0) {
         console.error("[WarehouseDeliveryRequests] Query errors:", queryErrors);
@@ -679,7 +703,7 @@ const WarehouseDeliveryRequests = () => {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <PageHeader title="Delivery Requests"  />
+      <PageHeader title="Delivery Requests" />
 
       <div className="space-y-2">
         <div className="flex items-center justify-between">
@@ -703,7 +727,7 @@ const WarehouseDeliveryRequests = () => {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>{isBulkAssign ? `Assign Driver to ${bulkSelection.selectedIds.size} Request(s)` : "Assign Driver"}</DialogTitle>
-            
+
           </DialogHeader>
 
           <div className="space-y-2">
@@ -715,9 +739,14 @@ const WarehouseDeliveryRequests = () => {
               <SelectContent>
                 {drivers.map((driver) => (
                   <SelectItem key={driver.id} value={driver.id}>
-                    {driver.full_name} ({driver.code || "No Code"})
+                    {getDriverLabel(driver)}
                   </SelectItem>
                 ))}
+                {drivers.length === 0 ? (
+                  <SelectItem value="no-active-drivers" disabled>
+                    No active drivers found
+                  </SelectItem>
+                ) : null}
               </SelectContent>
             </Select>
           </div>
@@ -833,4 +862,3 @@ const WarehouseDeliveryRequests = () => {
 };
 
 export default WarehouseDeliveryRequests;
-

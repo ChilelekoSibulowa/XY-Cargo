@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { TablePagination, paginate } from "@/components/shared/TablePagination";
 import { toast } from "sonner";
+import { isBlockedMarketingSource, normalizeMarketingSource } from "@/lib/marketingMetrics";
 
 type AnalyticsRow = {
   id: string;
@@ -37,20 +38,6 @@ const MarketingAnalytics = () => {
   const [entriesPage, setEntriesPage] = useState(1);
   const [platformPage, setPlatformPage] = useState(1);
 
-  const BLOCKED_SOURCES = ["internal"];
-
-  const isBlockedSource = (value: string | null | undefined) => {
-    const lower = (value || "").toLowerCase();
-    return BLOCKED_SOURCES.some((blocked) => lower.includes(blocked));
-  };
-
-  const normalizeSource = (value: string | null | undefined) => {
-    const raw = (value || "").trim();
-    if (!raw) return "direct";
-    if (raw.toLowerCase() === "referral") return "Referral (Unspecified)";
-    return raw;
-  };
-
   const fetchRows = async () => {
     setIsLoading(true);
     const [analyticsRes, leadsRes] = await Promise.all([
@@ -67,7 +54,7 @@ const MarketingAnalytics = () => {
       setRows((analyticsRes.data || []) as AnalyticsRow[]);
     }
 
-    setLeads((leadsRes.data || []) as LeadRow[]);
+    setLeads(((leadsRes.data || []) as LeadRow[]).filter((lead) => !isBlockedMarketingSource(lead.source)));
     setIsLoading(false);
   };
 
@@ -76,15 +63,15 @@ const MarketingAnalytics = () => {
   }, []);
 
   const sourceOptions = useMemo(() => {
-    const values = Array.from(new Set(rows.filter((row) => !isBlockedSource(row.traffic_source)).map((row) => normalizeSource(row.traffic_source))));
+    const values = Array.from(new Set(rows.filter((row) => !isBlockedMarketingSource(row.traffic_source)).map((row) => normalizeMarketingSource(row.traffic_source))));
     return values.sort((a, b) => a.localeCompare(b));
   }, [rows]);
 
   const filteredRows = useMemo(() => {
     return rows.filter((row) => {
-      if (isBlockedSource(row.traffic_source)) return false;
+      if (isBlockedMarketingSource(row.traffic_source)) return false;
       const rowDate = row.view_date || "";
-      const source = normalizeSource(row.traffic_source);
+      const source = normalizeMarketingSource(row.traffic_source);
 
       if (sourceFilter !== "all" && source !== sourceFilter) return false;
       if (landingFilter === "landing" && !row.is_landing_page) return false;
@@ -109,7 +96,7 @@ const MarketingAnalytics = () => {
   const trafficSources = useMemo(() => {
     const counts: Record<string, number> = {};
     filteredRows.forEach((row) => {
-      const key = normalizeSource(row.traffic_source);
+      const key = normalizeMarketingSource(row.traffic_source);
       counts[key] = (counts[key] || 0) + row.views;
     });
     return Object.entries(counts).sort((a, b) => b[1] - a[1]);
@@ -126,7 +113,7 @@ const MarketingAnalytics = () => {
   const websitePlatformRows = useMemo(() => {
     const visitsByPlatform = new Map<string, number>();
     filteredRows.forEach((row) => {
-      const platform = normalizeSource(row.traffic_source);
+      const platform = normalizeMarketingSource(row.traffic_source);
       visitsByPlatform.set(platform, (visitsByPlatform.get(platform) || 0) + Number(row.views || 0));
     });
 
@@ -304,7 +291,7 @@ const MarketingAnalytics = () => {
                   <td className="p-3 font-medium max-w-[360px] truncate">{row.page_path}</td>
                   <td className="p-3">{row.views}</td>
                   <td className="p-3">{row.bounce_rate}%</td>
-                  <td className="p-3">{normalizeSource(row.traffic_source)}</td>
+                  <td className="p-3">{normalizeMarketingSource(row.traffic_source)}</td>
                   <td className="p-3 text-muted-foreground">{row.view_date}</td>
                 </tr>
               ))}
@@ -359,4 +346,3 @@ const MarketingAnalytics = () => {
 };
 
 export default MarketingAnalytics;
-

@@ -42,6 +42,7 @@ import {
   getWarehouseArrivalTransition,
   getPortalShipmentWorkflowStatus,
   isSingleHandlingMethod,
+  isUnconsolidatedConsolidationParcel,
 } from "@/lib/parcelWorkflow";
 import {
   isShipmentStageStatus,
@@ -284,10 +285,24 @@ const filterByTab = (rows: UnifiedRow[], tab: TabKey) => {
   }
 
   if (tab === "paid") {
-    return rows.filter((row) => row.paymentStatus === "completed" && !shouldHideConsolidatedChildInStageView(row));
+    return rows.filter(
+      (row) =>
+        row.paymentStatus === "completed" &&
+        !shouldHideConsolidatedChildInStageView(row) &&
+        !["saved_pickup", "saved_dropoff", "received"].includes(normalizeShipmentStatus(row.status)) &&
+        isShipmentStageStatus(row.status) &&
+        (row.rowType === "consolidation" || row.handlingMethod === "single")
+    );
   }
   if (tab === "unpaid") {
-    return rows.filter((row) => row.paymentStatus !== "completed" && !shouldHideConsolidatedChildInStageView(row));
+    return rows.filter(
+      (row) =>
+        row.paymentStatus !== "completed" &&
+        !shouldHideConsolidatedChildInStageView(row) &&
+        !["saved_pickup", "saved_dropoff", "received"].includes(normalizeShipmentStatus(row.status)) &&
+        isShipmentStageStatus(row.status) &&
+        (row.rowType === "consolidation" || row.handlingMethod === "single")
+    );
   }
   const map: Record<string, string> = {
     created: "saved_pickup",
@@ -305,7 +320,13 @@ const filterByTab = (rows: UnifiedRow[], tab: TabKey) => {
     const statusMatches = row.status === map[tab];
     if (!statusMatches) return false;
     if (shouldHideConsolidatedChildInStageView(row)) return false;
-    if (isShipmentStage && row.rowType === "shipment" && !isSingleHandlingMethod(row as any)) return false;
+
+    // Strict Consolidation Enforcement:
+    // Unconsolidated consolidation parcels must never appear in Submitted or later stages.
+    if (isShipmentStage && row.rowType === "shipment" && isUnconsolidatedConsolidationParcel(row.sourceShipment || (row as any))) {
+      return false;
+    }
+
     return true;
   });
 };
@@ -377,6 +398,92 @@ const getShipmentCbm = (shipment: { cbm: number | null; notes: string | null }) 
   const fromNotes = getConsolidationCbmFromNotes(shipment.notes);
   if (fromNotes !== null) return fromNotes;
   return shipment.cbm || 0;
+};
+
+const hasRequiredText = (value: string | null | undefined) => !!value?.trim();
+
+const isPositiveNumberValue = (value: number | string | null | undefined) => {
+  const parsed = typeof value === "number" ? value : Number(value);
+  return Number.isFinite(parsed) && parsed > 0;
+};
+
+const formatMissingOutgoingFields = (fields: string[]) =>
+  `Complete required Outgoing Parcel details before moving to In Transit: ${fields.join(", ")}.`;
+
+const getMissingOutgoingTransportFields = (row: UnifiedRow) => {
+  const missing: string[] = [];
+
+  if (row.rowType === "shipment") {
+    const shipment = row.sourceShipment;
+    if (!shipment) return ["Shipment record"];
+
+    if (!hasRequiredText(getWarehouseTrackingNumber(shipment.notes))) missing.push("Tracking Number");
+    if (!hasRequiredText(getAirwayBillNumber(shipment.notes))) missing.push("Airbill Number");
+    if (!hasRequiredText(shipment.estimated_delivery_date)) missing.push("Estimated Date of Arrival");
+    if (!isPositiveNumberValue(shipment.shipping_cost)) missing.push("Shipping Fee");
+    if (!isPositiveNumberValue(shipment.weight)) missing.push("Weight");
+    if (!isPositiveNumberValue(getShipmentCbm(shipment))) missing.push("CBM");
+    if (!normalizeServiceType(shipment.service_type)) missing.push("Service Type");
+    return missing;
+  }
+
+  const consolidation = row.sourceConsolidation;
+  if (!consolidation) return ["Consolidated shipment record"];
+
+  const children = (consolidation.consolidation_shipments || [])
+    .map((entry) => entry.shipment)
+    .filter(Boolean) as NonNullable<ConsolidationChild["shipment"]>[];
+  const hasTracking =
+    hasRequiredText(consolidation.tracking_code) ||
+    hasRequiredText(getWarehouseTrackingNumber(consolidation.notes));
+  const hasAirwayBill =
+    hasRequiredText(getAirwayBillNumber(consolidation.notes)) ||
+    children.some((child) => hasRequiredText(getAirwayBillNumber(child.notes)));
+  const allChildrenHaveEta =
+    children.length > 0 && children.every((child) => hasRequiredText(child.estimated_delivery_date));
+  const hasServiceType =
+    !!normalizeServiceType(extractNoteValue(consolidation.notes, "Service type")) ||
+    children.some((child) => !!normalizeServiceType(child.service_type));
+
+  if (!hasTracking) missing.push("Tracking Number");
+  if (!hasAirwayBill) missing.push("Airbill Number");
+  if (!allChildrenHaveEta) missing.push("Estimated Date of Arrival");
+  if (!isPositiveNumberValue(consolidation.total_cost)) missing.push("Shipping Fee");
+  if (!isPositiveNumberValue(consolidation.total_weight)) missing.push("Weight");
+  if (!isPositiveNumberValue(consolidation.total_cbm ?? getConsolidationCbmFromNotes(consolidation.notes))) {
+    missing.push("CBM");
+  }
+  if (!hasServiceType) missing.push("Service Type");
+
+  return missing;
+};
+
+const getMissingOutgoingEditFields = ({
+  trackingNumber,
+  airwayBill,
+  estimatedDate,
+  shippingFee,
+  weight,
+  cbm,
+  serviceType,
+}: {
+  trackingNumber: string;
+  airwayBill: string;
+  estimatedDate: string;
+  shippingFee: number;
+  weight: number;
+  cbm: number;
+  serviceType: string;
+}) => {
+  const missing: string[] = [];
+  if (!hasRequiredText(trackingNumber)) missing.push("Tracking Number");
+  if (!hasRequiredText(airwayBill)) missing.push("Airbill Number");
+  if (!hasRequiredText(estimatedDate)) missing.push("Estimated Date of Arrival");
+  if (!isPositiveNumberValue(shippingFee)) missing.push("Shipping Fee");
+  if (!isPositiveNumberValue(weight)) missing.push("Weight");
+  if (!isPositiveNumberValue(cbm)) missing.push("CBM");
+  if (!normalizeServiceType(serviceType)) missing.push("Service Type");
+  return missing;
 };
 
 const setConsolidationCbmInNotes = (notes: string | null, cbm: number) =>
@@ -494,8 +601,8 @@ const WarehouseAllParcels = () => {
   const [selectedConsolidationRemovalIds, setSelectedConsolidationRemovalIds] = useState<Set<string>>(new Set());
   const [isSavingConsolidationRemoval, setIsSavingConsolidationRemoval] = useState(false);
 
-  const fetchData = async () => {
-    setIsLoading(true);
+  const fetchData = async (options?: { silent?: boolean }) => {
+    if (!options?.silent) setIsLoading(true);
     const [shipmentsRes, consolidationsRes] = await Promise.all([
       supabase
         .from("shipments")
@@ -561,13 +668,23 @@ const WarehouseAllParcels = () => {
   useEffect(() => {
     fetchData();
 
+    // Debounce fetchData to avoid multiple rapid reloads from parallel updates
+    let fetchTimeout: ReturnType<typeof setTimeout> | null = null;
+    const debouncedFetch = () => {
+      if (fetchTimeout) clearTimeout(fetchTimeout);
+      fetchTimeout = setTimeout(() => {
+        void fetchData({ silent: true });
+      }, 1000);
+    };
+
     const channel = supabase
       .channel("warehouse-parcels-live")
-      .on("postgres_changes", { event: "*", schema: "public", table: "shipments" }, () => fetchData())
-      .on("postgres_changes", { event: "*", schema: "public", table: "consolidations" }, () => fetchData())
+      .on("postgres_changes", { event: "*", schema: "public", table: "shipments" }, debouncedFetch)
+      .on("postgres_changes", { event: "*", schema: "public", table: "consolidations" }, debouncedFetch)
       .subscribe();
 
     return () => {
+      if (fetchTimeout) clearTimeout(fetchTimeout);
       supabase.removeChannel(channel);
     };
   }, []);
@@ -735,7 +852,7 @@ const WarehouseAllParcels = () => {
           serviceType: formatServiceType(shipment.service_type),
           productType: getProductType(shipment.notes, shipment.description),
           item: shipment.description || "-",
-          tracking: shouldHideTracking ? "" : resolveTrackingByStatus(normalizedStatus, shipment.notes, shipment.custom_tracking_number) || "",
+          tracking: shouldHideTracking ? "" : resolveTrackingByParcelTab(activeTab, normalizedStatus, shipment.notes, shipment.custom_tracking_number) || "",
           airwayBill: getAirwayBillNumber(shipment.notes) || "",
           qty: shipment.quantity || 1,
           weight: shipment.weight || 0,
@@ -1021,26 +1138,30 @@ const WarehouseAllParcels = () => {
       return false;
     }
 
+    if (status === "supplied") {
+      const outgoingRow = rows.find((row) => row.rowType === "shipment" && row.id === id);
+      const missingFields = outgoingRow ? getMissingOutgoingTransportFields(outgoingRow) : ["Shipment record"];
+      if (missingFields.length > 0) {
+        if (!options?.silent) {
+          toast.error(formatMissingOutgoingFields(missingFields));
+        }
+        return false;
+      }
+    }
+
     // ENFORCE: Consolidation parcels can NEVER reach Submitted unless they have
     // already been grouped into a consolidation by the customer/agent.
     if (
       status === "requested_pickup" &&
       targetShipment &&
-      !isSingleHandlingMethod(targetShipment as any)
+      isUnconsolidatedConsolidationParcel(targetShipment as any)
     ) {
-      const { data: links } = await supabase
-        .from("consolidation_shipments")
-        .select("id")
-        .eq("shipment_id", id)
-        .limit(1);
-      if (!links || links.length === 0) {
-        if (!options?.silent) {
-          toast.error(
-            "This parcel uses Consolidation handling. The customer/agent must consolidate it before it can move to Submitted.",
-          );
-        }
-        return false;
+      if (!options?.silent) {
+        toast.error(
+          "This parcel uses Consolidation handling. The customer/agent must consolidate it before it can move to Submitted.",
+        );
       }
+      return false;
     }
 
     setUpdatingId(id);
@@ -1156,6 +1277,16 @@ const WarehouseAllParcels = () => {
         toast.error("All linked shipments must be paid in full before warehouse can mark this consolidation as Collected.");
       }
       return false;
+    }
+
+    if (status === "in_transit") {
+      const missingFields = targetRow ? getMissingOutgoingTransportFields(targetRow) : ["Consolidated shipment record"];
+      if (missingFields.length > 0) {
+        if (!options?.silent) {
+          toast.error(formatMissingOutgoingFields(missingFields));
+        }
+        return false;
+      }
     }
 
     setUpdatingId(id);
@@ -1881,9 +2012,9 @@ const WarehouseAllParcels = () => {
 
     setEditRow(row);
     setEditShippingFee(toInputNumberValue(row.shippingFee));
-    setEditTrackingNumber(row.tracking || "");
+    setEditTrackingNumber(activeTab === "outgoing" ? "" : row.tracking || "");
     setEditAirwayBill(row.airwayBill || "");
-    setEditEstimatedDate(toDateInputValue(row.estimatedDeliveryDate));
+    setEditEstimatedDate(activeTab === "outgoing" ? "" : toDateInputValue(row.estimatedDeliveryDate));
     setEditTransitStatusMessage(
       row.rowType === "shipment"
         ? getTransitStatusMessage(row.sourceShipment?.notes || null) || ""
@@ -2176,6 +2307,21 @@ const WarehouseAllParcels = () => {
     }
 
     if (activeTab === "outgoing") {
+      const missingFields = getMissingOutgoingEditFields({
+        trackingNumber: editTrackingNumber,
+        airwayBill: editAirwayBill,
+        estimatedDate: editEstimatedDate,
+        shippingFee: parsedShippingFee,
+        weight: parsedWeight,
+        cbm: parsedCbm,
+        serviceType: nextServiceType,
+      });
+
+      if (missingFields.length > 0) {
+        setUpdatingId(null);
+        return toast.error(formatMissingOutgoingFields(missingFields));
+      }
+
       if (
         Number.isNaN(parsedShippingFee) ||
         Number.isNaN(parsedWeight) ||
@@ -3133,11 +3279,16 @@ const WarehouseAllParcels = () => {
                 variant="ghost"
                 className="h-8 w-8 p-0"
                 disabled={updatingId === row.id}
-                onClick={() =>
-                  row.rowType === "consolidation"
+                onClick={() => {
+                  const missingFields = getMissingOutgoingTransportFields(row);
+                  if (missingFields.length > 0) {
+                    toast.error(formatMissingOutgoingFields(missingFields));
+                    return;
+                  }
+                  return row.rowType === "consolidation"
                     ? runConsolidationUpdate(row.id, "in_transit", "Moved to In Transit.")
-                    : runShipmentUpdate(row.id, "supplied", "Moved to In Transit.")
-                }
+                    : runShipmentUpdate(row.id, "supplied", "Moved to In Transit.");
+                }}
                 title="Move to In Transit"
               >
                 {updatingId === row.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4 text-blue-600" />}
@@ -3269,8 +3420,8 @@ const WarehouseAllParcels = () => {
                 setSearchParams(tab.key === "all" ? {} : { tab: tab.key });
               }}
               className={`flex flex-col items-center justify-between p-2 rounded-md border transition-all duration-200 min-h-[75px] bg-white ${isActive
-                  ? "border-slate-400 shadow-sm ring-1 ring-slate-400/10"
-                  : "border-slate-100"
+                ? "border-slate-400 shadow-sm ring-1 ring-slate-400/10"
+                : "border-slate-100"
                 }`}
             >
               <span className="text-xs font-semibold text-slate-500 mb-1 text-center leading-tight">
@@ -3451,43 +3602,77 @@ const WarehouseAllParcels = () => {
           <DialogHeader>
             <DialogTitle>Parcel Details</DialogTitle>
           </DialogHeader>
-          <div className="space-y-3">
-            {viewChildren.map((entry) => (
-              <div key={entry.id} className="rounded-md border p-3 space-y-1 text-sm">
-                {activeTab === "submitted" && viewRow?.rowType === "consolidation" ? (
-                  <label className="flex items-center gap-2 text-xs text-muted-foreground mb-2">
-                    <Checkbox
-                      checked={selectedConsolidationRemovalIds.has(entry.id)}
-                      onCheckedChange={(checked) =>
-                        toggleConsolidationRemovalSelection(entry.id, checked === true)
-                      }
-                    />
-                    Remove this item from consolidation
-                  </label>
-                ) : null}
-                <p className="font-semibold">{entry.description || entry.code}</p>
-                <p className="text-xs font-mono text-muted-foreground">
-                  Tracking: {resolveTrackingByStatus(entry.status, entry.notes, entry.custom_tracking_number) || "Tracking pending"}
-                  {" | "}
-                  AWB/BL No.: {getAirwayBillNumber(entry.notes) || "-"}
-                </p>
-                <p>
-                  Qty: {entry.quantity || 1} | Weight: {(entry.weight || 0).toFixed(2)} kg | Dimensions:{" "}
-                  {formatDimensions(entry.length, entry.width, entry.height)}
-                </p>
-                <p>
-                  CBM: {getShipmentCbm(entry).toFixed(4)} |{" "}
-                  Item Cost: {formatAmount(getShipmentItemCost(entry))} | Shipping Fee: {formatAmount(entry.shipping_cost || 0)}
-                </p>
-                <p>
-                  Insurance: {getInsuranceLabel(entry.notes)} | Special Packaging:{" "}
-                  {getSpecialPackagingLabel(entry.notes)}
-                </p>
+          <div className="space-y-4">
+            {viewRow && (
+              <div className="rounded-lg border bg-slate-50 p-4 shadow-sm">
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="font-bold text-slate-900">
+                    {viewRow.rowType === "consolidation" ? "Consolidated Shipment" : "Single Shipment"}: {viewRow.code}
+                  </h3>
+                  <Badge variant="outline" className="bg-white">
+                    {statusLabel[viewRow.status] || viewRow.status}
+                  </Badge>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
+                  <p className="text-muted-foreground font-medium">
+                    Shipment Tracking:{" "}
+                    <span className="font-mono text-slate-900">
+                      {viewRow.rowType === "consolidation"
+                        ? resolveTrackingByStatus(viewRow.status, viewRow.sourceConsolidation?.notes || null, viewRow.sourceConsolidation?.tracking_code) || "Pending"
+                        : resolveTrackingByStatus(viewRow.status, viewRow.sourceShipment?.notes || null, viewRow.sourceShipment?.custom_tracking_number) || "Pending"}
+                    </span>
+                  </p>
+                  <p className="text-muted-foreground font-medium">
+                    AWB/BL No.:{" "}
+                    <span className="font-mono text-slate-900">
+                      {viewRow.rowType === "consolidation"
+                        ? getAirwayBillNumber(viewRow.sourceConsolidation?.notes || null) || "-"
+                        : getAirwayBillNumber(viewRow.sourceShipment?.notes || null) || "-"}
+                    </span>
+                  </p>
+                </div>
               </div>
-            ))}
-            {viewChildren.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No item details found.</p>
-            ) : null}
+            )}
+
+            <div className="space-y-3">
+              <h4 className="text-sm font-semibold text-slate-700 px-1">Individual Parcel Items</h4>
+              {viewChildren.map((entry) => (
+                <div key={entry.id} className="rounded-md border p-3 space-y-1 text-sm">
+                  {activeTab === "submitted" && viewRow?.rowType === "consolidation" ? (
+                    <label className="flex items-center gap-2 text-xs text-muted-foreground mb-2">
+                      <Checkbox
+                        checked={selectedConsolidationRemovalIds.has(entry.id)}
+                        onCheckedChange={(checked) =>
+                          toggleConsolidationRemovalSelection(entry.id, checked === true)
+                        }
+                      />
+                      Remove this item from consolidation
+                    </label>
+                  ) : null}
+                  <p className="font-semibold">{entry.description || entry.code}</p>
+                  <p className="text-xs font-mono text-muted-foreground">
+                    Tracking: {entry.custom_tracking_number?.trim() || "Tracking pending"}
+                    {" | "}
+                    AWB/BL No.: {getAirwayBillNumber(entry.notes) || "-"}
+                  </p>
+                  <p>
+                    Qty: {entry.quantity || 1} | Weight: {(entry.weight || 0).toFixed(2)} kg | Dimensions:{" "}
+                    {formatDimensions(entry.length, entry.width, entry.height)}
+                  </p>
+                  <p>
+                    CBM: {getShipmentCbm(entry).toFixed(4)} |{" "}
+                    Item Cost: {formatAmount(getShipmentItemCost(entry))} | Shipping Fee: {formatAmount(entry.shipping_cost || 0)}
+                  </p>
+                  <p>
+                    Insurance: {getInsuranceLabel(entry.notes)} | Special Packaging:{" "}
+                    {getSpecialPackagingLabel(entry.notes)}
+                  </p>
+                </div>
+              ))}
+              {viewChildren.length === 0 ? (
+                <p className="text-sm text-muted-foreground">No item details found.</p>
+              ) : null}
+            </div>
           </div>
           <DialogFooter>
             {activeTab === "submitted" && viewRow?.rowType === "consolidation" ? (
@@ -3692,56 +3877,73 @@ const WarehouseAllParcels = () => {
               <>
                 <div className="grid gap-4 md:grid-cols-2">
                   <div className="space-y-2">
-                    <Label htmlFor="trackingNumber">Tracking Number</Label>
+                    <Label htmlFor="trackingNumber">
+                      Tracking Number <span className="text-destructive">*</span>
+                    </Label>
                     <Input
                       id="trackingNumber"
+                      placeholder="Enter warehouse tracking number"
                       value={editTrackingNumber}
                       onChange={(event) => setEditTrackingNumber(event.target.value)}
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="airwayBill">AWB/BL No.</Label>
+                    <Label htmlFor="airwayBill">
+                      AWB/BL No. <span className="text-destructive">*</span>
+                    </Label>
                     <Input
                       id="airwayBill"
+                      placeholder="Enter airbill number"
                       value={editAirwayBill}
                       onChange={(event) => setEditAirwayBill(event.target.value)}
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="outgoingShippingFee">Shipping Fee</Label>
+                    <Label htmlFor="outgoingShippingFee">
+                      Shipping Fee <span className="text-destructive">*</span>
+                    </Label>
                     <Input
                       id="outgoingShippingFee"
                       type="number"
                       min="0"
                       step="0.01"
+                      placeholder="Enter shipping fee"
                       value={editShippingFee}
                       onChange={(event) => setEditShippingFee(event.target.value)}
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="outgoingWeight">Weight (kg)</Label>
+                    <Label htmlFor="outgoingWeight">
+                      Weight (kg) <span className="text-destructive">*</span>
+                    </Label>
                     <Input
                       id="outgoingWeight"
                       type="number"
                       min="0"
                       step="0.01"
+                      placeholder="Enter weight"
                       value={editWeight}
                       onChange={(event) => setEditWeight(event.target.value)}
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="outgoingCbm">CBM</Label>
+                    <Label htmlFor="outgoingCbm">
+                      CBM <span className="text-destructive">*</span>
+                    </Label>
                     <Input
                       id="outgoingCbm"
                       type="number"
                       min="0"
                       step="0.0001"
+                      placeholder="Enter CBM"
                       value={editCbm}
                       onChange={(event) => setEditCbm(event.target.value)}
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="outgoingEstimatedDate">Estimated Date of Arrival</Label>
+                    <Label htmlFor="outgoingEstimatedDate">
+                      Estimated Date of Arrival <span className="text-destructive">*</span>
+                    </Label>
                     <Input
                       id="outgoingEstimatedDate"
                       type="date"

@@ -71,7 +71,7 @@ const getStatusLabel = (status: string) => statusLabel[status] || status || "Unk
 
 export const TrackingPageContent = () => {
   const { formatAmount } = useDefaultCurrency();
-  useAuthContext();
+  const { userRole } = useAuthContext();
   const [searchParams, setSearchParams] = useSearchParams();
 
   // Shipment search (independent of map)
@@ -102,7 +102,7 @@ export const TrackingPageContent = () => {
     autoTrackedKeyRef.current = query;
     setIsLoading(true);
 
-    const details = await lookupTrackingDetails(query);
+    const details = await lookupTrackingDetails(query, { userRole });
 
     if (details) {
       setResult(details);
@@ -117,7 +117,7 @@ export const TrackingPageContent = () => {
     }
 
     setIsLoading(false);
-  }, [searchParams, setSearchParams, trackingId]);
+  }, [searchParams, setSearchParams, trackingId, userRole]);
 
   useEffect(() => {
     const query = searchParams.get("query")?.trim() || "";
@@ -429,4 +429,3 @@ const CustomerTracking = () => (
 );
 
 export default CustomerTracking;
-

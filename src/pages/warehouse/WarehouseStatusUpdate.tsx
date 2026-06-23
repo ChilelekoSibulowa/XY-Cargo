@@ -8,8 +8,14 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { toast } from "sonner";
-import { getWarehouseArrivalTransition, isSingleHandlingMethod } from "@/lib/parcelWorkflow";
-import { extractNoteValue, getWarehouseTrackingNumber, resolveTrackingByStatus, upsertNoteValue } from "@/lib/shipmentNotes";
+import { getWarehouseArrivalTransition, isUnconsolidatedConsolidationParcel } from "@/lib/parcelWorkflow";
+import {
+  getAirwayBillNumber,
+  getWarehouseTrackingNumber,
+  resolveTrackingByStatus,
+  setAirwayBillNumber,
+  upsertNoteValue,
+} from "@/lib/shipmentNotes";
 import { notifyStatusChange } from "@/lib/notifications";
 
 type ShipmentLookup = {
@@ -21,6 +27,8 @@ type ShipmentLookup = {
   payment_status: string | null;
   weight: number | null;
   cbm: number | null;
+  shipping_cost: number | null;
+  estimated_delivery_date: string | null;
   customer_id: string | null;
   service_type: string;
   created_at: string;
@@ -64,6 +72,42 @@ const formatCollectedByValue = (name: string | null | undefined, phone: string |
   return normalizedName || normalizedPhone || null;
 };
 
+const hasRequiredText = (value: string | null | undefined) => !!value?.trim();
+
+const isPositiveNumberValue = (value: number | string | null | undefined) => {
+  const parsed = typeof value === "number" ? value : Number(value);
+  return Number.isFinite(parsed) && parsed > 0;
+};
+
+const toDateInputValue = (value: string | null | undefined) => {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  return date.toISOString().slice(0, 10);
+};
+
+const normalizeServiceType = (serviceType: string | null | undefined) => {
+  const normalized = (serviceType || "").toLowerCase().trim();
+  if (normalized === "air" || normalized === "air_freight" || normalized === "air freight") return "air";
+  if (normalized === "sea" || normalized === "sea_freight" || normalized === "sea freight") return "sea";
+  return "";
+};
+
+const getMissingOutgoingShipmentFields = (shipment: ShipmentLookup) => {
+  const missing: string[] = [];
+  if (!hasRequiredText(getWarehouseTrackingNumber(shipment.notes))) missing.push("Tracking Number");
+  if (!hasRequiredText(getAirwayBillNumber(shipment.notes))) missing.push("Airbill Number");
+  if (!hasRequiredText(shipment.estimated_delivery_date)) missing.push("Estimated Date of Arrival");
+  if (!isPositiveNumberValue(shipment.shipping_cost)) missing.push("Shipping Fee");
+  if (!isPositiveNumberValue(shipment.weight)) missing.push("Weight");
+  if (!isPositiveNumberValue(shipment.cbm)) missing.push("CBM");
+  if (!normalizeServiceType(shipment.service_type)) missing.push("Service Type");
+  return missing;
+};
+
+const formatMissingOutgoingFields = (fields: string[]) =>
+  `Complete required Outgoing Parcel details before moving to In Transit: ${fields.join(", ")}.`;
+
 const WarehouseStatusUpdate = () => {
   const [scanCode, setScanCode] = useState("");
   const [shipment, setShipment] = useState<ShipmentLookup | null>(null);
@@ -73,6 +117,8 @@ const WarehouseStatusUpdate = () => {
   const [awbNumber, setAwbNumber] = useState("");
   const [transitWeight, setTransitWeight] = useState("");
   const [transitCbm, setTransitCbm] = useState("");
+  const [transportShippingFee, setTransportShippingFee] = useState("");
+  const [estimatedArrivalDate, setEstimatedArrivalDate] = useState("");
 
   useEffect(() => {
     if (!shipment) {
@@ -81,15 +127,18 @@ const WarehouseStatusUpdate = () => {
       setAwbNumber("");
       setTransitWeight("");
       setTransitCbm("");
+      setTransportShippingFee("");
+      setEstimatedArrivalDate("");
       return;
     }
     setSelectedStatus(shipment.status);
-    setCustomTrackingNumber(shipment.custom_tracking_number || "");
+    setCustomTrackingNumber(shipment.status === "assigned" ? "" : getWarehouseTrackingNumber(shipment.notes) || "");
     setTransitWeight(shipment.weight != null ? String(shipment.weight) : "");
+    setTransportShippingFee(shipment.shipping_cost != null ? String(shipment.shipping_cost) : "");
+    setEstimatedArrivalDate(shipment.status === "assigned" ? "" : toDateInputValue(shipment.estimated_delivery_date));
 
     // Extract AWB number from notes
-    const awbMatch = shipment.notes?.match(/AWB\/BL No\.:\s*([^|]+)/i);
-    setAwbNumber(awbMatch ? awbMatch[1].trim() : "");
+    setAwbNumber(getAirwayBillNumber(shipment.notes) || "");
 
     // Extract CBM from notes
     const cbmMatch = shipment.notes?.match(/CBM:\s*([^|]+)/i);
@@ -134,6 +183,8 @@ const WarehouseStatusUpdate = () => {
         payment_status,
         weight,
         cbm,
+        shipping_cost,
+        estimated_delivery_date,
         customer_id,
         service_type,
         custom_tracking_number,
@@ -158,6 +209,10 @@ const WarehouseStatusUpdate = () => {
           status,
           notes,
           created_at,
+          total_cost,
+          total_weight,
+          total_cbm,
+          tracking_code,
           customer_id,
           customer:customers(full_name, code)
         `)
@@ -170,14 +225,14 @@ const WarehouseStatusUpdate = () => {
       } else {
         // Map consolidation to ShipmentLookup format
         const normalizedConsStatus = (consData.status || "submitted").toLowerCase();
-        const mappedStatus = 
+        const mappedStatus =
           normalizedConsStatus === "submitted" ? "requested_pickup" :
-          normalizedConsStatus === "confirmed" ? "approved" :
-          normalizedConsStatus === "outgoing" ? "assigned" :
-          normalizedConsStatus === "in_transit" ? "supplied" :
-          normalizedConsStatus === "arrived" ? "delivered" :
-          normalizedConsStatus === "collected" ? "closed" : 
-          normalizedConsStatus;
+            normalizedConsStatus === "confirmed" ? "approved" :
+              normalizedConsStatus === "outgoing" ? "assigned" :
+                normalizedConsStatus === "in_transit" ? "supplied" :
+                  normalizedConsStatus === "arrived" ? "delivered" :
+                    normalizedConsStatus === "collected" ? "closed" :
+                      normalizedConsStatus;
 
         setShipment({
           id: consData.id,
@@ -190,28 +245,31 @@ const WarehouseStatusUpdate = () => {
           is_consolidation: true,
           service_type: "Mixed",
           payment_status: "pending",
-          weight: 0,
-          cbm: 0
+          weight: Number(consData.total_weight || 0),
+          cbm: Number(consData.total_cbm || 0),
+          shipping_cost: Number(consData.total_cost || 0),
+          estimated_delivery_date: null,
+          custom_tracking_number: consData.tracking_code || null,
         } as any);
       }
     } else {
       // Fetch branch names separately to avoid relation ambiguity
       let branchName: string | null = null;
       let destBranchName: string | null = null;
-      
+
       const branchIds = [data.branch_id, data.destination_branch_id].filter(Boolean);
       if (branchIds.length > 0) {
         const { data: branchesData } = await supabase
           .from("branches")
           .select("id, name")
           .in("id", branchIds);
-        
+
         if (branchesData) {
           branchName = branchesData.find(b => b.id === data.branch_id)?.name || null;
           destBranchName = branchesData.find(b => b.id === data.destination_branch_id)?.name || null;
         }
       }
-      
+
       setShipment({
         ...data,
         branch: { name: branchName },
@@ -242,18 +300,24 @@ const WarehouseStatusUpdate = () => {
     if (
       !shipment.is_consolidation &&
       selectedStatus === "requested_pickup" &&
-      !isSingleHandlingMethod(shipment as any)
+      isUnconsolidatedConsolidationParcel(shipment as any)
     ) {
-      const { data: links } = await supabase
-        .from("consolidation_shipments")
-        .select("id")
-        .eq("shipment_id", shipment.id)
-        .limit(1);
-      if (!links || links.length === 0) {
-        toast.error(
-          "This parcel uses Consolidation handling. It must be consolidated by the customer/agent before it can move to Submitted.",
-        );
-        setIsLoading(false);
+      toast.error(
+        "This parcel uses Consolidation handling. It must be consolidated by the customer/agent before it can move to Submitted.",
+      );
+      setIsLoading(false);
+      return;
+    }
+
+    if (selectedStatus === "supplied") {
+      if (shipment.is_consolidation) {
+        toast.error("Complete consolidated Outgoing Parcel transport details from Warehouse Management before moving to In Transit.");
+        return;
+      }
+
+      const missingFields = getMissingOutgoingShipmentFields(shipment);
+      if (missingFields.length > 0) {
+        toast.error(formatMissingOutgoingFields(missingFields));
         return;
       }
     }
@@ -282,21 +346,21 @@ const WarehouseStatusUpdate = () => {
       const nextNotes =
         isCollecting
           ? upsertNoteValue(
-              upsertNoteValue(shipment.notes, "Collected by", collectedByValue),
-              "Collected at",
-              collectionTimestamp,
-            )
+            upsertNoteValue(shipment.notes, "Collected by", collectedByValue),
+            "Collected at",
+            collectionTimestamp,
+          )
           : shipment.notes;
 
       if (shipment.is_consolidation) {
-        const consStatus = 
+        const consStatus =
           nextStatus === "requested_pickup" ? "submitted" :
-          nextStatus === "approved" ? "confirmed" :
-          nextStatus === "assigned" ? "outgoing" :
-          nextStatus === "supplied" ? "in_transit" :
-          nextStatus === "delivered" ? "arrived" :
-          nextStatus === "closed" ? "collected" :
-          nextStatus;
+            nextStatus === "approved" ? "confirmed" :
+              nextStatus === "assigned" ? "outgoing" :
+                nextStatus === "supplied" ? "in_transit" :
+                  nextStatus === "delivered" ? "arrived" :
+                    nextStatus === "closed" ? "collected" :
+                      nextStatus;
 
         const { error } = await supabase
           .from("consolidations")
@@ -304,14 +368,14 @@ const WarehouseStatusUpdate = () => {
             status: consStatus as any,
             ...(isCollecting
               ? {
-                  collected_by: collectedByValue,
-                  collected_at: collectionTimestamp,
-                  notes: nextNotes,
-                }
+                collected_by: collectedByValue,
+                collected_at: collectionTimestamp,
+                notes: nextNotes,
+              }
               : {}),
           })
           .eq("id", shipment.id);
-        
+
         if (error) {
           toast.error(error.message);
           setIsLoading(false);
@@ -325,10 +389,10 @@ const WarehouseStatusUpdate = () => {
             status: nextStatus as any,
             ...(isCollecting
               ? {
-                  collected_by: collectedByValue,
-                  collected_at: collectionTimestamp,
-                  notes: nextNotes,
-                }
+                collected_by: collectedByValue,
+                collected_at: collectionTimestamp,
+                notes: nextNotes,
+              }
               : {}),
           })
           .in("id", (
@@ -345,10 +409,10 @@ const WarehouseStatusUpdate = () => {
             status: nextStatus as any,
             ...(isCollecting
               ? {
-                  collected_by: collectedByValue,
-                  collected_at: collectionTimestamp,
-                  notes: nextNotes,
-                }
+                collected_by: collectedByValue,
+                collected_at: collectionTimestamp,
+                notes: nextNotes,
+              }
               : {}),
           })
           .eq("id", shipment.id);
@@ -428,15 +492,37 @@ const WarehouseStatusUpdate = () => {
       return;
     }
 
+    const nextShippingFee = Number(transportShippingFee);
+    if (transportShippingFee.trim() && (Number.isNaN(nextShippingFee) || nextShippingFee < 0)) {
+      toast.error("Shipping fee must be a valid number.");
+      return;
+    }
+
+    if (shipment.status === "assigned") {
+      const missingFields: string[] = [];
+      if (!customTrackingNumber.trim()) missingFields.push("Tracking Number");
+      if (!awbNumber.trim()) missingFields.push("Airbill Number");
+      if (!estimatedArrivalDate.trim()) missingFields.push("Estimated Date of Arrival");
+      if (!isPositiveNumberValue(transportShippingFee)) missingFields.push("Shipping Fee");
+      if (!isPositiveNumberValue(transitWeight)) missingFields.push("Weight");
+      if (!isPositiveNumberValue(transitCbm)) missingFields.push("CBM");
+      if (!normalizeServiceType(shipment.service_type)) missingFields.push("Service Type");
+
+      if (missingFields.length > 0) {
+        toast.error(formatMissingOutgoingFields(missingFields));
+        return;
+      }
+    }
+
     setIsLoading(true);
 
     const noteParts = (shipment.notes || "")
       .split("|")
       .map((part) => part.trim())
       .filter(Boolean)
-      .filter((part) => 
-        !/^AWB\/BL No\.:/i.test(part) && 
-        !/^CBM:/i.test(part) && 
+      .filter((part) =>
+        !/^AWB\/BL No\.:/i.test(part) &&
+        !/^CBM:/i.test(part) &&
         !/^Warehouse Tracking Number:/i.test(part) &&
         !/^Warehouse Tracking:/i.test(part)
       );
@@ -445,22 +531,20 @@ const WarehouseStatusUpdate = () => {
       noteParts.push(`Warehouse Tracking Number: ${customTrackingNumber.trim()}`);
     }
 
-    if (awbNumber.trim()) {
-      noteParts.push(`AWB/BL No.: ${awbNumber.trim()}`);
-    }
+    let updatedNotes = setAirwayBillNumber(noteParts.join(" | ") || null, awbNumber.trim() || null);
 
     if (transitCbm.trim()) {
-      noteParts.push(`CBM: ${nextCbm}`);
+      updatedNotes = upsertNoteValue(updatedNotes, "CBM", String(nextCbm));
     }
-
-    const updatedNotes = noteParts.join(" | ");
 
     const { error } = await supabase
       .from("shipments")
       .update({
-        custom_tracking_number: customTrackingNumber.trim() || null,
+        ...(shipment.status === "assigned" ? {} : { custom_tracking_number: customTrackingNumber.trim() || null }),
         weight: transitWeight.trim() ? nextWeight : null,
         cbm: transitCbm.trim() ? nextCbm : null,
+        shipping_cost: transportShippingFee.trim() ? nextShippingFee : null,
+        estimated_delivery_date: estimatedArrivalDate.trim() || null,
         notes: updatedNotes || null,
       })
       .eq("id", shipment.id);
@@ -474,9 +558,11 @@ const WarehouseStatusUpdate = () => {
     toast.success("Tracking information updated.");
     setShipment({
       ...shipment,
-      custom_tracking_number: customTrackingNumber.trim() || null,
+      custom_tracking_number: shipment.status === "assigned" ? shipment.custom_tracking_number : customTrackingNumber.trim() || null,
       weight: transitWeight.trim() ? nextWeight : null,
       cbm: transitCbm.trim() ? nextCbm : null,
+      shipping_cost: transportShippingFee.trim() ? nextShippingFee : null,
+      estimated_delivery_date: estimatedArrivalDate.trim() || null,
       notes: updatedNotes || null,
     });
     setIsLoading(false);
@@ -486,7 +572,7 @@ const WarehouseStatusUpdate = () => {
     <div className="space-y-6 animate-fade-in">
       <PageHeader
         title="Update Parcel Status"
-        
+
       />
 
       <Card className="border-border/70">
@@ -611,9 +697,11 @@ const WarehouseStatusUpdate = () => {
             <CardTitle>Update Tracking Information</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
               <div className="space-y-2">
-                <Label htmlFor="tracking_number">Tracking Number</Label>
+                <Label htmlFor="tracking_number">
+                  Tracking Number {shipment.status === "assigned" ? <span className="text-destructive">*</span> : null}
+                </Label>
                 <Input
                   id="tracking_number"
                   value={customTrackingNumber}
@@ -622,7 +710,9 @@ const WarehouseStatusUpdate = () => {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="awb_number">AWB/BL Number</Label>
+                <Label htmlFor="awb_number">
+                  AWB/BL Number {shipment.status === "assigned" ? <span className="text-destructive">*</span> : null}
+                </Label>
                 <Input
                   id="awb_number"
                   value={awbNumber}
@@ -631,7 +721,34 @@ const WarehouseStatusUpdate = () => {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="transit_weight">Weight</Label>
+                <Label htmlFor="estimated_arrival_date">
+                  Estimated Date of Arrival {shipment.status === "assigned" ? <span className="text-destructive">*</span> : null}
+                </Label>
+                <Input
+                  id="estimated_arrival_date"
+                  type="date"
+                  value={estimatedArrivalDate}
+                  onChange={(event) => setEstimatedArrivalDate(event.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="shipping_fee">
+                  Shipping Fee {shipment.status === "assigned" ? <span className="text-destructive">*</span> : null}
+                </Label>
+                <Input
+                  id="shipping_fee"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={transportShippingFee}
+                  onChange={(event) => setTransportShippingFee(event.target.value)}
+                  placeholder="Enter shipping fee"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="transit_weight">
+                  Weight {shipment.status === "assigned" ? <span className="text-destructive">*</span> : null}
+                </Label>
                 <Input
                   id="transit_weight"
                   type="number"
@@ -643,7 +760,9 @@ const WarehouseStatusUpdate = () => {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="transit_cbm">CBM</Label>
+                <Label htmlFor="transit_cbm">
+                  CBM {shipment.status === "assigned" ? <span className="text-destructive">*</span> : null}
+                </Label>
                 <Input
                   id="transit_cbm"
                   type="number"
@@ -674,4 +793,3 @@ const WarehouseStatusUpdate = () => {
 };
 
 export default WarehouseStatusUpdate;
-

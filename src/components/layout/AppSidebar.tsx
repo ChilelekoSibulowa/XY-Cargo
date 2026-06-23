@@ -35,7 +35,6 @@ import {
   LogOut,
   Wallet,
 } from "lucide-react";
-import { isPwaMode } from "@/lib/pwaUtils";
 import { cn } from "@/lib/utils";
 import { Logo } from "./Logo";
 import { useAuthContext } from "@/components/auth/AuthContext";
@@ -50,7 +49,6 @@ interface MenuItem {
   children?: MenuItem[];
   roles?: string[];
   action?: "logout";
-  onlyPwa?: boolean;
 }
 
 const sortMenuItemsByOrder = (items: MenuItem[], order: string[]) => {
@@ -138,7 +136,6 @@ const menuItems: MenuItem[] = [
     roles: ["customer"],
     children: [
       { title: "Dashboard", icon: LayoutDashboard, path: "/customer/dashboard", roles: ["customer"] },
-      { title: "Inbox", icon: Bell, path: "/customer/inbox", roles: ["customer"], onlyPwa: true },
       { title: "My Shipments", icon: Package, path: "/customer/shipments", roles: ["customer"] },
       { title: "Request Delivery", icon: Plane, path: "/customer/request-delivery", roles: ["customer"] },
       { title: "Track Shipment", icon: QrCode, path: "/customer/tracking", roles: ["customer"] },
@@ -250,7 +247,6 @@ const menuItems: MenuItem[] = [
       { title: "Service Promotions", icon: Globe, path: "/marketing/promotions", roles: ["admin", "staff"] },
       { title: "Social Media", icon: Globe, path: "/marketing/social", roles: ["admin", "staff"] },
       { title: "Email & Automation", icon: Bell, path: "/marketing/email", roles: ["admin", "staff"] },
-      { title: "Push Notify", icon: Bell, path: "/marketing/push-notify", roles: ["admin", "staff"] },
       { title: "Budget & ROI", icon: DollarSign, path: "/marketing/budget", roles: ["admin", "staff"] },
       { title: "Sales Integration", icon: UsersRound, path: "/marketing/sales", roles: ["admin", "staff"] },
       { title: "Reports", icon: BarChart3, path: "/marketing/reports", roles: ["staff"] },
@@ -487,11 +483,6 @@ export const AppSidebar = ({ userRole = "Admin", userName = "Admin" }: AppSideba
       .filter((item: MenuItem & { portalAllowed?: boolean }) => {
         const portalAllowed = item.portalAllowed ?? true;
         
-        // PWA Filter
-        if (item.onlyPwa && !isPwaMode()) {
-          return false;
-        }
-
         // Filter out empty parent items
         if (item.children && item.children.length === 0) {
           return false;

@@ -13,7 +13,6 @@ import { GoogleAnalytics } from "@/components/shared/GoogleAnalytics";
 import { AutoTableExportButtons } from "@/components/shared/AutoTableExportButtons";
 import { safeLazy } from "@/lib/safeLazy";
 import { supabase } from "@/integrations/supabase/client";
-import { PwaManager } from "@/components/shared/PwaManager";
 
 // Eagerly loaded pages (critical path)
 import Home from "./pages/Index";
@@ -142,7 +141,6 @@ const MarketingBudget = safeLazy(() => import("./pages/marketing/MarketingBudget
 const MarketingSales = safeLazy(() => import("./pages/marketing/MarketingSales"));
 const MarketingReports = safeLazy(() => import("./pages/marketing/MarketingReports"));
 const MarketingSettings = safeLazy(() => import("./pages/marketing/MarketingSettings"));
-const PushNotify = safeLazy(() => import("./pages/marketing/PushNotify"));
 
 // Support portal
 const SupportDashboard = safeLazy(() => import("./pages/support/SupportDashboard"));
@@ -290,7 +288,6 @@ const App = () => (
       <BrowserRouter>
         <ScrollToTop />
         <GoogleAnalytics />
-        <PwaManager>
         <Suspense fallback={<Loading />}>
           <Routes>
             {/* Public site */}
@@ -417,7 +414,6 @@ const App = () => (
               <Route path="/marketing/promotions" element={<RequireNonCustomer><MarketingPromotions /></RequireNonCustomer>} />
               <Route path="/marketing/social" element={<RequireNonCustomer><MarketingSocial /></RequireNonCustomer>} />
               <Route path="/marketing/email" element={<RequireNonCustomer><MarketingEmail /></RequireNonCustomer>} />
-              <Route path="/marketing/push-notify" element={<RequireNonCustomer><PushNotify /></RequireNonCustomer>} />
               <Route path="/marketing/budget" element={<RequireNonCustomer><MarketingBudget /></RequireNonCustomer>} />
               <Route path="/marketing/sales" element={<RequireNonCustomer><MarketingSales /></RequireNonCustomer>} />
               <Route path="/marketing/reports" element={<RequireNonCustomer><MarketingReports /></RequireNonCustomer>} />
@@ -542,7 +538,6 @@ const App = () => (
             <Route path="*" element={<NotFound />} />
           </Routes>
         </Suspense>
-        </PwaManager>
       </BrowserRouter>
     </TooltipProvider>
     </CurrencyProvider>

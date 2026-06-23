@@ -248,6 +248,7 @@ const FinancePayments = () => {
   const [activeTab, setActiveTab] = useState("history");
   const [form, setForm] = useState<PaymentFormState>(emptyForm);
   const [editingPayment, setEditingPayment] = useState<PaymentRow | null>(null);
+  const [viewDetail, setViewDetail] = useState<{ title: string; items: any[] } | null>(null);
   const [editForm, setEditForm] = useState<PaymentFormState>(emptyForm);
 
   const reconciliationRanRef = useRef(false);
@@ -356,19 +357,19 @@ const FinancePayments = () => {
           "id, code, custom_tracking_number, notes, customer_id, total_cost, shipping_cost, paid_amount, payment_status, status, customer:customers(full_name, code, phone)",
         )
         .order("updated_at", { ascending: false })
-        .limit(400),
+        .limit(1000),
       supabase
         .from("invoices")
         .select("id, code, shipment_id, customer_id, amount, status, due_date, created_at, shipment:shipments(total_cost, shipping_cost)")
         .order("created_at", { ascending: false })
-        .limit(400),
+        .limit(1000),
       supabase
         .from("payments")
         .select(
           "id, code, amount, currency, status, payment_provider, provider_reference, phone_number, callback_data, created_at, customer_id, shipment_id, customer:customers(full_name, code), shipment:shipments(code, custom_tracking_number, notes, status)",
         )
         .order("created_at", { ascending: false })
-        .limit(400),
+        .limit(1000),
     ]);
 
     if (customersRes.error || shipmentsRes.error || invoicesRes.error || paymentsRes.error) {
@@ -531,6 +532,35 @@ const FinancePayments = () => {
 
   useEffect(() => {
     void fetchData();
+
+    const channel = supabase
+      .channel("finance-payments-live")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "shipments" },
+        () => {
+          void fetchData();
+        },
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "invoices" },
+        () => {
+          void fetchData();
+        },
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "payments" },
+        () => {
+          void fetchData();
+        },
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [fetchData]);
 
   useEffect(() => {
@@ -569,17 +599,20 @@ const FinancePayments = () => {
     if (!shipment) return 0;
 
     const invoice = getShipmentInvoice(shipmentId);
+    
+    // Rule 23: Only officially sent invoices are eligible for payment recording.
+    // draft invoices or shipments without invoices are not eligible.
+    if (!invoice || !["sent", "approved", "paid"].includes(invoice.status || "")) {
+      return 0;
+    }
+
     const shipmentPaid = toNumber(shipment.paid_amount);
     const ignoredAmount =
       ignoredPayment?.shipment_id === shipmentId && ignoredPayment.status === "completed"
         ? ignoredPayment.amount
         : 0;
 
-    if (invoice) {
-      return getInvoiceOutstandingBalance(invoice, { paid_amount: shipmentPaid }) + ignoredAmount;
-    }
-
-    return getShipmentOutstandingBalance(shipment) + ignoredAmount;
+    return getInvoiceOutstandingBalance(invoice, { paid_amount: shipmentPaid }) + ignoredAmount;
   };
 
   const customerOptions = useMemo<SearchableSelectOption[]>(
@@ -598,12 +631,17 @@ const FinancePayments = () => {
       : shipments;
 
     return rows
-      .filter((shipment) => getShipmentDueAmount(shipment.id) > 0)
-      .map<SearchableSelectOption>((shipment) => ({
+      .map((shipment) => ({ shipment, invoice: getShipmentInvoice(shipment.id) }))
+      .filter(({ invoice }) => {
+        // Rule 23: Record Payment strictly pulls from Sent/Outstanding Invoices only.
+        return invoice && ["sent", "approved", "paid"].includes(invoice.status || "");
+      })
+      .filter(({ shipment }) => getShipmentDueAmount(shipment.id) > 0)
+      .map<SearchableSelectOption>(({ shipment, invoice }) => ({
         value: shipment.id,
-        label: shipment.custom_tracking_number?.trim() || "Tracking pending",
-        keywords: `${shipment.custom_tracking_number || ""} ${shipment.code} ${shipment.customer_name || ""} ${shipment.customer_code || ""}`,
-        description: `${shipment.customer_name || "Customer"}${shipment.customer_code ? ` (${shipment.customer_code})` : ""} | ${formatAmount(getShipmentDueAmount(shipment.id))} due`,
+        label: `Inv: ${invoice?.code} | Tracking: ${shipment.custom_tracking_number?.trim() || "Pending"}`,
+        keywords: `${invoice?.code || ""} ${shipment.custom_tracking_number || ""} ${shipment.code} ${shipment.customer_name || ""} ${shipment.customer_code || ""}`,
+        description: `${shipment.customer_name || "Customer"} (${shipment.customer_code}) | Balance: ${formatAmount(getShipmentDueAmount(shipment.id))}`,
       }));
   };
 
@@ -1546,26 +1584,29 @@ const FinancePayments = () => {
       ? getInvoiceOutstandingBalance(invoice, { paid_amount: shipment?.paid_amount })
       : row.balance_after;
 
-    openFinanceDetailWindow(`Payment ${row.code}`, "Payment Details", [
-      { label: "Payment Ref", value: row.code },
-      { label: "Customer", value: row.customer_label },
-      { label: "Shipment ID", value: row.shipment_ref },
-      { label: "System Shipment No.", value: shipment?.code || row.payment.shipment_code || "-" },
-      { label: "Invoice No.", value: row.invoice_code },
-      { label: "Invoice Amount", value: invoice ? formatAmount(invoice.amount) : "-" },
-      { label: "Paid Against Invoice", value: invoice ? formatAmount(invoicePaidAmount) : "-" },
-      { label: "Invoice Balance", value: formatAmount(invoiceBalance) },
-      { label: "Invoice Progress", value: invoice ? invoicePaymentState : "-" },
-      { label: "Payment Method", value: row.payment_provider_label },
-      { label: "Provider Reference", value: row.provider_reference },
-      { label: "Phone Number", value: row.phone_number },
-      { label: "Recorded Amount", value: formatAmount(row.amount, row.payment?.currency || "ZMW") },
-      { label: "Balance Before", value: formatAmount(row.balance_before) },
-      { label: "Balance Remaining", value: formatAmount(row.balance_after) },
-      { label: "Status", value: row.status },
-      { label: "Notes", value: row.notes || "-" },
-      { label: "Date", value: format(new Date(row.created_at), "PPpp") },
-    ], undefined, await fetchLogo());
+    setViewDetail({
+      title: `Payment ${row.code}`,
+      items: [
+        { label: "Payment Ref", value: row.code },
+        { label: "Customer", value: row.customer_label },
+        { label: "Shipment ID", value: row.shipment_ref },
+        { label: "System Shipment No.", value: shipment?.code || row.payment.shipment_code || "-" },
+        { label: "Invoice No.", value: row.invoice_code },
+        { label: "Invoice Amount", value: invoice ? formatAmount(invoice.amount) : "-" },
+        { label: "Paid Against Invoice", value: invoice ? formatAmount(invoicePaidAmount) : "-" },
+        { label: "Invoice Balance", value: formatAmount(invoiceBalance) },
+        { label: "Invoice Progress", value: invoice ? invoicePaymentState : "-" },
+        { label: "Payment Method", value: row.payment_provider_label },
+        { label: "Provider Reference", value: row.provider_reference },
+        { label: "Phone Number", value: row.phone_number },
+        { label: "Recorded Amount", value: formatAmount(row.amount, row.payment?.currency || "ZMW") },
+        { label: "Balance Before", value: formatAmount(row.balance_before) },
+        { label: "Balance Remaining", value: formatAmount(row.balance_after) },
+        { label: "Status", value: row.status },
+        { label: "Notes", value: row.notes || "-" },
+        { label: "Date", value: format(new Date(row.created_at), "PPpp") },
+      ]
+    });
   };
 
   const getStatusBadge = (status: string) => {
@@ -2039,7 +2080,35 @@ const FinancePayments = () => {
         </TabsContent>
       </Tabs>
 
-      <Dialog open={Boolean(editingPayment)} onOpenChange={(open) => (!open ? closeEditDialog() : null)}>
+      <Card>
+        <CardHeader>
+          <CardTitle>History</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <DataTable data={historyRows} columns={columns} isLoading={isLoading} />
+        </CardContent>
+      </Card>
+
+      <Dialog open={!!viewDetail} onOpenChange={() => setViewDetail(null)}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{viewDetail?.title}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-0 border rounded-md overflow-hidden">
+            {viewDetail?.items.map((item, idx) => (
+              <div key={idx} className={`grid grid-cols-2 p-2 text-sm ${idx % 2 === 0 ? "bg-muted/30" : ""}`}>
+                <div className="font-medium text-muted-foreground">{item.label}</div>
+                <div className="font-semibold">{item.value || "-"}</div>
+              </div>
+            ))}
+          </div>
+          <DialogFooter>
+            <Button onClick={() => setViewDetail(null)}>Close</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!editingPayment} onOpenChange={closeEditDialog}>
         <DialogContent className="max-w-3xl">
           <DialogHeader>
             <DialogTitle>Edit Payment</DialogTitle>

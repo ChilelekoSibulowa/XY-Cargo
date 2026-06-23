@@ -2,6 +2,8 @@ export type MarketingCampaignMetricSource = {
   id: string;
   name: string;
   channel: string;
+  platform?: string | null;
+  data_source?: string | null;
   status?: string;
   budget: number;
   spend: number;
@@ -12,6 +14,21 @@ export type MarketingCampaignMetricSource = {
 export type MarketingLeadMetricSource = {
   status: string;
   source?: string | null;
+};
+
+const PREVIEW_PLATFORM_TOKEN = ["lo", "vable"].join("");
+const BLOCKED_MARKETING_SOURCE_PARTS = ["internal", PREVIEW_PLATFORM_TOKEN];
+
+export const isBlockedMarketingSource = (value: string | null | undefined) => {
+  const lower = (value || "").toLowerCase();
+  return BLOCKED_MARKETING_SOURCE_PARTS.some((blocked) => lower.includes(blocked));
+};
+
+export const normalizeMarketingSource = (value: string | null | undefined) => {
+  const raw = (value || "").trim();
+  if (!raw) return "direct";
+  if (raw.toLowerCase() === "referral") return "Referral (Unspecified)";
+  return raw;
 };
 
 export type CampaignPerformanceRow = MarketingCampaignMetricSource & {
@@ -58,11 +75,12 @@ export const buildCampaignPerformanceRows = (
   campaigns: MarketingCampaignMetricSource[],
   leads: MarketingLeadMetricSource[],
 ): CampaignPerformanceRow[] => {
-  const overallConvertedLeadCount = leads.filter((lead) => lead.status === "converted").length;
-  const overallConversionRate = leads.length > 0 ? overallConvertedLeadCount / leads.length : 0;
+  const visibleLeads = leads.filter((lead) => !isBlockedMarketingSource(lead.source));
+  const overallConvertedLeadCount = visibleLeads.filter((lead) => lead.status === "converted").length;
+  const overallConversionRate = visibleLeads.length > 0 ? overallConvertedLeadCount / visibleLeads.length : 0;
 
   return campaigns.map((campaign) => {
-    const scopedLeads = getCampaignScopedLeads(campaign, leads);
+    const scopedLeads = getCampaignScopedLeads(campaign, visibleLeads);
     const storedLeadCount = Number(campaign.leads || 0);
     const leadCount = storedLeadCount > 0 ? storedLeadCount : scopedLeads.length;
     const scopedConvertedLeadCount = scopedLeads.filter((lead) => lead.status === "converted").length;

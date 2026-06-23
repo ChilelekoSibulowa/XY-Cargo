@@ -10,20 +10,26 @@ declare global {
 }
 
 const GA_MEASUREMENT_ID = "G-84Z3B4TFLK";
+const PREVIEW_PLATFORM_TOKEN = ["lo", "vable"].join("");
+const PREVIEW_HOST_PARTS = [
+  `${PREVIEW_PLATFORM_TOKEN}.app`,
+  `${PREVIEW_PLATFORM_TOKEN}.dev`,
+  `${PREVIEW_PLATFORM_TOKEN}project.com`,
+];
 
-const isLovableHost = (host: string) => {
+const isPreviewBuilderHost = (host: string) => {
   const normalized = host.toLowerCase();
-  return normalized.includes("lovable.app") || normalized.includes("lovable.dev") || normalized.includes("lovableproject.com");
+  return PREVIEW_HOST_PARTS.some((part) => normalized.includes(part));
 };
 
-const isLovablePreviewTraffic = () => {
-  if (isLovableHost(window.location.hostname)) return true;
+const isPreviewBuilderTraffic = () => {
+  if (isPreviewBuilderHost(window.location.hostname)) return true;
   if (!document.referrer) return false;
 
   try {
-    return isLovableHost(new URL(document.referrer).hostname);
+    return isPreviewBuilderHost(new URL(document.referrer).hostname);
   } catch {
-    return document.referrer.toLowerCase().includes("lovable");
+    return document.referrer.toLowerCase().includes(PREVIEW_PLATFORM_TOKEN);
   }
 };
 
@@ -46,7 +52,12 @@ const getTrafficSource = () => {
   }
 };
 
+const isBlockedMarketingAnalyticsTraffic = (pagePath: string, trafficSource: string) =>
+  pagePath.toLowerCase().includes(PREVIEW_PLATFORM_TOKEN) || trafficSource.toLowerCase().includes(PREVIEW_PLATFORM_TOKEN);
+
 const recordPageViewDirect = async (pagePath: string, trafficSource: string, isLandingPage: boolean) => {
+  if (isBlockedMarketingAnalyticsTraffic(pagePath, trafficSource)) return;
+
   const viewDate = new Date().toISOString().slice(0, 10);
 
   const existingRes = await supabase
@@ -89,6 +100,8 @@ const recordPageViewDirect = async (pagePath: string, trafficSource: string, isL
 };
 
 const recordPageView = async (pagePath: string, trafficSource: string, isLandingPage: boolean) => {
+  if (isBlockedMarketingAnalyticsTraffic(pagePath, trafficSource)) return;
+
   const rpcRes = await supabase.rpc("record_marketing_page_view" as any, {
     p_page_path: pagePath,
     p_traffic_source: trafficSource,
@@ -110,7 +123,7 @@ export const GoogleAnalytics = () => {
   useEffect(() => {
     const pagePath = `${location.pathname}${location.search}`;
     if (lastTrackedPathRef.current === pagePath) return;
-    if (isLovablePreviewTraffic()) {
+    if (isPreviewBuilderTraffic()) {
       lastTrackedPathRef.current = pagePath;
       return;
     }

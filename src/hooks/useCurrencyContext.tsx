@@ -117,17 +117,8 @@ export const CurrencyProvider = ({ children }: { children: ReactNode }) => {
       return amount;
     }
 
-    // Convert to base currency first, then to target
     const amountInBase = amount / fromCurrency.exchange_rate;
-    const converted = amountInBase * toCurrency.exchange_rate;
-
-    // Anti-drift: if the result is extremely close to the original and rates are nearly identical (within 0.01)
-    // we return the exact original amount to avoid "increases" like 3900 -> 3900.10
-    if (Math.abs(converted - amount) < 1.0 && Math.abs(fromCurrency.exchange_rate - toCurrency.exchange_rate) < 0.01) {
-      return amount;
-    }
-
-    return converted;
+    return amountInBase * toCurrency.exchange_rate;
   };
 
   const convert = (amount: number, fromCode?: string): number => {

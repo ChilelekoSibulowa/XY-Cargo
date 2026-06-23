@@ -10,7 +10,6 @@ import { cn } from "@/lib/utils";
 import { Eye, EyeOff, Loader2, ShieldCheck, UsersRound, Mail } from "lucide-react";
 import { Logo } from "@/components/layout/Logo";
 import { getRoleLandingRoute } from "@/lib/portalLanding";
-import { enforcePwaGate } from "@/lib/pwaUtils";
 import { writeDashboardAuthSnapshot } from "@/lib/dashboardSessionCache";
 
 const AUTH_CONFIG_ERROR =
@@ -80,12 +79,6 @@ const Login = () => {
     const userRoles = (roles || []).map((role) => role.role as string);
     const highestRole = roleOrder.find((role) => userRoles.includes(role)) || "customer";
 
-    // PWA Role Restriction: Only Customers, Agents, and Drivers
-    if (await enforcePwaGate(highestRole)) {
-      setIsLoading(false);
-      return;
-    }
-
     let assignedPortals: string[] = [];
     if (highestRole === "staff" || highestRole === "branch_manager") {
       const { data: assignments } = await supabase
@@ -99,9 +92,6 @@ const Login = () => {
     const destination = (location.state as { from?: string } | undefined)?.from;
     // Store session info for dashboard layout initialization
     writeDashboardAuthSnapshot(session.user, highestRole);
-
-    // Re-prompt push notification opt-in on each successful login (PWA mode)
-    try { sessionStorage.removeItem("push-prompt-dismissed"); } catch { /* noop */ }
 
     navigate(destination || getRoleLandingRoute(highestRole, assignedPortals), { replace: true });
     setIsLoading(false);
@@ -192,7 +182,7 @@ const Login = () => {
               <h1 className="text-4xl font-extrabold tracking-tight text-slate-900">Sign In</h1>
               <p className="text-lg text-slate-500 font-medium">Please enter your credentials to access your dashboard.</p>
             </div>
-            
+
             <form onSubmit={handleLogin} className="space-y-6">
               <div className="space-y-2">
                 <Label htmlFor="email-desktop" className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Email Address</Label>

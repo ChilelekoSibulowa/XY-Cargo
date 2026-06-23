@@ -407,12 +407,14 @@ const WarehouseConsolidation = () => {
         return;
       }
 
-      linkedShipmentDetails = ((linkedShipments || []) as Array<{ shipment: {
-        id: string;
-        payment_status: string | null;
-        notes: string | null;
-        receiver: { full_name: string | null; phone: string | null } | null;
-      } | null }>)
+      linkedShipmentDetails = ((linkedShipments || []) as Array<{
+        shipment: {
+          id: string;
+          payment_status: string | null;
+          notes: string | null;
+          receiver: { full_name: string | null; phone: string | null } | null;
+        } | null
+      }>)
         .map((row) => row.shipment)
         .filter(Boolean) as Array<{
           id: string;
@@ -466,10 +468,10 @@ const WarehouseConsolidation = () => {
           status: statusValue,
           ...(isCollectingStatus
             ? {
-                collected_by: consolidationCollectedBy,
-                collected_at: collectionTimestamp,
-                notes: collectionNotes,
-              }
+              collected_by: consolidationCollectedBy,
+              collected_at: collectionTimestamp,
+              notes: collectionNotes,
+            }
             : {}),
         })
         .eq("id", id);
@@ -573,23 +575,23 @@ const WarehouseConsolidation = () => {
       prev.map((row) =>
         row.id === selectedConsolidation.id
           ? {
-              ...row,
-              item_count: parsedItemCount,
-              total_weight: parsedWeight,
-              total_cost: parsedCost,
-            }
+            ...row,
+            item_count: parsedItemCount,
+            total_weight: parsedWeight,
+            total_cost: parsedCost,
+          }
           : row
       )
     );
     setSelectedConsolidation((prev) =>
       prev
         ? {
-            ...prev,
-            item_count: parsedItemCount,
-            total_weight: parsedWeight,
-            total_cost: parsedCost,
-            status: nextStatus,
-          }
+          ...prev,
+          item_count: parsedItemCount,
+          total_weight: parsedWeight,
+          total_cost: parsedCost,
+          status: nextStatus,
+        }
         : prev
     );
     toast.success(
@@ -687,14 +689,14 @@ const WarehouseConsolidation = () => {
     <div className="space-y-6 animate-fade-in">
       <PageHeader
         title="Consolidation Requests"
-        
+
       />
 
       {/* Customer Lookup */}
       <Card className="border-border/70">
         <CardHeader>
           <CardTitle>Customer Lookup</CardTitle>
-          
+
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex flex-col gap-3 md:flex-row md:items-end">
@@ -783,7 +785,7 @@ const WarehouseConsolidation = () => {
       <Card className="border-border/70">
         <CardHeader>
           <CardTitle>Consolidation Requests</CardTitle>
-          
+
         </CardHeader>
         <CardContent>
           <DataTable

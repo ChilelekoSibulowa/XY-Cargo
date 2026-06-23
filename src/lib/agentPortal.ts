@@ -77,6 +77,7 @@ export type AgentShipmentRow = {
   description: string | null;
   notes: string | null;
   custom_tracking_number: string | null;
+  handling_method?: string | null;
   created_at: string;
   updated_at: string;
   weight: number | null;
@@ -190,7 +191,7 @@ export const calculateAgentCommission = (
 ) => {
   const weight = Number(shipment.weight || 0);
   const cbm = Number(shipment.cbm || 0);
-  
+
   // Commission = (Weight * Rate/KG) + (CBM * Rate/CBM)
   return (weight * rateKg) + (cbm * rateCbm);
 };
@@ -286,7 +287,7 @@ export const fetchAgentShipments = async (agentId: string, limit = 500) => {
   const { data, error } = await supabase
     .from("shipments")
     .select(
-      "id, code, customer_id, status, payment_status, paid_amount, total_cost, shipping_cost, service_type, description, notes, custom_tracking_number, created_at, updated_at, estimated_delivery_date, actual_delivery_date, consolidation_id, customer:customers(code, full_name), receiver:receivers(full_name, phone, address)",
+      "id, code, customer_id, status, payment_status, paid_amount, total_cost, shipping_cost, service_type, description, notes, custom_tracking_number, handling_method, weight, cbm, created_at, updated_at, estimated_delivery_date, actual_delivery_date, consolidation_id, customer:customers(code, full_name), receiver:receivers(full_name, phone, address)",
     )
     .in("customer_id", customerIds)
     .order("updated_at", { ascending: false })
@@ -336,11 +337,11 @@ export const fetchAgentSupportTickets = async (
       .limit(limit),
     customerIds.length > 0
       ? supabase
-          .from("support_tickets")
-          .select(baseSelect)
-          .in("customer_id", customerIds)
-          .order("created_at", { ascending: false })
-          .limit(limit)
+        .from("support_tickets")
+        .select(baseSelect)
+        .in("customer_id", customerIds)
+        .order("created_at", { ascending: false })
+        .limit(limit)
       : Promise.resolve({ data: [], error: null }),
   ]);
 

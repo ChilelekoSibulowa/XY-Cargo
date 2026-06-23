@@ -3,7 +3,6 @@ import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { Loader2, LogOut, ShieldCheck } from "lucide-react";
 import { AppSidebar } from "./AppSidebar";
 import { TopBar } from "./TopBar";
-import { PushNotificationPrompt } from "@/components/shared/PushNotificationPrompt";
 import { supabase } from "@/integrations/supabase/client";
 import { AuthProvider } from "@/components/auth/AuthContext";
 import { getVerifiedTotpFactor } from "@/lib/authMfa";
@@ -17,10 +16,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { isPwaMode, enforcePwaGate } from "@/lib/pwaUtils";
 import { cn } from "@/lib/utils";
-import { StickyBottomNav } from "./StickyBottomNav";
-import { PullToRefresh } from "./PullToRefresh";
 
 
 const cachedAuthSnapshot = readDashboardAuthSnapshot();
@@ -156,12 +152,6 @@ export const DashboardLayout = () => {
 
       void (async () => {
         const highestRole = await loadUserRole(session.user.id);
-
-        // PWA Role Failsafe: Redirect and sign out if role is not allowed in App
-        if (await enforcePwaGate(highestRole, { silent: true })) {
-          navigate("/login", { replace: true });
-          return;
-        }
 
         setUserRole(highestRole);
         writeDashboardAuthSnapshot(session.user, highestRole);
@@ -306,7 +296,6 @@ export const DashboardLayout = () => {
 
   return (
     <AuthProvider value={{ user, userRole, isLoading }}>
-      <div id="title-bar" className="hidden display-mode-window-controls-overlay:flex" />
       <div className="dashboard-shell min-h-screen flex bg-background">
         <div
           className={`fixed inset-0 z-[60] bg-black/50 backdrop-blur-sm transition-opacity md:hidden ${isSidebarOpen ? "opacity-100" : "pointer-events-none opacity-0"
@@ -328,17 +317,13 @@ export const DashboardLayout = () => {
         </div>
         <div className="flex-1 flex flex-col min-w-0">
           <TopBar onMenuClick={() => setIsSidebarOpen((prev) => !prev)} />
-          <main className="flex-1 overflow-auto bg-background px-4 py-8 md:px-8 lg:px-10 pb-mobile-nav md:pb-8">
-            <PullToRefresh>
-              <div className="max-w-[1600px] mx-auto w-full">
-                <Outlet />
-              </div>
-            </PullToRefresh>
+          <main className="flex-1 overflow-auto bg-background px-4 py-8 md:px-8 lg:px-10">
+            <div className="max-w-[1600px] mx-auto w-full">
+              <Outlet />
+            </div>
           </main>
-          <StickyBottomNav />
         </div>
       </div>
-      <PushNotificationPrompt />
     </AuthProvider>
   );
 };
