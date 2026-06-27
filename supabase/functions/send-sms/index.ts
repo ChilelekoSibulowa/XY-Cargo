@@ -226,12 +226,11 @@ const sendViaZamtel = async (apiKey: string, senderId: string, contacts: string[
       message: messageTrimmed
     });
     
-    const fullUrl = `${baseUrl}?${queryParams.toString()}`;
+    const pathUrl = `${baseUrl}/contacts/${encodeURIComponent(contactsList)}/senderId/${encodeURIComponent(senderId)}/message/${encodeURIComponent(messageTrimmed)}`;
 
     try {
-      console.log(`Dispatching SMS batch ${i / BATCH_SIZE + 1} to ${batch.length} recipients via GET Query Params...`);
-      // Use GET as the primary method since Zamtel v2.1 routes seem to reject POST
-      let smsResponse = await fetch(fullUrl, { 
+      console.log(`Dispatching SMS batch ${i / BATCH_SIZE + 1} to ${batch.length} recipients via GET Path Segments...`);
+      let smsResponse = await fetch(pathUrl, { 
         method: "GET", 
         headers: { Accept: "application/json, text/plain, */*" } 
       });
@@ -240,14 +239,14 @@ const sendViaZamtel = async (apiKey: string, senderId: string, contacts: string[
       let messageText = getProviderMessage(payload, rawText);
       let ok = responseLooksSuccessful(smsResponse, payload, messageText);
 
-      // Fallback: If GET with query params didn't work, try Path segments (legacy format)
+      // Fallback: If GET with path segments didn't work, try query parameters format
       if (!ok) {
-        console.log("Query param method failed, trying path segments with GET...");
-        const pathUrl = `${baseUrl}/contacts/${encodeURIComponent(contactsList)}/senderId/${encodeURIComponent(senderId)}/message/${encodeURIComponent(messageTrimmed)}`;
-        smsResponse = await fetch(pathUrl, { method: "GET", headers: { Accept: "application/json, text/plain, */*" } });
-        const pathResult = await parseProviderResponse(smsResponse);
-        rawText = pathResult.rawText;
-        payload = pathResult.payload;
+        console.log("Path segments method failed, trying query parameters...");
+        const fullUrl = `${baseUrl}?${queryParams.toString()}`;
+        smsResponse = await fetch(fullUrl, { method: "GET", headers: { Accept: "application/json, text/plain, */*" } });
+        const queryResult = await parseProviderResponse(smsResponse);
+        rawText = queryResult.rawText;
+        payload = queryResult.payload;
         messageText = getProviderMessage(payload, rawText);
         ok = responseLooksSuccessful(smsResponse, payload, messageText);
       }

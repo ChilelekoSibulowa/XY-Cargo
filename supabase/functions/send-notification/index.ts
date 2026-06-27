@@ -340,18 +340,18 @@ serve(async (req) => {
               message: smsText.trim()
             });
             
-            const fullUrl = `${baseUrl}?${queryParams.toString()}`;
+            const pathUrl = `${baseUrl}/contacts/${encodeURIComponent(zamtelPhone)}/senderId/${encodeURIComponent(senderId)}/message/${encodeURIComponent(smsText.trim())}`;
             
-            let smsResp = await fetch(fullUrl, {
+            let smsResp = await fetch(pathUrl, {
               method: "POST",
               headers: { Accept: "application/json, text/plain, */*" },
             });
             let smsResult = await parseSmsResponse(smsResp);
 
-            // Fallback to path segments if query params failed
+            // Fallback to query params if path segments failed
             if (!smsResult.ok) {
-              const pathUrl = `${baseUrl}/contacts/${encodeURIComponent(zamtelPhone)}/senderId/${encodeURIComponent(senderId)}/message/${encodeURIComponent(smsText.trim())}`;
-              smsResp = await fetch(pathUrl, {
+              const fullUrl = `${baseUrl}?${queryParams.toString()}`;
+              smsResp = await fetch(fullUrl, {
                 method: "POST",
                 headers: { Accept: "application/json, text/plain, */*" },
               });
