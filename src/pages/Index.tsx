@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import {
   ArrowRight,
   BatteryCharging,
@@ -12,12 +12,18 @@ import {
   Play,
   Scissors,
   Smartphone,
+  Users,
+  Globe,
+  Clock,
+  CheckCircle2,
+  HelpCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
+import { cn } from "@/lib/utils";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useCmsPage } from "@/hooks/useCmsPage";
 import { cmsDefaults, CmsHomeData } from "@/content/cmsDefaults";
@@ -45,6 +51,31 @@ const Index = () => {
   const [productType, setProductType] = useState("");
   const [origin, setOrigin] = useState("china-foshan");
   const [destination, setDestination] = useState("zambia-lusaka");
+  
+  const navigate = useNavigate();
+  const [activeTab, setActiveTab] = useState<"tracking" | "shipping">("tracking");
+  const [trackingCode, setTrackingCode] = useState("");
+  const [estOrigin, setEstOrigin] = useState("china-foshan");
+  const [estDestination, setEstDestination] = useState("zambia-lusaka");
+
+  const handleTrackSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (trackingCode.trim()) {
+      navigate(`/tracking?query=${encodeURIComponent(trackingCode.trim())}`);
+    }
+  };
+
+  const handleEstimateSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const element = document.getElementById("homepage-calculator");
+    if (element) {
+      setOrigin(estOrigin);
+      setDestination(estDestination);
+      element.scrollIntoView({ behavior: "smooth" });
+    } else {
+      navigate(`/calculator?origin=${estOrigin}&destination=${estDestination}`);
+    }
+  };
   const [weight, setWeight] = useState(10);
   const [length, setLength] = useState(40);
   const [width, setWidth] = useState(30);
@@ -267,138 +298,261 @@ const Index = () => {
     <>
       <MetaPixel />
       <div className="flex flex-col">
-        <section className="relative w-full overflow-hidden">
-          <div className="relative h-[380px] md:h-[500px] lg:h-[620px]">
-          {slides.map((slide, index) => (
-            <div
-              key={`${slide.title}-${index}`}
-              className={`absolute inset-0 transition-opacity duration-700 ${index === activeSlide ? "opacity-100" : "opacity-0"}`}
-            >
-              <OptimizedImage
-                src={slide.image}
-                alt={slide.title}
-                className="h-full w-full object-cover"
-                containerClassName="h-full w-full"
-                aspectRatio="auto"
-                priority={index === 0}
-              />
-              <div className="absolute inset-0 bg-gradient-to-b from-black/35 via-black/25 to-black/60" />
-            </div>
-          ))}
-          <div className="absolute inset-0 flex items-center">
-            <div
-              key={heroKey}
-              className="mx-auto flex w-full max-w-6xl flex-col items-center gap-4 px-4 text-center text-white sm:px-6 motion-safe:animate-fade-up"
-            >
-              <p className="hero-subtitle max-w-full [overflow-wrap:anywhere] motion-safe:animate-fade-up [animation-delay:80ms]">
-                {currentSlide?.subtitle}
-              </p>
-              <h1 className="hero-title max-w-full [overflow-wrap:anywhere] drop-shadow-2xl motion-safe:animate-fade-up [animation-delay:140ms]">
-                {currentSlide?.title}
+        {/* Redesigned Hero Section */}
+        <section className="relative w-full min-h-[580px] lg:min-h-[640px] flex flex-col justify-between overflow-hidden bg-slate-950 text-white">
+          {/* Background image with high contrast dark gradient overlay */}
+          <div className="absolute inset-0 z-0">
+            <OptimizedImage
+              src="/hero/xy-hero-bg.png"
+              alt="XY Cargo Redesign background"
+              className="h-full w-full object-cover opacity-35"
+              containerClassName="h-full w-full"
+              aspectRatio="auto"
+              priority={true}
+            />
+            <div className="absolute inset-0 bg-gradient-to-r from-slate-950/85 via-slate-900/60 to-slate-950/80" />
+            <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-slate-950/90" />
+          </div>
+
+          <div className="relative z-10 w-full max-w-7xl mx-auto px-6 py-16 lg:py-24 grid grid-cols-1 lg:grid-cols-12 gap-12 items-center flex-1">
+            {/* Left Content Column */}
+            <div className="lg:col-span-7 space-y-6 motion-safe:animate-fade-up">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-[#d8000d]/10 text-[#d8000d] border border-[#d8000d]/20 uppercase tracking-wider">
+                China & UAE to Zambia Logistics
+              </span>
+              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black text-white tracking-tight leading-tight uppercase">
+                We Keep Your <span className="text-[#d8000d]">Supply Chain</span> Moving
               </h1>
-              <p className="hero-description max-w-3xl px-1 [overflow-wrap:anywhere] drop-shadow motion-safe:animate-fade-up [animation-delay:200ms] sm:px-0">
-                {currentSlide?.description || currentSlide?.subtitle}
+              <p className="text-base sm:text-lg text-slate-200 max-w-xl leading-relaxed">
+                From China and UAE to Zambia, our seamless logistics solutions ensure on-time, secure, and hassle-free delivery. Connect your business across borders with speed and certainty.
               </p>
-              <div className="mt-6 flex items-center justify-center gap-3 px-2 sm:gap-4 sm:px-0 motion-safe:animate-fade-up [animation-delay:260ms]">
-                <Button
-                  asChild
-                  className="group inline-flex items-center gap-2 rounded-full bg-[#d8000d] px-4 py-2.5 text-[11px] font-semibold text-white shadow-lg shadow-black/25 hover:bg-[#bf000c] sm:gap-4 sm:px-7 sm:py-3 sm:text-sm"
-                >
-                  <Link to="/tracking">
-                    <span>{home.hero.buttonPrimary}</span>
-                    <span className="flex h-9 w-9 items-center justify-center rounded-full bg-black/90 text-white transition group-hover:bg-black">
-                      <ArrowRight className="h-4 w-4" />
-                    </span>
-                  </Link>
-                </Button>
-                <Button
-                  asChild
-                  className="group inline-flex items-center gap-2 rounded-full bg-black px-4 py-2.5 text-[11px] font-semibold text-white shadow-lg shadow-black/30 hover:bg-black/90 sm:gap-4 sm:px-7 sm:py-3 sm:text-sm"
-                >
-                  <Link to="/calculator">
-                    <span>{home.hero.buttonSecondary}</span>
-                    <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[#d8000d] text-white transition group-hover:bg-[#bf000c]">
-                      <ArrowRight className="h-4 w-4" />
-                    </span>
-                  </Link>
-                </Button>
+              <Button
+                asChild
+                className="rounded-full bg-[#d8000d] text-white hover:bg-[#bf000c] text-sm font-semibold px-8 py-6 shadow-lg shadow-[#d8000d]/20 transition-all hover:translate-y-[-1px] group"
+              >
+                <Link to="/about" className="inline-flex items-center gap-2">
+                  <span>Learn More Now</span>
+                  <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+                </Link>
+              </Button>
+            </div>
+
+            {/* Right Card Column */}
+            <div className="lg:col-span-5 motion-safe:animate-fade-up [animation-delay:150ms]">
+              <Card className="bg-white/95 backdrop-blur-md border border-slate-200/50 rounded-3xl shadow-2xl p-6 sm:p-8 relative overflow-hidden text-slate-900">
+                <div className="flex border-b border-slate-100 mb-6">
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab("tracking")}
+                    className={cn(
+                      "flex-1 pb-4 text-xs sm:text-sm font-bold border-b-2 text-center transition-all uppercase tracking-wide",
+                      activeTab === "tracking"
+                        ? "border-[#d8000d] text-[#d8000d]"
+                        : "border-transparent text-slate-500 hover:text-slate-900"
+                    )}
+                  >
+                    Tracking Order
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab("shipping")}
+                    className={cn(
+                      "flex-1 pb-4 text-xs sm:text-sm font-bold border-b-2 text-center transition-all uppercase tracking-wide",
+                      activeTab === "shipping"
+                        ? "border-[#d8000d] text-[#d8000d]"
+                        : "border-transparent text-slate-500 hover:text-slate-900"
+                    )}
+                  >
+                    Ship Order
+                  </button>
+                </div>
+
+                {activeTab === "tracking" && (
+                  <form onSubmit={handleTrackSubmit} className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="trackingCode" className="text-xs font-bold text-slate-700 uppercase tracking-wider">
+                        Tracking Number
+                      </Label>
+                      <Input
+                        id="trackingCode"
+                        type="text"
+                        placeholder="Type your tracking number here"
+                        value={trackingCode}
+                        onChange={(e) => setTrackingCode(e.target.value)}
+                        className="w-full rounded-xl border-slate-200 focus:border-[#d8000d] focus:ring-[#d8000d]/10 h-12"
+                      />
+                    </div>
+                    <Button
+                      type="submit"
+                      className="w-full rounded-xl bg-[#d8000d] text-white hover:bg-[#bf000c] h-12 font-bold shadow-lg shadow-[#d8000d]/20 transition-all"
+                    >
+                      Track Now
+                    </Button>
+                    <div className="flex items-center justify-between pt-2 text-xs">
+                      <Link to="/tracking" className="text-[#d8000d] hover:underline font-semibold">
+                        Multiple Tracking Numbers
+                      </Link>
+                      <Link to="/support" className="flex items-center gap-1 text-slate-500 hover:text-slate-950 transition-colors">
+                        <HelpCircle className="h-4 w-4 text-slate-400" />
+                        <span>Need Help</span>
+                      </Link>
+                    </div>
+                  </form>
+                )}
+
+                {activeTab === "shipping" && (
+                  <form onSubmit={handleEstimateSubmit} className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label className="text-xs font-bold text-slate-700 uppercase tracking-wider">From (Origin)</Label>
+                        <Select value={estOrigin} onValueChange={setEstOrigin}>
+                          <SelectTrigger className="rounded-xl border-slate-200 h-11 text-xs">
+                            <SelectValue placeholder="Origin" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="china-foshan">China (Foshan)</SelectItem>
+                            <SelectItem value="china-yiwu">China (Yiwu)</SelectItem>
+                            <SelectItem value="uae-dubai">UAE (Dubai)</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-xs font-bold text-slate-700 uppercase tracking-wider">To (Destination)</Label>
+                        <Select value={estDestination} onValueChange={setEstDestination}>
+                          <SelectTrigger className="rounded-xl border-slate-200 h-11 text-xs">
+                            <SelectValue placeholder="Destination" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="zambia-lusaka">Zambia (Lusaka)</SelectItem>
+                            <SelectItem value="zambia-ndola">Zambia (Ndola)</SelectItem>
+                            <SelectItem value="zambia-livingstone">Zambia (Livingstone)</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                    <Button
+                      type="submit"
+                      className="w-full rounded-xl bg-[#d8000d] text-white hover:bg-[#bf000c] h-12 font-bold shadow-lg shadow-[#d8000d]/20 transition-all"
+                    >
+                      Estimate Cost
+                    </Button>
+                    <p className="text-[11px] text-slate-500 text-center leading-relaxed">
+                      Instant shipping calculation for Air Cargo and Sea Freight.
+                    </p>
+                  </form>
+                )}
+              </Card>
+            </div>
+          </div>
+
+          {/* Stats Bar Overlay */}
+          <div className="relative z-10 w-full bg-slate-950/70 border-t border-white/5 py-8 backdrop-blur-md">
+            <div className="max-w-7xl mx-auto px-6 grid grid-cols-2 lg:grid-cols-4 gap-6">
+              <div className="flex items-center gap-4 bg-white/5 border border-white/10 rounded-2xl p-5 backdrop-blur-sm transition-all hover:bg-white/10">
+                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#d8000d]/15 text-[#d8000d]">
+                  <Users className="h-6 w-6" />
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-2xl font-bold text-white leading-tight">2,000+</span>
+                  <span className="text-xs text-slate-400 font-medium mt-0.5">Satisfied Clients</span>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-4 bg-white/5 border border-white/10 rounded-2xl p-5 backdrop-blur-sm transition-all hover:bg-white/10">
+                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#d8000d]/15 text-[#d8000d]">
+                  <CheckCircle2 className="h-6 w-6" />
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-2xl font-bold text-white leading-tight">99.98%</span>
+                  <span className="text-xs text-slate-400 font-medium mt-0.5">On-Time Delivery</span>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-4 bg-white/5 border border-white/10 rounded-2xl p-5 backdrop-blur-sm transition-all hover:bg-white/10">
+                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#d8000d]/15 text-[#d8000d]">
+                  <Globe className="h-6 w-6" />
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-2xl font-bold text-white leading-tight">150+</span>
+                  <span className="text-xs text-slate-400 font-medium mt-0.5">Countries Served</span>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-4 bg-white/5 border border-white/10 rounded-2xl p-5 backdrop-blur-sm transition-all hover:bg-white/10">
+                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#d8000d]/15 text-[#d8000d]">
+                  <Clock className="h-6 w-6" />
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-2xl font-bold text-white leading-tight">24/7</span>
+                  <span className="text-xs text-slate-400 font-medium mt-0.5">Customer Support</span>
+                </div>
               </div>
             </div>
           </div>
-          {slides.length > 1 && (
-            <div className="absolute bottom-6 left-1/2 flex -translate-x-1/2 gap-2">
-              {slides.map((_, index) => (
-                <button
-                  key={`hero-dot-${index}`}
-                  type="button"
-                  onClick={() => setActiveSlide(index)}
-                  className={`h-2 w-2 rounded-full transition ${index === activeSlide ? "bg-white" : "bg-white/50"}`}
-                  aria-label={`Go to slide ${index + 1}`}
-                />
-              ))}
-            </div>
-          )}
-        </div>
-      </section>
+        </section>
 
-      <section className="mx-auto max-w-6xl px-6 py-12 text-center motion-safe:animate-fade-in">
-        <div className="mx-auto max-w-3xl space-y-4">
-          <h2 className="text-2xl font-semibold">{home.process.title}</h2>
-          <p className="text-sm text-slate-600">{home.process.body}</p>
-          <Button asChild className="rounded-full bg-[#d8000d] px-6 text-sm font-semibold text-white">
-            <Link to="/tracking">{home.process.buttonLabel}</Link>
-          </Button>
-        </div>
-      </section>
+        {/* Shipping Process Text Header */}
+        <section className="mx-auto max-w-6xl px-6 py-16 text-center motion-safe:animate-fade-in">
+          <div className="mx-auto max-w-3xl space-y-4">
+            <h2 className="text-3xl font-extrabold text-slate-900 uppercase tracking-tight">{home.process.title}</h2>
+            <div className="h-1 w-20 bg-[#d8000d] mx-auto rounded-full" />
+            <p className="text-base text-slate-600 mt-4 leading-relaxed">{home.process.body}</p>
+            <Button asChild className="rounded-full bg-[#d8000d] hover:bg-[#bf000c] px-8 py-5 text-sm font-semibold text-white shadow-md shadow-[#d8000d]/10">
+              <Link to="/tracking">{home.process.buttonLabel}</Link>
+            </Button>
+          </div>
+        </section>
 
-      <section className="bg-slate-50 py-10 motion-safe:animate-fade-in">
-        <div className="mx-auto grid max-w-7xl grid-cols-2 gap-6 px-6 md:grid-cols-4">
-          {steps.map((step, index) => (
-            <div key={step.title} className="text-center group">
-              <div className="relative mx-auto h-24 w-24 overflow-hidden rounded-full ring-2 ring-transparent transition-all duration-300 group-hover:ring-[#d8000d] group-hover:scale-105">
-                <OptimizedImage src={step.image} alt={step.title} className="h-full w-full" />
-                <span className="absolute bottom-1 right-1 flex h-8 w-8 items-center justify-center rounded-full bg-[#d8000d] text-xs font-semibold text-white shadow-lg">
-                  {String(index + 1).padStart(2, "0")}
-                </span>
-              </div>
-              <h3 className="mt-4 text-sm font-semibold transition-colors group-hover:text-[#d8000d]">{step.title}</h3>
-              <p className="mt-2 text-xs text-slate-600">{step.body}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      <section className="mx-auto grid max-w-6xl gap-10 px-6 py-12 md:grid-cols-[1.1fr_0.9fr] md:items-start motion-safe:animate-fade-in">
-        <div className="space-y-4">
-          <h2 className="text-2xl font-semibold">{home.about.title}</h2>
-          <p className="text-sm text-slate-600">{home.about.body}</p>
-          <Accordion type="single" collapsible className="space-y-2">
-            {aboutAccordions.map((item) => (
-              <AccordionItem key={item.title} value={item.title}>
-                <AccordionTrigger className="text-sm">{item.title}</AccordionTrigger>
-                <AccordionContent className="text-xs text-slate-600">{item.body}</AccordionContent>
-              </AccordionItem>
+        {/* Process Steps Cards */}
+        <section className="bg-slate-50 border-y border-slate-100 py-16 motion-safe:animate-fade-in">
+          <div className="mx-auto grid max-w-7xl grid-cols-1 sm:grid-cols-2 gap-8 px-6 md:grid-cols-4">
+            {steps.map((step, index) => (
+              <Card key={step.title} className="text-center group bg-white border border-slate-200/60 rounded-2xl p-6 shadow-sm hover:shadow-md transition-all duration-300">
+                <div className="relative mx-auto h-24 w-24 overflow-hidden rounded-full ring-2 ring-transparent transition-all duration-300 group-hover:ring-[#d8000d] group-hover:scale-105">
+                  <OptimizedImage src={step.image} alt={step.title} className="h-full w-full object-cover" />
+                  <span className="absolute bottom-1 right-1 flex h-8 w-8 items-center justify-center rounded-full bg-[#d8000d] text-xs font-bold text-white shadow-lg">
+                    {String(index + 1).padStart(2, "0")}
+                  </span>
+                </div>
+                <h3 className="mt-5 text-base font-bold text-slate-900 transition-colors group-hover:text-[#d8000d]">{step.title}</h3>
+                <p className="mt-2 text-xs sm:text-sm text-slate-500 leading-relaxed">{step.body}</p>
+              </Card>
             ))}
-          </Accordion>
-        </div>
-        <OptimizedImage 
-          src={home.about.image} 
-          alt="About XY Cargo Zambia" 
-          className="rounded-2xl" 
-          aspectRatio="video"
-        />
-      </section>
+          </div>
+        </section>
 
-      <section className="mx-auto grid max-w-7xl grid-cols-3 gap-3 px-4 pb-12 sm:gap-6 sm:px-6 md:grid-cols-3 motion-safe:animate-fade-in">
-        {stats.map((stat) => (
-          <Card key={stat.label} className="border-slate-200/70">
-            <CardContent className="flex flex-col items-center gap-2 p-6 text-center">
-              <p className="text-2xl font-semibold">{stat.value}</p>
-              <p className="text-xs text-slate-500">{stat.label}</p>
-            </CardContent>
-          </Card>
-        ))}
-      </section>
+        {/* About Section */}
+        <section className="mx-auto max-w-6xl px-6 py-16 grid grid-cols-1 md:grid-cols-[1.1fr_0.9fr] gap-12 md:items-center motion-safe:animate-fade-in">
+          <div className="space-y-6">
+            <div className="space-y-2">
+              <span className="text-xs font-bold text-[#d8000d] uppercase tracking-widest">Who We Are</span>
+              <h2 className="text-3xl font-extrabold text-slate-900 uppercase tracking-tight">{home.about.title}</h2>
+              <div className="h-1 w-16 bg-[#d8000d] rounded-full" />
+            </div>
+            <p className="text-base text-slate-600 leading-relaxed">{home.about.body}</p>
+            <Accordion type="single" collapsible className="space-y-3 w-full">
+              {aboutAccordions.map((item, idx) => (
+                <AccordionItem key={item.title} value={item.title} className="border border-slate-200 rounded-xl px-4 bg-white">
+                  <AccordionTrigger className="text-sm font-bold text-slate-800 hover:text-[#d8000d] hover:no-underline py-3">
+                    {item.title}
+                  </AccordionTrigger>
+                  <AccordionContent className="text-xs sm:text-sm text-slate-500 leading-relaxed pb-4 pt-1 border-t border-slate-100">
+                    {item.body}
+                  </AccordionContent>
+                </AccordionItem>
+              ))}
+            </Accordion>
+          </div>
+          <div className="relative group">
+            <div className="absolute inset-0 bg-gradient-to-tr from-[#d8000d]/10 to-transparent rounded-3xl opacity-0 group-hover:opacity-100 transition-all duration-500" />
+            <OptimizedImage 
+              src={home.about.image} 
+              alt="About XY Cargo Zambia" 
+              className="rounded-3xl shadow-lg border border-slate-200/50" 
+              aspectRatio="video"
+            />
+          </div>
+        </section>
 
       <section className="bg-[#fefafa] py-10 motion-safe:animate-fade-in">
         <div className="mx-auto max-w-6xl space-y-6 px-6">
@@ -519,7 +673,7 @@ const Index = () => {
         ) : null}
       </section>
 
-      <section className="mx-auto max-w-6xl px-6 py-12 motion-safe:animate-fade-in">
+      <section id="homepage-calculator" className="mx-auto max-w-6xl px-6 py-12 motion-safe:animate-fade-in">
         <div className="space-y-3 text-center">
           <h2 className="text-2xl font-semibold md:text-3xl">{home.calculator.title}</h2>
           <p className="text-sm text-slate-600">{home.calculator.subtitle}</p>
