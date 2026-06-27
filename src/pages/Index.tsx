@@ -2,12 +2,6 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
   ArrowRight,
-  ArrowUpRight,
-  ArrowLeftRight,
-  Anchor,
-  Navigation,
-  Calendar,
-  CalendarDays,
   BatteryCharging,
   Box,
   Calculator,
@@ -57,54 +51,7 @@ const Index = () => {
   const [productType, setProductType] = useState("");
   const [origin, setOrigin] = useState("china-foshan");
   const [destination, setDestination] = useState("zambia-lusaka");
-  
-  const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState<"tracking" | "schedules">("schedules");
-  const [trackingCode, setTrackingCode] = useState("");
-  const [estOrigin, setEstOrigin] = useState("china-foshan");
-  const [estDestination, setEstDestination] = useState("zambia-lusaka");
-  const [estDate, setEstDate] = useState("29 Aug, 2026");
 
-  const handleTrackSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (trackingCode.trim()) {
-      navigate(`/tracking?query=${encodeURIComponent(trackingCode.trim())}`);
-    }
-  };
-
-  const handleSwapLocations = () => {
-    const originVals = ["china-foshan", "china-yiwu", "uae-dubai"];
-    const destVals = ["zambia-lusaka", "zambia-ndola", "zambia-livingstone"];
-    
-    if (originVals.includes(estOrigin) && destVals.includes(estDestination)) {
-      const temp = estOrigin;
-      setEstOrigin(estDestination);
-      setEstDestination(temp);
-    } else {
-      const temp = estOrigin;
-      setEstOrigin(estDestination);
-      setEstDestination(temp);
-    }
-  };
-
-  const handleSchedulesSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const element = document.getElementById("homepage-calculator");
-    if (element) {
-      const originVals = ["china-foshan", "china-yiwu", "uae-dubai"];
-      const destVals = ["zambia-lusaka", "zambia-ndola", "zambia-livingstone"];
-      
-      if (originVals.includes(estOrigin)) {
-        setOrigin(estOrigin);
-      }
-      if (destVals.includes(estDestination)) {
-        setDestination(estDestination);
-      }
-      element.scrollIntoView({ behavior: "smooth" });
-    } else {
-      navigate(`/calculator?origin=${estOrigin}&destination=${estDestination}`);
-    }
-  };
 
   const [weight, setWeight] = useState(10);
   const [length, setLength] = useState(40);
@@ -115,7 +62,6 @@ const Index = () => {
   const [seaRateIndex, setSeaRateIndex] = useState(0);
   const [hasStartedVideoPlayback, setHasStartedVideoPlayback] = useState(false);
   const videoRef = useRef<HTMLVideoElement | null>(null);
-  
   const steps = Array.isArray(home?.steps) ? home.steps : cmsDefaults.home.steps;
   const aboutAccordions = Array.isArray(home?.about?.accordions)
     ? home.about.accordions
@@ -183,7 +129,6 @@ const Index = () => {
 
   const currentSlide = slides[Math.min(activeSlide, slides.length - 1)];
   const heroKey = `${currentSlide?.title || "slide"}-${activeSlide}`;
-  
   const serviceTypeOptions = [
     {
       id: "air-standard",
@@ -227,31 +172,27 @@ const Index = () => {
     }
   }, [airRatesContent]);
   const activeAirRate = airRatesContent[airRateIndex] ?? airRatesContent[0];
-  
   useEffect(() => {
     if (seaRatesContent.length > 0) {
       setSeaRateIndex((prev) => (prev < seaRatesContent.length ? prev : 0));
     }
   }, [seaRatesContent]);
   const activeSeaRate = seaRatesContent[seaRateIndex] ?? seaRatesContent[0];
-  
   const airRateIcons: Record<string, JSX.Element> = {
-    "Normal Goods": <Package className="h-6 w-6 text-slate-400" />,
-    "Wigs & Hair Products": <Scissors className="h-6 w-6 text-slate-400" />,
-    "Mobile Phones": <Smartphone className="h-6 w-6 text-slate-400" />,
-    "Battery Goods & Electronics": <BatteryCharging className="h-6 w-6 text-slate-400" />,
-    "Laptops & iPads": <Laptop className="h-6 w-6 text-slate-400" />,
-    Medicare: <HeartPulse className="h-6 w-6 text-slate-400" />,
+    "Normal Goods": <Package className="h-6 w-6 text-slate-500" />,
+    "Wigs & Hair Products": <Scissors className="h-6 w-6 text-slate-500" />,
+    "Mobile Phones": <Smartphone className="h-6 w-6 text-slate-500" />,
+    "Battery Goods & Electronics": <BatteryCharging className="h-6 w-6 text-slate-500" />,
+    "Laptops & iPads": <Laptop className="h-6 w-6 text-slate-500" />,
+    Medicare: <HeartPulse className="h-6 w-6 text-slate-500" />,
   };
-  
   const seaRateIcons: Record<string, JSX.Element> = {
-    "General Goods": <Package className="h-6 w-6 text-slate-400" />,
-    "Special Goods": <Box className="h-6 w-6 text-slate-400" />,
+    "General Goods": <Package className="h-6 w-6 text-slate-500" />,
+    "Special Goods": <Box className="h-6 w-6 text-slate-500" />,
   };
 
   const isSea = serviceType === "sea-freight";
   const productServiceType = isSea ? "sea" : "air";
-  
   const systemProductTypeOptions = useMemo(
     () => getSystemProductTypeOptions(shippingRates, productServiceType),
     [productServiceType, shippingRates]
@@ -265,7 +206,6 @@ const Index = () => {
     () => mergeProductTypeOptions(baseProductTypeOptions, systemProductTypeOptions),
     [baseProductTypeOptions, systemProductTypeOptions]
   );
-  
   const selectedRate = useMemo(() => {
     return selectSystemShippingRate(shippingRates, productServiceType, destination, productType);
   }, [destination, productServiceType, productType, shippingRates]);
@@ -273,7 +213,6 @@ const Index = () => {
   const rateBasis = getRateBasis(selectedRate, productServiceType);
   const rateValue = getRateValue(selectedRate, productServiceType);
   const rateUnit = rateBasis === "cbm" ? "CBM" : "kg";
-  
   const currentQuote = useMemo(() => {
     const minimumCharge = selectedRate?.minimum_charge || 0;
     const estimatedCost =
@@ -290,7 +229,6 @@ const Index = () => {
   }, [cbm, rateBasis, rateValue, selectedRate, weight]);
   const [calculatedQuote, setCalculatedQuote] = useState(currentQuote);
   const displayedQuote = calculatedQuote || currentQuote;
-  
   const pricingInfo = useMemo(() => {
     const info = shippingRates.map((rate) => {
       const service = rate.service_type === "air" ? "Air" : "Sea";
@@ -311,7 +249,6 @@ const Index = () => {
 
     return info;
   }, [formatAmount, shippingRates]);
-  
   const toNumber = (value: string) => {
     const next = Number(value);
     return Number.isFinite(next) ? next : 0;
@@ -337,298 +274,128 @@ const Index = () => {
   return (
     <>
       <MetaPixel />
-      <div className="flex flex-col bg-slate-950 text-slate-100 overflow-x-hidden font-sans">
-        
-        {/* Creative Awwwards-Style Hero Section */}
-        <section className="relative w-full min-h-[95vh] flex flex-col justify-between overflow-hidden border-b border-white/5">
-          {/* Ship Background Image Layer */}
-          <div className="absolute inset-0 z-0">
-            <OptimizedImage
-              src="/hero/xy-hero-bg-ship.png"
-              alt="XY Cargo ocean shipping container ship background"
-              className="h-full w-full object-cover opacity-25 scale-105 transition-transform duration-[10000ms] hover:scale-100"
-              containerClassName="h-full w-full"
-              aspectRatio="auto"
-              priority={true}
-            />
-            <div className="absolute inset-0 bg-gradient-to-r from-slate-950 via-slate-950/40 to-slate-900/60" />
-            <div className="absolute inset-0 bg-gradient-to-b from-transparent via-slate-950/70 to-slate-950" />
-          </div>
-
-          <div className="relative z-10 w-full max-w-7xl mx-auto px-6 py-20 lg:py-28 grid grid-cols-1 lg:grid-cols-12 gap-12 items-center flex-1">
-            {/* Left Content Column: Editorial Title & Description */}
-            <div className="lg:col-span-7 space-y-8 motion-safe:animate-fade-up">
-              <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-semibold bg-[#d8000d]/10 text-[#d8000d] border border-[#d8000d]/20 uppercase tracking-widest">
-                Unmatched Worldwide Reach
-              </span>
-              <h1 className="text-4xl sm:text-6xl lg:text-7xl font-black text-white tracking-tight leading-[1.05] uppercase">
-                Global Cargo <span className="text-transparent bg-clip-text bg-gradient-to-r from-white via-slate-200 to-[#d8000d] italic font-normal tracking-wide">logistics</span> – Efficient & trusted
-              </h1>
-              <p className="text-base sm:text-lg text-slate-400 max-w-xl leading-relaxed">
-                Direct shipping lanes from Foshan, Yiwu, and Dubai to major Zambian hubs. Secure cargo handling, transparent timelines, and unmatched reliability.
-              </p>
-              <div className="flex flex-wrap items-center gap-4">
-                <Button
-                  asChild
-                  className="rounded-full bg-[#d8000d] text-white hover:bg-[#bf000c] text-sm font-bold px-8 py-6 shadow-lg shadow-[#d8000d]/30 transition-all hover:translate-y-[-1px] group"
-                >
-                  <Link to="/about" className="inline-flex items-center gap-2">
-                    <span>Learn More Now</span>
-                    <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-                  </Link>
-                </Button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    const el = document.getElementById("homepage-calculator");
-                    el?.scrollIntoView({ behavior: "smooth" });
-                  }}
-                  className="rounded-full bg-white/5 border border-white/10 hover:bg-white/10 text-white text-sm font-semibold px-8 py-3.5 transition-all"
-                >
-                  Calculate Cost
-                </button>
+      <div className="flex flex-col">
+        {/* Carousel Slideshow Hero Section */}
+        <section className="relative w-full overflow-hidden">
+          <div className="relative h-[380px] md:h-[500px] lg:h-[620px]">
+            {slides.map((slide, index) => (
+              <div
+                key={`${slide.title}-${index}`}
+                className={`absolute inset-0 transition-opacity duration-700 ${index === activeSlide ? "opacity-100" : "opacity-0"}`}
+              >
+                <OptimizedImage
+                  src={slide.image}
+                  alt={slide.title}
+                  className="h-full w-full object-cover"
+                  containerClassName="h-full w-full"
+                  aspectRatio="auto"
+                  priority={index === 0}
+                />
+                <div className="absolute inset-0 bg-gradient-to-b from-black/35 via-black/25 to-black/60" />
               </div>
-            </div>
-
-            {/* Right Column: Uthao-style glassmorphic floating search/tabs card */}
-            <div className="lg:col-span-5 motion-safe:animate-fade-up [animation-delay:150ms]">
-              <div className="bg-slate-900/60 backdrop-blur-xl border border-white/10 shadow-[0_8px_32px_0_rgba(0,0,0,0.37)] rounded-[32px] p-6 sm:p-8 relative overflow-hidden text-white">
-                
-                {/* Custom Tab selectors */}
-                <div className="flex bg-slate-950/50 p-1 rounded-2xl mb-6 border border-white/5">
-                  <button
-                    type="button"
-                    onClick={() => setActiveTab("tracking")}
-                    className={cn(
-                      "flex-1 py-3 text-xs font-bold rounded-xl text-center transition-all uppercase tracking-wider",
-                      activeTab === "tracking"
-                        ? "bg-[#d8000d] text-white shadow-lg"
-                        : "text-slate-400 hover:text-white"
-                    )}
+            ))}
+            <div className="absolute inset-0 flex items-center">
+              <div
+                key={heroKey}
+                className="mx-auto flex w-full max-w-6xl flex-col items-center gap-4 px-4 text-center text-white sm:px-6 motion-safe:animate-fade-up"
+              >
+                <p className="hero-subtitle max-w-full [overflow-wrap:anywhere] motion-safe:animate-fade-up [animation-delay:80ms]">
+                  {currentSlide?.subtitle}
+                </p>
+                <h1 className="hero-title max-w-full [overflow-wrap:anywhere] drop-shadow-2xl motion-safe:animate-fade-up [animation-delay:140ms]">
+                  {currentSlide?.title}
+                </h1>
+                <p className="hero-description max-w-3xl px-1 [overflow-wrap:anywhere] drop-shadow motion-safe:animate-fade-up [animation-delay:200ms] sm:px-0">
+                  {currentSlide?.description || currentSlide?.subtitle}
+                </p>
+                <div className="mt-6 flex items-center justify-center gap-3 px-2 sm:gap-4 sm:px-0 motion-safe:animate-fade-up [animation-delay:260ms]">
+                  <Button
+                    asChild
+                    className="group inline-flex items-center gap-2 rounded-full bg-[#d8000d] px-4 py-2.5 text-[11px] font-semibold text-white shadow-lg shadow-black/25 hover:bg-[#bf000c] sm:gap-4 sm:px-7 sm:py-3 sm:text-sm"
                   >
-                    Tracking
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setActiveTab("schedules")}
-                    className={cn(
-                      "flex-1 py-3 text-xs font-bold rounded-xl text-center transition-all uppercase tracking-wider",
-                      activeTab === "schedules"
-                        ? "bg-[#d8000d] text-white shadow-lg"
-                        : "text-slate-400 hover:text-white"
-                    )}
+                    <Link to="/tracking">
+                      <span>{home.hero.buttonPrimary}</span>
+                      <span className="flex h-9 w-9 items-center justify-center rounded-full bg-black/90 text-white transition group-hover:bg-black">
+                        <ArrowRight className="h-4 w-4" />
+                      </span>
+                    </Link>
+                  </Button>
+                  <Button
+                    asChild
+                    className="group inline-flex items-center gap-2 rounded-full bg-black px-4 py-2.5 text-[11px] font-semibold text-white shadow-lg shadow-black/30 hover:bg-black/90 sm:gap-4 sm:px-7 sm:py-3 sm:text-sm"
                   >
-                    Schedules
-                  </button>
-                </div>
-
-                {/* Tab content 1: Tracking form */}
-                {activeTab === "tracking" && (
-                  <form onSubmit={handleTrackSubmit} className="space-y-4">
-                    <div className="space-y-2 relative">
-                      <Label htmlFor="trackingCode" className="text-xs font-bold text-slate-300 uppercase tracking-widest">
-                        Type tracking number here
-                      </Label>
-                      <div className="relative">
-                        <Input
-                          id="trackingCode"
-                          type="text"
-                          placeholder="Type your tracking number here"
-                          value={trackingCode}
-                          onChange={(e) => setTrackingCode(e.target.value)}
-                          className="w-full rounded-2xl border-white/10 bg-slate-950/40 text-white placeholder-slate-500 focus:border-[#d8000d] focus:ring-0 h-14 pl-12 dynamic-fade-in"
-                        />
-                        <Navigation className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
-                      </div>
-                    </div>
-                    <Button
-                      type="submit"
-                      className="w-full rounded-2xl bg-[#d8000d] hover:bg-[#bf000c] h-14 font-bold text-white shadow-lg shadow-[#d8000d]/10 flex items-center justify-center gap-2 group transition-all"
-                    >
-                      <span>Search</span>
-                      <ArrowUpRight className="h-5 w-5 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
-                    </Button>
-                    <div className="flex justify-center pt-2">
-                      <Link to="/tracking" className="text-xs text-slate-400 hover:text-[#d8000d] font-semibold transition-colors">
-                        Multiple Tracking Numbers
-                      </Link>
-                    </div>
-                  </form>
-                )}
-
-                {/* Tab content 2: Schedules form (Uthao style) */}
-                {activeTab === "schedules" && (
-                  <form onSubmit={handleSchedulesSubmit} className="space-y-4 relative dynamic-fade-in">
-                    
-                    {/* Origin input */}
-                    <div className="space-y-1">
-                      <Label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Origin</Label>
-                      <div className="relative">
-                        <Select value={estOrigin} onValueChange={setEstOrigin}>
-                          <SelectTrigger className="w-full rounded-2xl border-white/10 bg-slate-950/40 h-12 pl-12 text-xs font-semibold text-white">
-                            <SelectValue placeholder="Select Origin" />
-                          </SelectTrigger>
-                          <SelectContent className="bg-slate-900 border-white/10 text-white">
-                            <SelectItem value="china-foshan">China (Foshan)</SelectItem>
-                            <SelectItem value="china-yiwu">China (Yiwu)</SelectItem>
-                            <SelectItem value="uae-dubai">UAE (Dubai)</SelectItem>
-                            <SelectItem value="zambia-lusaka" disabled>Zambia (Lusaka)</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <Anchor className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                      </div>
-                    </div>
-
-                    {/* Destination input */}
-                    <div className="space-y-1">
-                      <Label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Destination</Label>
-                      <div className="relative">
-                        <Select value={estDestination} onValueChange={setEstDestination}>
-                          <SelectTrigger className="w-full rounded-2xl border-white/10 bg-slate-950/40 h-12 pl-12 text-xs font-semibold text-white">
-                            <SelectValue placeholder="Select Destination" />
-                          </SelectTrigger>
-                          <SelectContent className="bg-slate-900 border-white/10 text-white">
-                            <SelectItem value="zambia-lusaka">Zambia (Lusaka)</SelectItem>
-                            <SelectItem value="zambia-ndola">Zambia (Ndola)</SelectItem>
-                            <SelectItem value="zambia-livingstone">Zambia (Livingstone)</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <Navigation className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                      </div>
-                    </div>
-
-                    {/* Swap button overlapping on the right side */}
-                    <button
-                      type="button"
-                      onClick={handleSwapLocations}
-                      className="absolute right-4 top-[32%] -translate-y-1/2 flex h-8 w-8 items-center justify-center rounded-full bg-[#d8000d] text-white hover:bg-[#bf000c] shadow-md border border-white/10 z-20 transition-all active:scale-95"
-                      title="Swap Locations"
-                    >
-                      <ArrowLeftRight className="h-4 w-4 rotate-90" />
-                    </button>
-
-                    {/* Date select & Search button grid */}
-                    <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 items-end">
-                      <div className="sm:col-span-6 space-y-1">
-                        <Label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Date</Label>
-                        <div className="relative">
-                          <Input
-                            type="text"
-                            value={estDate}
-                            onChange={(e) => setEstDate(e.target.value)}
-                            placeholder="Select Date"
-                            className="w-full rounded-2xl border-white/10 bg-slate-950/40 text-white text-xs h-12 pl-10"
-                          />
-                          <CalendarDays className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                        </div>
-                      </div>
-                      <div className="sm:col-span-6">
-                        <Button
-                          type="submit"
-                          className="w-full rounded-2xl bg-[#d8000d] hover:bg-[#bf000c] h-12 font-bold text-white flex items-center justify-center gap-2 group transition-all"
-                        >
-                          <span>Search</span>
-                          <ArrowUpRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
-                        </Button>
-                      </div>
-                    </div>
-
-                  </form>
-                )}
-
-              </div>
-            </div>
-          </div>
-
-          {/* Stats Bar Overlay with dark glassy layout and red highlights */}
-          <div className="relative z-10 w-full bg-slate-950/80 border-t border-white/5 py-8 backdrop-blur-md">
-            <div className="max-w-7xl mx-auto px-6 grid grid-cols-2 lg:grid-cols-4 gap-6">
-              <div className="flex items-center gap-4 bg-white/5 border border-white/10 rounded-2xl p-5 transition-all hover:bg-[#d8000d]/5 hover:border-[#d8000d]/20">
-                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#d8000d]/10 text-[#d8000d]">
-                  <Users className="h-6 w-6" />
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-2xl font-bold text-white leading-tight">2,000+</span>
-                  <span className="text-xs text-slate-400 font-medium mt-0.5">Satisfied Clients</span>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-4 bg-white/5 border border-white/10 rounded-2xl p-5 transition-all hover:bg-[#d8000d]/5 hover:border-[#d8000d]/20">
-                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#d8000d]/10 text-[#d8000d]">
-                  <CheckCircle2 className="h-6 w-6" />
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-2xl font-bold text-white leading-tight">99.98%</span>
-                  <span className="text-xs text-slate-400 font-medium mt-0.5">On-Time Delivery</span>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-4 bg-white/5 border border-white/10 rounded-2xl p-5 transition-all hover:bg-[#d8000d]/5 hover:border-[#d8000d]/20">
-                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#d8000d]/10 text-[#d8000d]">
-                  <Globe className="h-6 w-6" />
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-2xl font-bold text-white leading-tight">150+</span>
-                  <span className="text-xs text-slate-400 font-medium mt-0.5">Countries Served</span>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-4 bg-white/5 border border-white/10 rounded-2xl p-5 transition-all hover:bg-[#d8000d]/5 hover:border-[#d8000d]/20">
-                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#d8000d]/10 text-[#d8000d]">
-                  <Clock className="h-6 w-6" />
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-2xl font-bold text-white leading-tight">24/7</span>
-                  <span className="text-xs text-slate-400 font-medium mt-0.5">Customer Support</span>
+                    <Link to="/calculator">
+                      <span>{home.hero.buttonSecondary}</span>
+                      <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[#d8000d] text-white transition group-hover:bg-[#bf000c]">
+                        <ArrowRight className="h-4 w-4" />
+                      </span>
+                    </Link>
+                  </Button>
                 </div>
               </div>
             </div>
+            {slides.length > 1 && (
+              <div className="absolute bottom-6 left-1/2 flex -translate-x-1/2 gap-2">
+                {slides.map((_, index) => (
+                  <button
+                    key={`hero-dot-${index}`}
+                    type="button"
+                    onClick={() => setActiveSlide(index)}
+                    className={`h-2 w-2 rounded-full transition ${index === activeSlide ? "bg-white" : "bg-white/50"}`}
+                    aria-label={`Go to slide ${index + 1}`}
+                  />
+                ))}
+              </div>
+            )}
           </div>
         </section>
 
-        {/* Shipping Process steps redesigned in a clean timeline */}
-        <section className="bg-slate-900/40 border-b border-white/5 py-20 motion-safe:animate-fade-in">
-          <div className="max-w-7xl mx-auto px-6">
-            <div className="text-center max-w-3xl mx-auto mb-16 space-y-4">
-              <span className="text-xs font-bold text-[#d8000d] uppercase tracking-widest">Workflow</span>
-              <h2 className="text-4xl font-extrabold text-white tracking-tight uppercase">{home.process.title}</h2>
-              <div className="h-1.5 w-24 bg-[#d8000d] mx-auto rounded-full" />
-              <p className="text-slate-400 mt-4 leading-relaxed">{home.process.body}</p>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-              {steps.map((step, index) => (
-                <div key={step.title} className="relative group bg-slate-900 border border-white/5 rounded-3xl p-6 shadow-xl transition-all duration-300 hover:border-[#d8000d]/30 hover:-translate-y-1">
-                  <div className="relative mx-auto h-24 w-24 overflow-hidden rounded-2xl ring-2 ring-transparent transition-all duration-300 group-hover:ring-[#d8000d]">
-                    <OptimizedImage src={step.image} alt={step.title} className="h-full w-full object-cover" />
-                    <span className="absolute bottom-2 right-2 flex h-8 w-8 items-center justify-center rounded-xl bg-[#d8000d] text-xs font-bold text-white shadow-lg">
-                      {String(index + 1).padStart(2, "0")}
-                    </span>
-                  </div>
-                  <h3 className="mt-6 text-lg font-bold text-white text-center transition-colors group-hover:text-[#d8000d]">{step.title}</h3>
-                  <p className="mt-2 text-xs sm:text-sm text-slate-400 text-center leading-relaxed">{step.body}</p>
-                </div>
-              ))}
-            </div>
+        {/* Shipping Process Text Header */}
+        <section className="mx-auto max-w-6xl px-6 py-16 text-center motion-safe:animate-fade-in">
+          <div className="mx-auto max-w-3xl space-y-4">
+            <h2 className="text-3xl font-extrabold text-slate-900 uppercase tracking-tight">{home.process.title}</h2>
+            <div className="h-1 w-20 bg-[#d8000d] mx-auto rounded-full" />
+            <p className="text-base text-slate-600 mt-4 leading-relaxed">{home.process.body}</p>
+            <Button asChild className="rounded-full bg-[#d8000d] hover:bg-[#bf000c] px-8 py-5 text-sm font-semibold text-white shadow-md shadow-[#d8000d]/10">
+              <Link to="/tracking">{home.process.buttonLabel}</Link>
+            </Button>
           </div>
         </section>
 
-        {/* About us section: refined layout with accordions */}
-        <section className="mx-auto max-w-7xl px-6 py-20 grid grid-cols-1 lg:grid-cols-[1.1fr_0.9fr] gap-16 lg:items-center motion-safe:animate-fade-in">
+        {/* Process Steps Cards */}
+        <section className="bg-slate-50 border-y border-slate-100 py-16 motion-safe:animate-fade-in">
+          <div className="mx-auto grid max-w-7xl grid-cols-1 sm:grid-cols-2 gap-8 px-6 md:grid-cols-4">
+            {steps.map((step, index) => (
+              <Card key={step.title} className="text-center group bg-white border border-slate-200/60 rounded-2xl p-6 shadow-sm hover:shadow-md transition-all duration-300">
+                <div className="relative mx-auto h-24 w-24 overflow-hidden rounded-full ring-2 ring-transparent transition-all duration-300 group-hover:ring-[#d8000d] group-hover:scale-105">
+                  <OptimizedImage src={step.image} alt={step.title} className="h-full w-full object-cover" />
+                  <span className="absolute bottom-1 right-1 flex h-8 w-8 items-center justify-center rounded-full bg-[#d8000d] text-xs font-bold text-white shadow-lg">
+                    {String(index + 1).padStart(2, "0")}
+                  </span>
+                </div>
+                <h3 className="mt-5 text-base font-bold text-slate-900 transition-colors group-hover:text-[#d8000d]">{step.title}</h3>
+                <p className="mt-2 text-xs sm:text-sm text-slate-500 leading-relaxed">{step.body}</p>
+              </Card>
+            ))}
+          </div>
+        </section>
+
+        {/* About Section */}
+        <section className="mx-auto max-w-6xl px-6 py-16 grid grid-cols-1 md:grid-cols-[1.1fr_0.9fr] gap-12 md:items-center motion-safe:animate-fade-in">
           <div className="space-y-6">
             <div className="space-y-2">
-              <span className="text-xs font-bold text-[#d8000d] uppercase tracking-widest">About Us</span>
-              <h2 className="text-4xl font-extrabold text-white tracking-tight uppercase">{home.about.title}</h2>
-              <div className="h-1.5 w-16 bg-[#d8000d] rounded-full" />
+              <span className="text-xs font-bold text-[#d8000d] uppercase tracking-widest">Who We Are</span>
+              <h2 className="text-3xl font-extrabold text-slate-900 uppercase tracking-tight">{home.about.title}</h2>
+              <div className="h-1 w-16 bg-[#d8000d] rounded-full" />
             </div>
-            <p className="text-slate-400 leading-relaxed">{home.about.body}</p>
-            <Accordion type="single" collapsible className="space-y-3 w-full border-none">
-              {aboutAccordions.map((item) => (
-                <AccordionItem key={item.title} value={item.title} className="border border-white/5 rounded-2xl px-5 bg-slate-900/60">
-                  <AccordionTrigger className="text-sm font-bold text-slate-200 hover:text-[#d8000d] hover:no-underline py-4">
+            <p className="text-base text-slate-600 leading-relaxed">{home.about.body}</p>
+            <Accordion type="single" collapsible className="space-y-3 w-full">
+              {aboutAccordions.map((item, idx) => (
+                <AccordionItem key={item.title} value={item.title} className="border border-slate-200 rounded-xl px-4 bg-white">
+                  <AccordionTrigger className="text-sm font-bold text-slate-800 hover:text-[#d8000d] hover:no-underline py-3">
                     {item.title}
                   </AccordionTrigger>
-                  <AccordionContent className="text-xs sm:text-sm text-slate-400 leading-relaxed pb-4 pt-1 border-t border-white/5">
+                  <AccordionContent className="text-xs sm:text-sm text-slate-500 leading-relaxed pb-4 pt-1 border-t border-slate-100">
                     {item.body}
                   </AccordionContent>
                 </AccordionItem>
@@ -636,36 +403,43 @@ const Index = () => {
             </Accordion>
           </div>
           <div className="relative group">
-            <div className="absolute inset-0 bg-gradient-to-tr from-[#d8000d]/10 to-transparent rounded-3xl opacity-0 group-hover:opacity-100 transition-all duration-500 z-10" />
-            <OptimizedImage 
-              src={home.about.image} 
-              alt="About XY Cargo Zambia" 
-              className="rounded-3xl shadow-2xl border border-white/5 relative z-0" 
+            <div className="absolute inset-0 bg-gradient-to-tr from-[#d8000d]/10 to-transparent rounded-3xl opacity-0 group-hover:opacity-100 transition-all duration-500" />
+            <OptimizedImage
+              src={home.about.image}
+              alt="About XY Cargo Zambia"
+              className="rounded-3xl shadow-lg border border-slate-200/50"
               aspectRatio="video"
             />
           </div>
         </section>
 
-        {/* Air Rates Services block */}
-        <section className="bg-slate-900/40 border-y border-white/5 py-16 motion-safe:animate-fade-in">
-          <div className="mx-auto max-w-7xl space-y-8 px-6">
+        {/* Stats Section */}
+        <section className="mx-auto grid max-w-7xl grid-cols-3 gap-3 px-4 pb-12 sm:gap-6 sm:px-6 md:grid-cols-3 motion-safe:animate-fade-in">
+          {stats.map((stat) => (
+            <Card key={stat.label} className="border-slate-200/70 bg-white">
+              <CardContent className="flex flex-col items-center gap-2 p-6 text-center">
+                <p className="text-2xl font-semibold text-slate-900">{stat.value}</p>
+                <p className="text-xs text-slate-500">{stat.label}</p>
+              </CardContent>
+            </Card>
+          ))}
+        </section>
+
+        <section className="bg-[#fefafa] py-10 motion-safe:animate-fade-in">
+          <div className="mx-auto max-w-6xl space-y-6 px-6">
             <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-              <div>
-                <span className="text-xs font-bold text-[#d8000d] uppercase tracking-widest">Air Cargo</span>
-                <h2 className="text-3xl font-extrabold text-white tracking-tight mt-1 uppercase">Air Freight Rates</h2>
-              </div>
-              <div className="flex items-center gap-2 bg-slate-950 p-1 rounded-full border border-white/5">
+              <h2 className="text-2xl font-semibold">Air Freight Services</h2>
+              <div className="flex items-center gap-3">
                 {airRatesContent.map((rate, index) => {
                   const isActive = index === airRateIndex;
                   return (
                     <button
                       key={rate.location}
                       type="button"
-                      className={`rounded-full px-5 py-2 text-xs font-bold transition uppercase tracking-wider ${
-                        isActive
+                      className={`rounded-full px-4 py-2 text-sm font-semibold transition ${isActive
                           ? "bg-[#d8000d] text-white shadow-lg"
-                          : "text-slate-400 hover:text-white"
-                      }`}
+                          : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                        }`}
                       onClick={() => setAirRateIndex(index)}
                     >
                       {rate.location}
@@ -674,16 +448,16 @@ const Index = () => {
                 })}
               </div>
             </div>
-            <div className="grid gap-6 md:grid-cols-3">
+            <div className="grid gap-4 md:grid-cols-3">
               {activeAirRate?.cards.map((card) => (
-                <Card key={card.title} className="rounded-3xl border border-white/5 bg-slate-900 shadow-xl transition-all duration-300 hover:border-[#d8000d]/20 text-white">
-                  <CardContent className="space-y-4 p-6 text-center">
-                    <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-slate-950 border border-white/10 text-[#d8000d]">
-                      {airRateIcons[card.title] ?? <Package className="h-6 w-6" />}
+                <Card key={card.title} className="rounded-2xl border border-slate-200/70 bg-white shadow-sm">
+                  <CardContent className="space-y-3 p-5 text-center">
+                    <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full border border-slate-200">
+                      {airRateIcons[card.title] ?? <Package className="h-6 w-6 text-slate-500" />}
                     </div>
-                    <h3 className="text-lg font-bold text-white">{card.title}</h3>
-                    <p className="text-sm font-black text-[#d8000d]">{card.price}</p>
-                    <p className="text-xs text-slate-400 leading-relaxed">{card.description}</p>
+                    <h3 className="text-lg font-semibold">{card.title}</h3>
+                    <p className="text-xs font-semibold text-slate-500">{card.price}</p>
+                    <p className="text-xs text-slate-600">{card.description}</p>
                   </CardContent>
                 </Card>
               ))}
@@ -691,26 +465,21 @@ const Index = () => {
           </div>
         </section>
 
-        {/* Sea Rates Services block */}
-        <section className="bg-slate-900/40 border-b border-white/5 py-16 motion-safe:animate-fade-in">
-          <div className="mx-auto max-w-7xl space-y-8 px-6">
+        <section className="bg-[#fefafa] py-10 motion-safe:animate-fade-in">
+          <div className="mx-auto max-w-6xl space-y-6 px-6">
             <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-              <div>
-                <span className="text-xs font-bold text-[#d8000d] uppercase tracking-widest">Ocean Cargo</span>
-                <h2 className="text-3xl font-extrabold text-white tracking-tight mt-1 uppercase">Sea Freight Rates</h2>
-              </div>
-              <div className="flex items-center gap-2 bg-slate-950 p-1 rounded-full border border-white/5">
+              <h2 className="text-2xl font-semibold">Sea Freight Services</h2>
+              <div className="flex items-center gap-3">
                 {seaRatesContent.map((rate, index) => {
                   const isActive = index === seaRateIndex;
                   return (
                     <button
                       key={rate.location}
                       type="button"
-                      className={`rounded-full px-5 py-2 text-xs font-bold transition uppercase tracking-wider ${
-                        isActive
+                      className={`rounded-full px-4 py-2 text-sm font-semibold transition ${isActive
                           ? "bg-[#d8000d] text-white shadow-lg"
-                          : "text-slate-400 hover:text-white"
-                      }`}
+                          : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                        }`}
                       onClick={() => setSeaRateIndex(index)}
                     >
                       {rate.location}
@@ -719,18 +488,18 @@ const Index = () => {
                 })}
               </div>
             </div>
-            <div className="grid gap-6 md:grid-cols-2">
+            <div className="grid gap-4 md:grid-cols-2">
               {activeSeaRate?.cards.map((card) => (
-                <Card key={card.title} className="rounded-3xl border border-white/5 bg-slate-900 shadow-xl transition-all duration-300 hover:border-[#d8000d]/20 text-white">
-                  <CardContent className="space-y-4 p-6 text-center">
-                    <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-slate-950 border border-white/10 text-[#d8000d]">
-                      {seaRateIcons[card.title] ?? <Package className="h-6 w-6" />}
+                <Card key={card.title} className="rounded-2xl border border-slate-200/70 bg-white shadow-sm">
+                  <CardContent className="space-y-3 p-5 text-center">
+                    <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full border border-slate-200">
+                      {seaRateIcons[card.title] ?? <Package className="h-6 w-6 text-slate-500" />}
                     </div>
-                    <h3 className="text-lg font-bold text-white">{card.title}</h3>
-                    <p className="text-sm font-black text-[#d8000d]">{card.price}</p>
-                    <p className="text-xs text-slate-400 leading-relaxed">{card.description}</p>
+                    <h3 className="text-lg font-semibold">{card.title}</h3>
+                    <p className="text-xs font-semibold text-slate-500">{card.price}</p>
+                    <p className="text-xs text-slate-600">{card.description}</p>
                     {card.notes && (
-                      <div className="space-y-1 text-xs text-slate-400/80 pt-2 border-t border-white/5">
+                      <div className="space-y-1 text-xs text-slate-500">
                         {card.notes.map((note) => (
                           <p key={note}>{note}</p>
                         ))}
@@ -743,8 +512,7 @@ const Index = () => {
           </div>
         </section>
 
-        {/* Video or poster banner */}
-        <section className="relative w-full h-[320px] overflow-hidden border-b border-white/5">
+        <section className="relative mt-4 h-[280px] w-full overflow-hidden motion-safe:animate-fade-in">
           {isVideo ? (
             <video
               ref={videoRef}
@@ -755,44 +523,40 @@ const Index = () => {
               preload="metadata"
             />
           ) : (
-            <OptimizedImage src={videoSrc} alt={safeVideoTitle} className="h-full w-full object-cover" />
+            <OptimizedImage src={videoSrc} alt={safeVideoTitle} className="h-full w-full" />
           )}
           {isVideo && !hasStartedVideoPlayback ? (
             <>
-              <div className="absolute inset-0 bg-black/60" />
+              <div className="absolute inset-0 bg-black/40" />
               <div className="absolute inset-0 flex items-center justify-center">
                 <Button
                   type="button"
                   onClick={handleVideoPlay}
                   aria-label={`Play ${safeVideoTitle} with sound`}
-                  className="h-16 w-16 rounded-full bg-white text-slate-950 shadow-2xl transition-transform hover:scale-110 hover:shadow-[#d8000d]/25 flex items-center justify-center"
+                  className="h-14 w-14 rounded-full bg-white text-brand shadow-xl transition-transform hover:scale-110 hover:shadow-2xl"
                 >
-                  <Play className="h-6 w-6 text-[#d8000d] fill-[#d8000d]" />
+                  <Play className="h-6 w-6" />
                 </Button>
               </div>
             </>
           ) : null}
         </section>
 
-        {/* Calculator anchor section */}
-        <section id="homepage-calculator" className="mx-auto max-w-7xl px-6 py-20 motion-safe:animate-fade-in w-full">
-          <div className="space-y-3 text-center mb-12">
-            <span className="text-xs font-bold text-[#d8000d] uppercase tracking-widest">Rate Calculator</span>
-            <h2 className="text-4xl font-extrabold text-white tracking-tight uppercase">{home.calculator.title}</h2>
-            <div className="h-1.5 w-16 bg-[#d8000d] mx-auto rounded-full" />
-            <p className="text-slate-400 mt-4 leading-relaxed">{home.calculator.subtitle}</p>
+        <section id="homepage-calculator" className="mx-auto max-w-6xl px-6 py-12 motion-safe:animate-fade-in">
+          <div className="space-y-3 text-center">
+            <h2 className="text-2xl font-semibold md:text-3xl">{home.calculator.title}</h2>
+            <p className="text-sm text-slate-600">{home.calculator.subtitle}</p>
           </div>
-
-          <div className="grid gap-8 md:grid-cols-[1.1fr_0.9fr] md:items-start">
+          <div className="mt-8 grid gap-8 md:grid-cols-[1.1fr_0.9fr] md:items-start">
             <div className="space-y-6">
-              <div className="grid gap-6 md:grid-cols-2 bg-slate-900/60 p-6 rounded-3xl border border-white/5">
+              <div className="grid gap-6 md:grid-cols-2">
                 <div className="space-y-2">
-                  <Label className="text-xs font-bold text-slate-300 uppercase tracking-widest">From</Label>
+                  <Label className="text-sm font-semibold text-slate-700">From</Label>
                   <Select value={origin} onValueChange={setOrigin}>
-                    <SelectTrigger className="rounded-xl border-white/10 bg-slate-950/80 h-11 text-xs text-white">
+                    <SelectTrigger className="rounded-full border-slate-200">
                       <SelectValue placeholder="Select origin" />
                     </SelectTrigger>
-                    <SelectContent className="bg-slate-900 border-white/10 text-white">
+                    <SelectContent>
                       <SelectItem value="china-foshan">China (Foshan)</SelectItem>
                       <SelectItem value="china-yiwu">China (Yiwu)</SelectItem>
                       <SelectItem value="uae-dubai">UAE (Dubai)</SelectItem>
@@ -800,12 +564,12 @@ const Index = () => {
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-xs font-bold text-slate-300 uppercase tracking-widest">To</Label>
+                  <Label className="text-sm font-semibold text-slate-700">To</Label>
                   <Select value={destination} onValueChange={setDestination}>
-                    <SelectTrigger className="rounded-xl border-white/10 bg-slate-955/80 h-11 text-xs text-white">
+                    <SelectTrigger className="rounded-full border-slate-200">
                       <SelectValue placeholder="Select destination" />
                     </SelectTrigger>
-                    <SelectContent className="bg-slate-900 border-white/10 text-white">
+                    <SelectContent>
                       <SelectItem value="zambia-lusaka">Zambia (Lusaka)</SelectItem>
                       <SelectItem value="zambia-ndola">Zambia (Ndola/Kitwe)</SelectItem>
                       <SelectItem value="zambia-livingstone">Zambia (Livingstone)</SelectItem>
@@ -814,8 +578,8 @@ const Index = () => {
                 </div>
               </div>
 
-              <div className="space-y-3 bg-slate-900/60 p-6 rounded-3xl border border-white/5">
-                <Label className="text-xs font-bold text-slate-300 uppercase tracking-widest">Service Type</Label>
+              <div className="space-y-3">
+                <Label className="text-sm font-semibold text-slate-700">Service Type</Label>
                 <div className="grid gap-4 md:grid-cols-3">
                   {serviceTypeOptions.map((option) => {
                     const isActive = serviceType === option.id;
@@ -824,21 +588,19 @@ const Index = () => {
                         key={option.id}
                         type="button"
                         onClick={() => setServiceType(option.id)}
-                        className={`relative rounded-2xl border p-3 text-left transition ${
-                          isActive
-                            ? "border-[#d8000d] bg-[#d8000d]/5 shadow-lg"
-                            : "border-white/5 bg-slate-955/40 hover:border-white/10"
-                        }`}
+                        className={`relative rounded-2xl border p-3 text-left transition ${isActive
+                            ? "border-[#d8000d] ring-2 ring-[#d8000d]/20"
+                            : "border-slate-200 hover:border-slate-300"
+                          }`}
                       >
                         <span
-                          className={`absolute right-3 top-3 h-4 w-4 rounded-full border ${
-                            isActive ? "border-[#d8000d] bg-[#d8000d]" : "border-slate-700 bg-transparent"
-                          }`}
+                          className={`absolute right-3 top-3 h-4 w-4 rounded-full border ${isActive ? "border-[#d8000d] bg-[#d8000d]" : "border-slate-300 bg-white"
+                            }`}
                         />
-                        <img src={option.image} alt={option.title} className="h-20 w-full rounded-xl object-cover opacity-70 group-hover:opacity-100" />
+                        <img src={option.image} alt={option.title} className="h-24 w-full rounded-xl object-cover" />
                         <div className="mt-3 space-y-1">
-                          <p className="text-xs font-bold text-white">{option.title}</p>
-                          <p className="text-[10px] text-slate-400">{option.subtitle}</p>
+                          <p className="text-xs font-semibold text-slate-900">{option.title}</p>
+                          <p className="text-[10px] text-slate-500">{option.subtitle}</p>
                         </div>
                       </button>
                     );
@@ -846,18 +608,18 @@ const Index = () => {
                 </div>
               </div>
 
-              <div className="space-y-6 bg-slate-900/60 p-6 rounded-3xl border border-white/5">
+              <div className="space-y-4 rounded-2xl border border-slate-200/80 bg-white p-5">
                 <div className="space-y-2">
-                  <Label className="text-xs font-bold text-slate-300 uppercase tracking-widest">Product Type</Label>
+                  <Label className="text-sm font-semibold text-slate-700">Product Type</Label>
                   <Select
                     value={productType}
                     onValueChange={setProductType}
                     disabled={productTypeOptions.length === 0}
                   >
-                    <SelectTrigger className="rounded-xl border-white/10 bg-slate-955/80 h-11 text-xs text-white">
+                    <SelectTrigger className="rounded-full border-slate-200">
                       <SelectValue placeholder="Select product type" />
                     </SelectTrigger>
-                    <SelectContent className="bg-slate-900 border-white/10 text-white">
+                    <SelectContent>
                       {productTypeOptions.length === 0 ? (
                         <SelectItem value="no-product-types" disabled>
                           No product types configured
@@ -876,50 +638,50 @@ const Index = () => {
                 <div className="grid gap-4 md:grid-cols-2">
                   {rateBasis === "kg" && (
                     <div className="space-y-2">
-                      <Label className="text-xs font-bold text-slate-300 uppercase tracking-widest">Weight (kg)</Label>
+                      <Label className="text-sm font-semibold text-slate-700">Weight (kg)</Label>
                       <Input
                         type="number"
                         min="0"
                         step="0.1"
                         value={weight}
                         onChange={(event) => setWeight(toNumber(event.target.value))}
-                        className="rounded-xl border-white/10 bg-slate-955/80 h-11 text-white text-xs"
+                        className="rounded-full border-slate-200"
                       />
                     </div>
                   )}
                   {rateBasis === "cbm" && (
                     <>
                       <div className="space-y-2">
-                        <Label className="text-xs font-bold text-slate-300 uppercase tracking-widest">Length (cm)</Label>
+                        <Label className="text-sm font-semibold text-slate-700">Length (cm)</Label>
                         <Input
                           type="number"
                           min="0"
                           step="1"
                           value={length}
                           onChange={(event) => setLength(toNumber(event.target.value))}
-                          className="rounded-xl border-white/10 bg-slate-955/80 h-11 text-white text-xs"
+                          className="rounded-full border-slate-200"
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label className="text-xs font-bold text-slate-300 uppercase tracking-widest">Width (cm)</Label>
+                        <Label className="text-sm font-semibold text-slate-700">Width (cm)</Label>
                         <Input
                           type="number"
                           min="0"
                           step="1"
                           value={width}
                           onChange={(event) => setWidth(toNumber(event.target.value))}
-                          className="rounded-xl border-white/10 bg-slate-955/80 h-11 text-white text-xs"
+                          className="rounded-full border-slate-200"
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label className="text-xs font-bold text-slate-300 uppercase tracking-widest">Height (cm)</Label>
+                        <Label className="text-sm font-semibold text-slate-700">Height (cm)</Label>
                         <Input
                           type="number"
                           min="0"
                           step="1"
                           value={height}
                           onChange={(event) => setHeight(toNumber(event.target.value))}
-                          className="rounded-xl border-white/10 bg-slate-955/80 h-11 text-white text-xs"
+                          className="rounded-full border-slate-200"
                         />
                       </div>
                     </>
@@ -929,19 +691,19 @@ const Index = () => {
                 <Button
                   type="button"
                   onClick={handleCalculate}
-                  className="w-full rounded-xl bg-[#d8000d] text-white hover:bg-[#bf000c] h-12 font-bold shadow-lg shadow-[#d8000d]/10"
+                  className="w-full rounded-full bg-[#d8000d] text-white hover:bg-[#b8000b]"
                 >
                   <Calculator className="mr-2 h-4 w-4" />
                   Calculate
                 </Button>
 
-                <div className="rounded-2xl border border-white/5 bg-slate-950 p-5">
-                  <p className="text-xs font-bold uppercase tracking-widest text-slate-400">Estimated Total</p>
+                <div className="rounded-2xl border border-slate-200/70 bg-slate-50 p-4">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Estimated Total</p>
                   <div className="mt-2 flex items-end gap-3">
-                    <p className="text-3xl font-extrabold text-[#d8000d]">{formatAmount(displayedQuote.estimatedCost)}</p>
-                    <p className="text-xs text-slate-500 mb-1">Based on current rates</p>
+                    <p className="text-2xl font-semibold text-slate-900">{formatAmount(displayedQuote.estimatedCost)}</p>
+                    <p className="text-xs text-slate-500">Based on current rates</p>
                   </div>
-                  <div className="mt-4 grid gap-2 text-xs text-slate-400 md:grid-cols-2 pt-3 border-t border-white/5">
+                  <div className="mt-3 grid gap-2 text-xs text-slate-500 md:grid-cols-2">
                     <div>
                       Rate: {formatAmount(displayedQuote.rateValue)} / {displayedQuote.rateUnit}
                     </div>
@@ -951,17 +713,16 @@ const Index = () => {
               </div>
             </div>
 
-            {/* Ready to calculate sidebar panel */}
-            <div className="rounded-3xl border border-dashed border-white/10 bg-slate-900/40 p-6">
-              <p className="text-sm font-bold text-[#d8000d] uppercase tracking-wider">Ready to Calculate</p>
-              <div className="mt-6 space-y-6 text-sm text-slate-300">
+            <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-6">
+              <p className="text-sm font-semibold text-[#d8000d]">Ready to Calculate</p>
+              <div className="mt-4 space-y-5 text-sm text-slate-700">
                 {pricingInfo.map((section) => (
-                  <div key={section.title} className="space-y-3">
-                    <p className="font-bold text-white uppercase text-xs tracking-wider border-b border-white/5 pb-1">{section.title}</p>
-                    <ul className="space-y-2">
+                  <div key={section.title} className="space-y-2">
+                    <p className="font-semibold text-slate-900">{section.title}</p>
+                    <ul className="space-y-1">
                       {section.items.map((item) => (
-                        <li key={item} className="flex items-start gap-2 text-xs sm:text-sm">
-                          <Check className="mt-0.5 h-4 w-4 text-[#d8000d] shrink-0" />
+                        <li key={item} className="flex items-start gap-2">
+                          <Check className="mt-1 h-4 w-4 text-slate-700" />
                           <span>{item}</span>
                         </li>
                       ))}
@@ -973,28 +734,27 @@ const Index = () => {
           </div>
         </section>
 
-        {/* Important Info Section */}
-        <section className="mx-auto max-w-7xl grid grid-cols-1 lg:grid-cols-2 items-start gap-8 px-6 pb-24 motion-safe:animate-fade-in w-full">
-          <Card className="rounded-3xl border border-white/5 bg-slate-900/80 text-white">
-            <CardContent className="space-y-6 p-6 sm:p-8">
-              <h3 className="text-xl font-bold text-[#d8000d] uppercase tracking-wider">Important Information</h3>
+        <section className="mx-auto grid max-w-6xl items-start gap-6 px-6 pb-12 md:grid-cols-2 motion-safe:animate-fade-in">
+          <Card className="rounded-3xl border border-dashed border-slate-300 bg-white">
+            <CardContent className="space-y-6 p-6">
+              <h3 className="text-lg font-semibold text-[#d8000d]">Important Information</h3>
               <div>
-                <p className="text-xs font-bold text-white uppercase tracking-wider mb-2">Minimum Requirements</p>
-                <ul className="space-y-2 text-xs sm:text-sm text-slate-400">
+                <p className="text-xs font-semibold text-slate-900">Minimum Requirements</p>
+                <ul className="space-y-2 text-sm text-slate-600">
                   {minimumRequirements.map((item) => (
                     <li key={item} className="flex items-start gap-2">
-                      <Check className="mt-0.5 h-4 w-4 text-slate-500 shrink-0" />
+                      <Check className="mt-1 h-4 w-4 text-slate-500" />
                       <span>{item}</span>
                     </li>
                   ))}
                 </ul>
               </div>
-              <div className="border-t border-white/5 pt-4">
-                <p className="text-xs font-bold text-white uppercase tracking-wider mb-2">Storage Policy</p>
-                <ul className="space-y-2 text-xs sm:text-sm text-slate-400">
+              <div>
+                <p className="text-xs font-semibold text-slate-900">Storage Policy</p>
+                <ul className="space-y-2 text-sm text-slate-600">
                   {storagePolicy.map((item) => (
                     <li key={item} className="flex items-start gap-2">
-                      <Check className="mt-0.5 h-4 w-4 text-slate-500 shrink-0" />
+                      <Check className="mt-1 h-4 w-4 text-slate-500" />
                       <span>{item}</span>
                     </li>
                   ))}
@@ -1002,20 +762,19 @@ const Index = () => {
               </div>
             </CardContent>
           </Card>
-          <Card className="relative overflow-hidden rounded-3xl shadow-2xl h-full min-h-[300px]">
+          <Card className="relative overflow-hidden rounded-3xl shadow-lg">
             <img
               src={home.infoSection.includeCard.image}
               alt={home.infoSection.includeCard.title}
-              className="absolute inset-0 h-full w-full object-cover opacity-60"
+              className="absolute inset-0 h-full w-full object-cover"
             />
-            <div className="absolute inset-0 bg-slate-950/80" />
-            <div className="relative bg-transparent p-6 sm:p-8 text-white space-y-4">
-              <h3 className="text-2xl font-black uppercase text-white tracking-tight">{home.infoSection.includeCard.title}</h3>
-              <span className="inline-block text-xs uppercase tracking-[0.2em] text-[#d8000d] font-bold">{home.infoSection.includeCard.subheading}</span>
-              <ul className="mt-4 space-y-2 text-xs sm:text-sm text-slate-300">
+            <div className="relative bg-slate-900/60 p-6 text-white">
+              <h3 className="text-lg font-semibold">{home.infoSection.includeCard.title}</h3>
+              <p className="text-xs uppercase tracking-[0.2em]">{home.infoSection.includeCard.subheading}</p>
+              <ul className="mt-4 space-y-2 text-sm">
                 {includeCardItems.map((item) => (
                   <li key={item} className="flex items-start gap-2">
-                    <Check className="mt-0.5 h-4 w-4 text-[#d8000d]" />
+                    <Check className="mt-1 h-4 w-4 text-white" />
                     <span>{item}</span>
                   </li>
                 ))}
@@ -1023,10 +782,10 @@ const Index = () => {
             </div>
           </Card>
         </section>
-
       </div>
     </>
   );
+
 };
 
 export default Index;
