@@ -17,6 +17,8 @@ import {
   Clock,
   CheckCircle2,
   HelpCircle,
+  Phone,
+  ChevronDown,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -28,6 +30,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useCmsPage } from "@/hooks/useCmsPage";
 import { cmsDefaults, CmsHomeData } from "@/content/cmsDefaults";
 import { OptimizedImage } from "@/components/shared/OptimizedImage";
+import { LogoImage } from "@/components/shared/LogoImage";
 import MetaPixel from "@/components/marketing/MetaPixel";
 import { useDefaultCurrency } from "@/hooks/useDefaultCurrency";
 import { useProductTypes } from "@/hooks/useProductTypes";
@@ -52,6 +55,33 @@ const Index = () => {
   const [origin, setOrigin] = useState("china-foshan");
   const [destination, setDestination] = useState("zambia-lusaka");
 
+  // State variables for transparent overlay navigation and tabs in the hero section
+  const [heroActiveTab, setHeroActiveTab] = useState<"track" | "ship">("track");
+  const [heroTrackingNumber, setHeroTrackingNumber] = useState("");
+  const navigate = useNavigate();
+
+  const [heroShipOrigin, setHeroShipOrigin] = useState("china-foshan");
+  const [heroShipDestination, setHeroShipDestination] = useState("zambia-lusaka");
+  const [heroShipWeight, setHeroShipWeight] = useState(10);
+
+  const handleHeroTrackSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (heroTrackingNumber.trim()) {
+      navigate(`/tracking?query=${encodeURIComponent(heroTrackingNumber.trim())}`);
+    }
+  };
+
+  const handleHeroShipSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setOrigin(heroShipOrigin);
+    setDestination(heroShipDestination);
+    setWeight(heroShipWeight);
+    setServiceType("air-standard");
+    const calcElement = document.getElementById("homepage-calculator");
+    if (calcElement) {
+      calcElement.scrollIntoView({ behavior: "smooth" });
+    }
+  };
 
   const [weight, setWeight] = useState(10);
   const [length, setLength] = useState(40);
@@ -275,78 +305,275 @@ const Index = () => {
     <>
       <MetaPixel />
       <div className="flex flex-col">
-        {/* Carousel Slideshow Hero Section */}
-        <section className="relative w-full overflow-hidden">
-          <div className="relative h-[380px] md:h-[500px] lg:h-[620px]">
-            {slides.map((slide, index) => (
-              <div
-                key={`${slide.title}-${index}`}
-                className={`absolute inset-0 transition-opacity duration-700 ${index === activeSlide ? "opacity-100" : "opacity-0"}`}
-              >
-                <OptimizedImage
-                  src={slide.image}
-                  alt={slide.title}
-                  className="h-full w-full object-cover"
-                  containerClassName="h-full w-full"
-                  aspectRatio="auto"
-                  priority={index === 0}
-                />
-                <div className="absolute inset-0 bg-gradient-to-b from-black/35 via-black/25 to-black/60" />
+        {/* Transparent Overlay Navigation Bar */}
+        <header className="absolute top-0 left-0 right-0 z-50 w-full bg-slate-900/15 backdrop-blur-md border-b border-white/10">
+          <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-6 py-4">
+            {/* Logo: LogoImage + XY Cargo */}
+            <Link to="/" className="flex items-center gap-3 transition-transform hover:scale-[1.01]">
+              <div className="relative">
+                <LogoImage size="md" />
               </div>
-            ))}
-            <div className="absolute inset-0 flex items-center">
-              <div
-                key={heroKey}
-                className="mx-auto flex w-full max-w-6xl flex-col items-center gap-4 px-4 text-center text-white sm:px-6 motion-safe:animate-fade-up"
+              <div className="flex flex-col text-left">
+                <span className="text-base font-extrabold tracking-tight text-white leading-tight">XY Cargo Zambia</span>
+              </div>
+            </Link>
+
+            {/* Navigation links */}
+            <nav className="hidden items-center gap-8 lg:flex">
+              <Link to="/" className="text-xs font-bold uppercase tracking-wider text-white transition-colors hover:text-[#d8000d] relative py-1 group">
+                Home
+                <span className="absolute bottom-0 left-0 w-full h-0.5 bg-[#d8000d] scale-x-100 transition-transform origin-left" />
+              </Link>
+              <div className="relative group/shipping">
+                <button className="flex items-center gap-1 text-xs font-bold uppercase tracking-wider text-white transition-colors hover:text-[#d8000d] py-1">
+                  Shipping
+                  <ChevronDown className="h-3.5 w-3.5" />
+                </button>
+                <div className="absolute top-full left-0 hidden group-hover/shipping:block bg-slate-950/90 backdrop-blur-md text-white rounded-2xl shadow-2xl border border-white/10 py-2.5 w-48 mt-1 z-50 transition-all duration-300 animate-fade-in">
+                  <Link to="/calculator" className="block px-4 py-2.5 text-xs font-bold uppercase tracking-wider hover:bg-white/10 hover:text-[#d8000d] transition-colors">
+                    Shipping Calculator
+                  </Link>
+                  <Link to="/services" className="block px-4 py-2.5 text-xs font-bold uppercase tracking-wider hover:bg-white/10 hover:text-[#d8000d] transition-colors">
+                    Our Services
+                  </Link>
+                  <Link to="/pricing" className="block px-4 py-2.5 text-xs font-bold uppercase tracking-wider hover:bg-white/10 hover:text-[#d8000d] transition-colors">
+                    Pricing Rates
+                  </Link>
+                </div>
+              </div>
+              <Link to="/tracking" className="text-xs font-bold uppercase tracking-wider text-white transition-colors hover:text-[#d8000d] relative py-1 group">
+                Tracking
+                <span className="absolute bottom-0 left-0 w-full h-0.5 bg-[#d8000d] scale-x-0 transition-transform origin-left group-hover:scale-x-100" />
+              </Link>
+              <Link to="/support" className="text-xs font-bold uppercase tracking-wider text-white transition-colors hover:text-[#d8000d] relative py-1 group">
+                Support
+                <span className="absolute bottom-0 left-0 w-full h-0.5 bg-[#d8000d] scale-x-0 transition-transform origin-left group-hover:scale-x-100" />
+              </Link>
+              <Link to="/join-us" className="text-xs font-bold uppercase tracking-wider text-white transition-colors hover:text-[#d8000d] relative py-1 group">
+                Career
+                <span className="absolute bottom-0 left-0 w-full h-0.5 bg-[#d8000d] scale-x-0 transition-transform origin-left group-hover:scale-x-100" />
+              </Link>
+            </nav>
+
+            {/* Right: Phone and CTA */}
+            <div className="flex items-center gap-4">
+              {/* Phone pill */}
+              <a
+                href="tel:+260967379139"
+                className="hidden md:flex items-center gap-2 bg-white/10 backdrop-blur-md border border-white/10 text-white font-bold text-xs py-2.5 px-4 rounded-full transition hover:bg-white/20"
               >
-                <p className="hero-subtitle max-w-full [overflow-wrap:anywhere] motion-safe:animate-fade-up [animation-delay:80ms]">
-                  {currentSlide?.subtitle}
-                </p>
-                <h1 className="hero-title max-w-full [overflow-wrap:anywhere] drop-shadow-2xl motion-safe:animate-fade-up [animation-delay:140ms]">
-                  {currentSlide?.title}
-                </h1>
-                <p className="hero-description max-w-3xl px-1 [overflow-wrap:anywhere] drop-shadow motion-safe:animate-fade-up [animation-delay:200ms] sm:px-0">
-                  {currentSlide?.description || currentSlide?.subtitle}
-                </p>
-                <div className="mt-6 flex items-center justify-center gap-3 px-2 sm:gap-4 sm:px-0 motion-safe:animate-fade-up [animation-delay:260ms]">
-                  <Button
-                    asChild
-                    className="group inline-flex items-center gap-2 rounded-full bg-[#d8000d] px-4 py-2.5 text-[11px] font-semibold text-white shadow-lg shadow-black/25 hover:bg-[#bf000c] sm:gap-4 sm:px-7 sm:py-3 sm:text-sm"
+                <Phone className="h-3.5 w-3.5 text-[#d8000d] fill-current animate-pulse" />
+                <span>+260 967379139</span>
+              </a>
+              {/* Get Started button */}
+              <Button
+                asChild
+                className="bg-white hover:bg-slate-50 text-slate-900 font-extrabold text-xs py-3 px-5 rounded-full flex items-center gap-2 transition-all duration-300 shadow-md hover:shadow-lg border border-slate-200/50 group hover:scale-[1.02]"
+              >
+                <Link to="/login" className="flex items-center gap-2">
+                  <span>Get Started Now</span>
+                  <ArrowRight className="h-3.5 w-3.5 text-slate-900 transition-transform duration-300 group-hover:translate-x-1" />
+                </Link>
+              </Button>
+            </div>
+          </div>
+        </header>
+
+        {/* Hero Section Container */}
+        <section className="relative w-full overflow-hidden bg-slate-950 h-screen min-h-[700px] flex items-center">
+          {/* Background Image of Truck at Port */}
+          <div className="absolute inset-0">
+            <img
+              src="/hero/hero section main.webp"
+              alt="Arrow Cargo Truck at Port"
+              className="h-full w-full object-cover"
+            />
+            {/* Subtle Overlays */}
+            <div className="absolute inset-0 bg-black/15" />
+            <div className="absolute inset-0 bg-gradient-to-t from-slate-950/95 via-transparent to-black/20" />
+          </div>
+
+          <div className="relative mx-auto w-full max-w-7xl px-6 py-24 md:py-32 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center h-full z-10">
+            {/* Left Column: Headline & Description */}
+            <div className="lg:col-span-8 flex flex-col gap-6 text-left text-white animate-fade-up">
+              <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-[68px] font-black tracking-tighter !text-white leading-[1.0] lg:leading-[0.95] font-syne uppercase select-none">
+                We Keep Your <br />
+                Supply Chain <br />
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#d8000d] via-[#ff4d4d] to-[#ff8080] font-black">
+                  Moving.
+                </span>
+              </h1>
+              <p className="text-xs sm:text-sm !text-slate-200 max-w-[320px] leading-relaxed font-normal tracking-tight">
+                From local to global shipments, our seamless logistics solutions ensure on-time, secure, and hassle-free delivery.
+              </p>
+              <div className="mt-4">
+                <Button
+                  asChild
+                  className="bg-[#d8000d] hover:bg-[#bf000c] hover:shadow-red-900/20 text-white py-3 px-6 rounded-full font-black text-xs tracking-wider flex items-center gap-2 transition shadow-lg hover:scale-[1.03] group w-fit"
+                >
+                  <Link to="/calculator" className="flex items-center gap-2.5">
+                    <span>Learn More Now</span>
+                    <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
+                  </Link>
+                </Button>
+              </div>
+            </div>
+
+            {/* Right Column: Double-Tab Tracking / Shipping Widget */}
+            <div className="lg:col-span-4 w-full animate-zoom-in-soft ml-auto">
+              <div className="bg-slate-950/45 backdrop-blur-xl border border-white/10 rounded-3xl p-5 shadow-2xl flex flex-col gap-4 w-full max-w-sm ml-auto relative overflow-hidden">
+                {/* Tabs Header */}
+                <div className="flex border-b border-white/10 pb-1">
+                  <button
+                    type="button"
+                    onClick={() => setHeroActiveTab("track")}
+                    className={cn(
+                      "flex-1 text-center py-2.5 text-xs font-black uppercase tracking-wider transition-all relative",
+                      heroActiveTab === "track" ? "text-white" : "text-white/50 hover:text-white/70"
+                    )}
                   >
-                    <Link to="/tracking">
-                      <span>{home.hero.buttonPrimary}</span>
-                      <span className="flex h-9 w-9 items-center justify-center rounded-full bg-black/90 text-white transition group-hover:bg-black">
-                        <ArrowRight className="h-4 w-4" />
-                      </span>
-                    </Link>
-                  </Button>
-                  <Button
-                    asChild
-                    className="group inline-flex items-center gap-2 rounded-full bg-black px-4 py-2.5 text-[11px] font-semibold text-white shadow-lg shadow-black/30 hover:bg-black/90 sm:gap-4 sm:px-7 sm:py-3 sm:text-sm"
+                    Tracking Order
+                    {heroActiveTab === "track" && (
+                      <span className="absolute bottom-0 left-0 right-0 h-1 bg-[#d8000d] rounded-full" />
+                    )}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setHeroActiveTab("ship")}
+                    className={cn(
+                      "flex-1 text-center py-2.5 text-xs font-black uppercase tracking-wider transition-all relative",
+                      heroActiveTab === "ship" ? "text-white" : "text-white/50 hover:text-white/70"
+                    )}
                   >
-                    <Link to="/calculator">
-                      <span>{home.hero.buttonSecondary}</span>
-                      <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[#d8000d] text-white transition group-hover:bg-[#bf000c]">
-                        <ArrowRight className="h-4 w-4" />
-                      </span>
-                    </Link>
-                  </Button>
+                    Ship Order
+                    {heroActiveTab === "ship" && (
+                      <span className="absolute bottom-0 left-0 right-0 h-1 bg-[#d8000d] rounded-full" />
+                    )}
+                  </button>
+                </div>
+
+                {/* Tab Forms */}
+                {heroActiveTab === "track" ? (
+                  <form onSubmit={handleHeroTrackSubmit} className="flex flex-col gap-4">
+                    <div className="flex flex-col gap-2">
+                      <Input
+                        type="text"
+                        placeholder="Type your tracking number here"
+                        value={heroTrackingNumber}
+                        onChange={(e) => setHeroTrackingNumber(e.target.value)}
+                        className="bg-white/10 border border-white/15 rounded-2xl py-6 px-4 text-white placeholder-white/40 text-sm focus-visible:ring-[#d8000d]/50 focus-visible:border-[#d8000d]"
+                      />
+                    </div>
+                    <Button
+                      type="submit"
+                      className="w-full bg-[#d8000d] hover:bg-[#bf000c] text-white py-6 rounded-2xl font-bold transition shadow-lg"
+                    >
+                      Track Now
+                    </Button>
+                    <div className="flex justify-between items-center text-[10px] text-white/60 font-bold uppercase tracking-wider px-1">
+                      <Link to="/tracking" className="hover:text-[#d8000d] transition">Multiple Tracking Numbers</Link>
+                      <Link to="/support" className="flex items-center gap-1 hover:text-[#d8000d] transition">
+                        <HelpCircle className="h-3.5 w-3.5" />
+                        <span>Need Help</span>
+                      </Link>
+                    </div>
+                  </form>
+                ) : (
+                  <form onSubmit={handleHeroShipSubmit} className="flex flex-col gap-4">
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-1 text-left">
+                        <label className="text-[10px] uppercase font-black text-white/70 tracking-wider">From</label>
+                        <Select value={heroShipOrigin} onValueChange={setHeroShipOrigin}>
+                          <SelectTrigger className="bg-white/10 border border-white/15 rounded-xl text-white text-xs py-5 focus:ring-[#d8000d]/50">
+                            <SelectValue placeholder="Select origin" />
+                          </SelectTrigger>
+                          <SelectContent className="bg-slate-950 text-white border border-slate-800">
+                            <SelectItem value="china-foshan">China (Foshan)</SelectItem>
+                            <SelectItem value="china-yiwu">China (Yiwu)</SelectItem>
+                            <SelectItem value="uae-dubai">UAE (Dubai)</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-1 text-left">
+                        <label className="text-[10px] uppercase font-black text-white/70 tracking-wider">To</label>
+                        <Select value={heroShipDestination} onValueChange={setHeroShipDestination}>
+                          <SelectTrigger className="bg-white/10 border border-white/15 rounded-xl text-white text-xs py-5 focus:ring-[#d8000d]/50">
+                            <SelectValue placeholder="Select destination" />
+                          </SelectTrigger>
+                          <SelectContent className="bg-slate-950 text-white border border-slate-800">
+                            <SelectItem value="zambia-lusaka">Zambia (Lusaka)</SelectItem>
+                            <SelectItem value="zambia-ndola">Zambia (Ndola)</SelectItem>
+                            <SelectItem value="zambia-livingstone">Zambia (Livingstone)</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                    <div className="space-y-1 text-left">
+                      <label className="text-[10px] uppercase font-black text-white/70 tracking-wider">Est. Weight (kg)</label>
+                      <Input
+                        type="number"
+                        min="1"
+                        value={heroShipWeight}
+                        onChange={(e) => setHeroShipWeight(Number(e.target.value))}
+                        className="bg-white/10 border border-white/15 rounded-xl py-5 text-white text-xs focus-visible:ring-[#d8000d]/50 focus-visible:border-[#d8000d]"
+                      />
+                    </div>
+                    <Button
+                      type="submit"
+                      className="w-full bg-[#d8000d] hover:bg-[#bf000c] text-white py-6 rounded-2xl font-bold transition shadow-lg mt-1"
+                    >
+                      Ship Now & Get Quote
+                    </Button>
+                  </form>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Bottom Glassmorphic Stats Panel (Desktop Only) */}
+          <div className="absolute bottom-10 left-0 right-0 hidden lg:block z-20 px-6">
+            <div className="mx-auto max-w-5xl rounded-3xl bg-slate-950/65 backdrop-blur-md border border-white/10 p-5 shadow-2xl">
+              <div className="grid grid-cols-4 gap-6 text-white divide-x divide-white/10 text-center">
+                <div className="px-4">
+                  <p className="text-2xl font-black tracking-tight text-white font-jakarta">2000+</p>
+                  <p className="text-[10px] uppercase tracking-wider text-slate-400 mt-1 font-bold">Satisfied Clients</p>
+                </div>
+                <div className="px-4">
+                  <p className="text-2xl font-black tracking-tight text-white font-jakarta">2.98%</p>
+                  <p className="text-[10px] uppercase tracking-wider text-slate-400 mt-1 font-bold">On-Time Delivery Rate</p>
+                </div>
+                <div className="px-4">
+                  <p className="text-2xl font-black tracking-tight text-white font-jakarta">150+</p>
+                  <p className="text-[10px] uppercase tracking-wider text-slate-400 mt-1 font-bold">Countries Served</p>
+                </div>
+                <div className="px-4">
+                  <p className="text-2xl font-black tracking-tight text-white font-jakarta">24/7</p>
+                  <p className="text-[10px] uppercase tracking-wider text-slate-400 mt-1 font-bold">Customer Support</p>
                 </div>
               </div>
             </div>
-            {slides.length > 1 && (
-              <div className="absolute bottom-6 left-1/2 flex -translate-x-1/2 gap-2">
-                {slides.map((_, index) => (
-                  <button
-                    key={`hero-dot-${index}`}
-                    type="button"
-                    onClick={() => setActiveSlide(index)}
-                    className={`h-2 w-2 rounded-full transition ${index === activeSlide ? "bg-white" : "bg-white/50"}`}
-                    aria-label={`Go to slide ${index + 1}`}
-                  />
-                ))}
-              </div>
-            )}
+          </div>
+        </section>
+
+        {/* Mobile Stats Panel (Mobile Only) */}
+        <section className="bg-slate-950 border-b border-slate-900 py-8 lg:hidden">
+          <div className="mx-auto grid grid-cols-2 gap-y-6 gap-x-4 px-6 text-center text-white">
+            <div>
+              <p className="text-2xl font-black text-white font-jakarta">2000+</p>
+              <p className="text-[10px] uppercase tracking-wider text-slate-400 mt-1 font-bold">Satisfied Clients</p>
+            </div>
+            <div>
+              <p className="text-2xl font-black text-white font-jakarta">2.98%</p>
+              <p className="text-[10px] uppercase tracking-wider text-slate-400 mt-1 font-bold">On-Time Delivery Rate</p>
+            </div>
+            <div>
+              <p className="text-2xl font-black text-white font-jakarta">150+</p>
+              <p className="text-[10px] uppercase tracking-wider text-slate-400 mt-1 font-bold">Countries Served</p>
+            </div>
+            <div>
+              <p className="text-2xl font-black text-white font-jakarta">24/7</p>
+              <p className="text-[10px] uppercase tracking-wider text-slate-400 mt-1 font-bold">Customer Support</p>
+            </div>
           </div>
         </section>
 
@@ -413,32 +640,27 @@ const Index = () => {
           </div>
         </section>
 
-        {/* Stats Section */}
-        <section className="mx-auto grid max-w-7xl grid-cols-3 gap-3 px-4 pb-12 sm:gap-6 sm:px-6 md:grid-cols-3 motion-safe:animate-fade-in">
-          {stats.map((stat) => (
-            <Card key={stat.label} className="border-slate-200/70 bg-white">
-              <CardContent className="flex flex-col items-center gap-2 p-6 text-center">
-                <p className="text-2xl font-semibold text-slate-900">{stat.value}</p>
-                <p className="text-xs text-slate-500">{stat.label}</p>
-              </CardContent>
-            </Card>
-          ))}
-        </section>
 
-        <section className="bg-[#fefafa] py-10 motion-safe:animate-fade-in">
-          <div className="mx-auto max-w-6xl space-y-6 px-6">
-            <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-              <h2 className="text-2xl font-semibold">Air Freight Services</h2>
-              <div className="flex items-center gap-3">
+
+        {/* Air Freight Services Section */}
+        <section className="bg-slate-50/50 border-y border-slate-100 py-20 motion-safe:animate-fade-in">
+          <div className="mx-auto max-w-6xl space-y-8 px-6">
+            <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
+              <div className="space-y-2">
+                <span className="text-xs font-bold text-[#f04f23] uppercase tracking-widest">Air Transport</span>
+                <h2 className="text-3xl font-black text-slate-900 tracking-tight font-jakarta">Air Freight Services</h2>
+                <div className="h-1 w-16 bg-gradient-to-r from-orange-500 to-red-500 rounded-full" />
+              </div>
+              <div className="flex items-center gap-2.5">
                 {airRatesContent.map((rate, index) => {
                   const isActive = index === airRateIndex;
                   return (
                     <button
                       key={rate.location}
                       type="button"
-                      className={`rounded-full px-4 py-2 text-sm font-semibold transition ${isActive
-                          ? "bg-[#d8000d] text-white shadow-lg"
-                          : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                      className={`rounded-full px-5 py-2.5 text-xs font-bold uppercase tracking-wider transition-all duration-300 ${isActive
+                        ? "bg-gradient-to-r from-orange-500 to-red-500 text-white shadow-lg shadow-orange-500/25 scale-105"
+                        : "bg-white border border-slate-200/60 text-slate-600 hover:bg-slate-50 hover:text-slate-800"
                         }`}
                       onClick={() => setAirRateIndex(index)}
                     >
@@ -448,16 +670,18 @@ const Index = () => {
                 })}
               </div>
             </div>
-            <div className="grid gap-4 md:grid-cols-3">
+            <div className="grid gap-6 sm:grid-cols-2 md:grid-cols-3">
               {activeAirRate?.cards.map((card) => (
-                <Card key={card.title} className="rounded-2xl border border-slate-200/70 bg-white shadow-sm">
-                  <CardContent className="space-y-3 p-5 text-center">
-                    <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full border border-slate-200">
-                      {airRateIcons[card.title] ?? <Package className="h-6 w-6 text-slate-500" />}
+                <Card key={card.title} className="rounded-3xl border border-slate-200/50 bg-white shadow-sm hover:shadow-xl transition-all duration-300 hover:scale-[1.02] flex flex-col justify-between overflow-hidden group p-6">
+                  <CardContent className="space-y-4 p-0 text-center flex flex-col items-center">
+                    <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-orange-50 text-[#f04f23] transition-all duration-300 group-hover:bg-gradient-to-r group-hover:from-orange-500 group-hover:to-red-500 group-hover:text-white shadow-sm">
+                      {airRateIcons[card.title] ?? <Package className="h-6 w-6" />}
                     </div>
-                    <h3 className="text-lg font-semibold">{card.title}</h3>
-                    <p className="text-xs font-semibold text-slate-500">{card.price}</p>
-                    <p className="text-xs text-slate-600">{card.description}</p>
+                    <div className="space-y-1">
+                      <h3 className="text-base font-bold text-slate-800 transition-colors duration-300 group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-orange-500 group-hover:to-red-500">{card.title}</h3>
+                      <p className="text-base font-extrabold text-[#f04f23] font-jakarta">{card.price}</p>
+                      <p className="text-xs text-slate-500 leading-relaxed max-w-xs">{card.description}</p>
+                    </div>
                   </CardContent>
                 </Card>
               ))}
@@ -465,20 +689,25 @@ const Index = () => {
           </div>
         </section>
 
-        <section className="bg-[#fefafa] py-10 motion-safe:animate-fade-in">
-          <div className="mx-auto max-w-6xl space-y-6 px-6">
-            <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-              <h2 className="text-2xl font-semibold">Sea Freight Services</h2>
-              <div className="flex items-center gap-3">
+        {/* Sea Freight Services Section */}
+        <section className="bg-white py-20 border-b border-slate-100 motion-safe:animate-fade-in">
+          <div className="mx-auto max-w-6xl space-y-8 px-6">
+            <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
+              <div className="space-y-2">
+                <span className="text-xs font-bold text-[#f04f23] uppercase tracking-widest">Ocean Transport</span>
+                <h2 className="text-3xl font-black text-slate-900 tracking-tight font-jakarta">Sea Freight Services</h2>
+                <div className="h-1 w-16 bg-gradient-to-r from-orange-500 to-red-500 rounded-full" />
+              </div>
+              <div className="flex items-center gap-2.5">
                 {seaRatesContent.map((rate, index) => {
                   const isActive = index === seaRateIndex;
                   return (
                     <button
                       key={rate.location}
                       type="button"
-                      className={`rounded-full px-4 py-2 text-sm font-semibold transition ${isActive
-                          ? "bg-[#d8000d] text-white shadow-lg"
-                          : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                      className={`rounded-full px-5 py-2.5 text-xs font-bold uppercase tracking-wider transition-all duration-300 ${isActive
+                        ? "bg-gradient-to-r from-orange-500 to-red-500 text-white shadow-lg shadow-orange-500/25 scale-105"
+                        : "bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-800"
                         }`}
                       onClick={() => setSeaRateIndex(index)}
                     >
@@ -488,20 +717,25 @@ const Index = () => {
                 })}
               </div>
             </div>
-            <div className="grid gap-4 md:grid-cols-2">
+            <div className="grid gap-6 md:grid-cols-2">
               {activeSeaRate?.cards.map((card) => (
-                <Card key={card.title} className="rounded-2xl border border-slate-200/70 bg-white shadow-sm">
-                  <CardContent className="space-y-3 p-5 text-center">
-                    <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full border border-slate-200">
-                      {seaRateIcons[card.title] ?? <Package className="h-6 w-6 text-slate-500" />}
+                <Card key={card.title} className="rounded-3xl border border-slate-200/50 bg-white shadow-sm hover:shadow-xl transition-all duration-300 hover:scale-[1.02] flex flex-col justify-between overflow-hidden group p-6">
+                  <CardContent className="space-y-4 p-0 text-center flex flex-col items-center">
+                    <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-orange-50 text-[#f04f23] transition-all duration-300 group-hover:bg-gradient-to-r group-hover:from-orange-500 group-hover:to-red-500 group-hover:text-white shadow-sm">
+                      {seaRateIcons[card.title] ?? <Package className="h-6 w-6" />}
                     </div>
-                    <h3 className="text-lg font-semibold">{card.title}</h3>
-                    <p className="text-xs font-semibold text-slate-500">{card.price}</p>
-                    <p className="text-xs text-slate-600">{card.description}</p>
+                    <div className="space-y-1">
+                      <h3 className="text-base font-bold text-slate-800 transition-colors duration-300 group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-orange-500 group-hover:to-red-500">{card.title}</h3>
+                      <p className="text-base font-extrabold text-[#f04f23] font-jakarta">{card.price}</p>
+                      <p className="text-xs text-slate-500 leading-relaxed max-w-xs">{card.description}</p>
+                    </div>
                     {card.notes && (
-                      <div className="space-y-1 text-xs text-slate-500">
+                      <div className="w-full bg-slate-50 rounded-2xl p-3 space-y-1 text-left text-[11px] text-slate-500 border border-slate-100">
                         {card.notes.map((note) => (
-                          <p key={note}>{note}</p>
+                          <p key={note} className="flex items-start gap-1">
+                            <span className="text-[#f04f23] font-bold">•</span>
+                            <span>{note}</span>
+                          </p>
                         ))}
                       </div>
                     )}
@@ -589,12 +823,12 @@ const Index = () => {
                         type="button"
                         onClick={() => setServiceType(option.id)}
                         className={`relative rounded-2xl border p-3 text-left transition ${isActive
-                            ? "border-[#d8000d] ring-2 ring-[#d8000d]/20"
-                            : "border-slate-200 hover:border-slate-300"
+                          ? "border-[#f04f23] ring-2 ring-[#f04f23]/20"
+                          : "border-slate-200 hover:border-slate-300"
                           }`}
                       >
                         <span
-                          className={`absolute right-3 top-3 h-4 w-4 rounded-full border ${isActive ? "border-[#d8000d] bg-[#d8000d]" : "border-slate-300 bg-white"
+                          className={`absolute right-3 top-3 h-4 w-4 rounded-full border ${isActive ? "border-[#f04f23] bg-[#f04f23]" : "border-slate-300 bg-white"
                             }`}
                         />
                         <img src={option.image} alt={option.title} className="h-24 w-full rounded-xl object-cover" />
@@ -691,7 +925,7 @@ const Index = () => {
                 <Button
                   type="button"
                   onClick={handleCalculate}
-                  className="w-full rounded-full bg-[#d8000d] text-white hover:bg-[#b8000b]"
+                  className="w-full rounded-full bg-[#f04f23] text-white hover:bg-[#e0451b]"
                 >
                   <Calculator className="mr-2 h-4 w-4" />
                   Calculate
@@ -714,7 +948,7 @@ const Index = () => {
             </div>
 
             <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-6">
-              <p className="text-sm font-semibold text-[#d8000d]">Ready to Calculate</p>
+              <p className="text-sm font-semibold text-[#f04f23]">Ready to Calculate</p>
               <div className="mt-4 space-y-5 text-sm text-slate-700">
                 {pricingInfo.map((section) => (
                   <div key={section.title} className="space-y-2">
@@ -737,7 +971,7 @@ const Index = () => {
         <section className="mx-auto grid max-w-6xl items-start gap-6 px-6 pb-12 md:grid-cols-2 motion-safe:animate-fade-in">
           <Card className="rounded-3xl border border-dashed border-slate-300 bg-white">
             <CardContent className="space-y-6 p-6">
-              <h3 className="text-lg font-semibold text-[#d8000d]">Important Information</h3>
+              <h3 className="text-lg font-semibold text-[#f04f23]">Important Information</h3>
               <div>
                 <p className="text-xs font-semibold text-slate-900">Minimum Requirements</p>
                 <ul className="space-y-2 text-sm text-slate-600">

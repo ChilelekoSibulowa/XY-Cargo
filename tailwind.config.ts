@@ -17,6 +17,7 @@ export default {
         sans: ["'Manrope'", "-apple-system", "BlinkMacSystemFont", "sans-serif"],
         jakarta: ["'Plus Jakarta Sans'", "sans-serif"],
         manrope: ["'Manrope'", "sans-serif"],
+        syne: ["'Syne'", "sans-serif"],
       },
       colors: {
         border: "hsl(var(--border))",
