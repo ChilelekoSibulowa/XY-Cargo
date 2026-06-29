@@ -738,61 +738,92 @@ const Index = () => {
         {/* Section 1.5: About Us Section */}
         <section className="bg-white py-24 border-t border-slate-100 animate-fade-in">
           <div className="mx-auto max-w-7xl px-6 relative z-10">
+            {/* Top Grid: Copywriting & Rotated Card Stack */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-16 items-center">
-              {/* Left Column: Text and Accordion */}
-              <div className="lg:col-span-7 space-y-8">
+              {/* Left Column: Text and CTA Button */}
+              <div className="lg:col-span-7 space-y-8 text-left">
                 <div className="space-y-4">
                   <div className="flex items-center gap-2">
                     <span className="w-2.5 h-2.5 bg-[#d8000d] shrink-0" />
                     <span className="text-xs font-extrabold text-slate-900 uppercase tracking-widest">Who We Are</span>
                   </div>
-                  <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight leading-tight uppercase font-syne">
-                    {home?.about?.title || cmsDefaults.home.about.title}
+                  <h2 className="text-4xl sm:text-5xl font-extrabold text-slate-900 tracking-tight leading-none uppercase font-syne">
+                    About Us
                   </h2>
                 </div>
-                <p className="text-sm sm:text-base text-slate-600 leading-relaxed font-medium">
-                  {home?.about?.body || cmsDefaults.home.about.body}
-                </p>
-                <Accordion type="single" collapsible className="space-y-4 w-full">
-                  {aboutAccordions.map((item) => (
-                    <AccordionItem 
-                      key={item.title} 
-                      value={item.title} 
-                      className="border border-slate-200 rounded-3xl bg-white shadow-sm overflow-hidden transition-all duration-300 hover:border-slate-300"
-                    >
-                      <AccordionTrigger className="text-sm font-extrabold text-slate-900 hover:text-[#d8000d] hover:no-underline py-5 px-6 font-syne uppercase">
-                        {item.title}
-                      </AccordionTrigger>
-                      <AccordionContent className="text-xs sm:text-sm text-slate-500 leading-relaxed px-6 pb-6 pt-0 border-t border-slate-100 font-medium">
-                        {item.body}
-                      </AccordionContent>
-                    </AccordionItem>
-                  ))}
-                </Accordion>
+                <div className="space-y-6 text-sm sm:text-base text-slate-600 leading-relaxed font-medium">
+                  <p>
+                    XY Cargo Zambia is your premier logistics gateway connecting China to Zambia. We specialize in fast, secure, and affordable air and sea freight cargo consolidation, dedicated customs clearance, and secure warehousing. From individual parcels to commercial cargo shipments, we manage your entire supply chain with total transparency and care.
+                  </p>
+                  <p>
+                    With daily air cargo consolidation and weekly ocean freight shipments, we help importers, traders, and businesses receive their packages safely in Lusaka, Ndola, Kitwe, and across Zambia. Our real-time package tracking and responsive support team ensure you are always informed at every stage of your shipment's journey.
+                  </p>
+                </div>
+                <div className="pt-2">
+                  <Button asChild className="rounded-full bg-[#d8000d] hover:bg-[#bf000c] text-white font-extrabold text-xs uppercase tracking-widest px-8 py-5 shadow-lg shadow-red-900/10 transition-all duration-300 hover:scale-[1.02] group">
+                    <Link to="/about" className="flex items-center gap-2">
+                      <span>More About Us</span>
+                      <ArrowRight className="h-3.5 w-3.5 transition-transform duration-300 group-hover:translate-x-1" />
+                    </Link>
+                  </Button>
+                </div>
               </div>
 
-              {/* Right Column: Luxury Framed Visuals */}
-              <div className="lg:col-span-5 relative group">
-                {/* Asymmetric border frame effect */}
-                <div className="absolute top-4 left-4 -right-4 -bottom-4 border-2 border-slate-200 rounded-[36px] -z-10 group-hover:border-[#d8000d]/20 transition-colors duration-500" />
-                <div className="relative rounded-[32px] overflow-hidden shadow-2xl border border-slate-200/50 bg-white">
+              {/* Right Column: Rotated Overlapping Stack & Dashed Plane Line */}
+              <div className="lg:col-span-5 relative h-[380px] sm:h-[420px] w-full z-10">
+                {/* SVG Loop Path & Airplane */}
+                <svg className="absolute inset-0 w-full h-full -z-10 pointer-events-none" viewBox="0 0 500 400" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M 40,320 Q 150,380 250,260 T 420,60" fill="none" stroke="#d8000d" strokeWidth="2" strokeDasharray="6,6" opacity="0.35" />
+                  <g transform="translate(420,60) rotate(-35)">
+                    <path d="M0,0 L-10,-4 L-8,0 L-10,4 Z" fill="#d8000d" opacity="0.75" />
+                  </g>
+                </svg>
+
+                {/* Background Rotated Card */}
+                <div className="absolute top-4 left-6 w-60 h-60 sm:w-72 sm:h-72 rounded-[32px] overflow-hidden shadow-xl border border-slate-200 transform rotate-[-4deg] bg-white">
+                  <OptimizedImage
+                    src="https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?q=80&w=600&auto=format&fit=crop"
+                    alt="XY Cargo Warehouse Operations"
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+
+                {/* Foreground Rotated Card */}
+                <div className="absolute top-16 left-24 w-52 h-52 sm:w-64 sm:h-64 rounded-[32px] overflow-hidden shadow-2xl border border-slate-200 transform rotate-[8deg] hover:rotate-[4deg] transition-all duration-500 bg-white z-20">
                   <OptimizedImage
                     src={home?.about?.image || cmsDefaults.home.about.image}
-                    alt="About XY Cargo Zambia"
-                    className="w-full object-cover aspect-[4/3] transform hover:scale-[1.01] transition-all duration-700 ease-out"
-                    aspectRatio="video"
+                    alt="XY Cargo Logistics Delivery"
+                    className="w-full h-full object-cover"
                   />
-                  {/* Floating badge */}
-                  <div className="absolute bottom-6 left-6 right-6 bg-white/95 backdrop-blur-md border border-slate-100 shadow-xl rounded-2xl p-4 flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-red-50 text-[#d8000d] flex items-center justify-center shrink-0">
-                      <CheckCircle2 className="h-5 w-5" />
-                    </div>
-                    <div>
-                      <p className="text-xs font-black text-slate-900 leading-tight uppercase tracking-wider">Trusted Partner</p>
-                      <p className="text-[10px] text-slate-400 font-bold">100% Reliable Cargo Warehousing</p>
-                    </div>
-                  </div>
                 </div>
+              </div>
+            </div>
+
+            {/* Bottom Stats Row */}
+            <div className="border-t border-slate-100 pt-16 mt-16 grid grid-cols-2 md:grid-cols-4 gap-8 justify-center">
+              <div className="space-y-1 text-center">
+                <p className="text-4xl font-extrabold text-slate-900 tracking-tight font-jakarta">
+                  10,000<span className="text-[#d8000d] font-black">+</span>
+                </p>
+                <p className="text-[10px] uppercase tracking-wider text-slate-400 font-black">Packages Delivered</p>
+              </div>
+              <div className="space-y-1 text-center">
+                <p className="text-4xl font-extrabold text-slate-900 tracking-tight font-jakarta">
+                  50<span className="text-[#d8000d] font-black">+</span>
+                </p>
+                <p className="text-[10px] uppercase tracking-wider text-slate-400 font-black">Global Partners</p>
+              </div>
+              <div className="space-y-1 text-center">
+                <p className="text-4xl font-extrabold text-slate-900 tracking-tight font-jakarta">
+                  98<span className="text-[#d8000d] font-black">%</span>
+                </p>
+                <p className="text-[10px] uppercase tracking-wider text-slate-400 font-black">Delivery Success</p>
+              </div>
+              <div className="space-y-1 text-center">
+                <p className="text-4xl font-extrabold text-slate-900 tracking-tight font-jakarta">
+                  5<span className="text-[#d8000d] font-black">+</span>
+                </p>
+                <p className="text-[10px] uppercase tracking-wider text-slate-400 font-black">Years Experience</p>
               </div>
             </div>
           </div>
