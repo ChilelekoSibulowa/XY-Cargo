@@ -14,10 +14,8 @@ export default {
     },
     extend: {
       fontFamily: {
-        sans: ["'Manrope'", "-apple-system", "BlinkMacSystemFont", "sans-serif"],
+        sans: ["'Plus Jakarta Sans'", "-apple-system", "BlinkMacSystemFont", "sans-serif"],
         jakarta: ["'Plus Jakarta Sans'", "sans-serif"],
-        manrope: ["'Manrope'", "sans-serif"],
-        syne: ["'Syne'", "sans-serif"],
         montserrat: ["'Montserrat'", "sans-serif"],
       },
       colors: {
