@@ -14,8 +14,8 @@ export default {
     },
     extend: {
       fontFamily: {
-        sans: ["'Satoshi'", "-apple-system", "BlinkMacSystemFont", "sans-serif"],
-        satoshi: ["'Satoshi'", "sans-serif"],
+        sans: ["'Satoshi'"],
+        satoshi: ["'Satoshi'"],
       },
       colors: {
         border: "hsl(var(--border))",
