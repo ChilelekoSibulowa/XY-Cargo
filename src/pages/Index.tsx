@@ -735,6 +735,69 @@ const Index = () => {
           </div>
         </section>
 
+        {/* Section 1.5: About Us Section */}
+        <section className="bg-white py-24 border-t border-slate-100 animate-fade-in">
+          <div className="mx-auto max-w-7xl px-6 relative z-10">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-16 items-center">
+              {/* Left Column: Text and Accordion */}
+              <div className="lg:col-span-7 space-y-8">
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2">
+                    <span className="w-2.5 h-2.5 bg-[#d8000d] shrink-0" />
+                    <span className="text-xs font-extrabold text-slate-900 uppercase tracking-widest">Who We Are</span>
+                  </div>
+                  <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight leading-tight uppercase font-syne">
+                    {home?.about?.title || cmsDefaults.home.about.title}
+                  </h2>
+                </div>
+                <p className="text-sm sm:text-base text-slate-600 leading-relaxed font-medium">
+                  {home?.about?.body || cmsDefaults.home.about.body}
+                </p>
+                <Accordion type="single" collapsible className="space-y-4 w-full">
+                  {aboutAccordions.map((item) => (
+                    <AccordionItem 
+                      key={item.title} 
+                      value={item.title} 
+                      className="border border-slate-200 rounded-3xl bg-white shadow-sm overflow-hidden transition-all duration-300 hover:border-slate-300"
+                    >
+                      <AccordionTrigger className="text-sm font-extrabold text-slate-900 hover:text-[#d8000d] hover:no-underline py-5 px-6 font-syne uppercase">
+                        {item.title}
+                      </AccordionTrigger>
+                      <AccordionContent className="text-xs sm:text-sm text-slate-500 leading-relaxed px-6 pb-6 pt-0 border-t border-slate-100 font-medium">
+                        {item.body}
+                      </AccordionContent>
+                    </AccordionItem>
+                  ))}
+                </Accordion>
+              </div>
+
+              {/* Right Column: Luxury Framed Visuals */}
+              <div className="lg:col-span-5 relative group">
+                {/* Asymmetric border frame effect */}
+                <div className="absolute top-4 left-4 -right-4 -bottom-4 border-2 border-slate-200 rounded-[36px] -z-10 group-hover:border-[#d8000d]/20 transition-colors duration-500" />
+                <div className="relative rounded-[32px] overflow-hidden shadow-2xl border border-slate-200/50 bg-white">
+                  <OptimizedImage
+                    src={home?.about?.image || cmsDefaults.home.about.image}
+                    alt="About XY Cargo Zambia"
+                    className="w-full object-cover aspect-[4/3] transform hover:scale-[1.01] transition-all duration-700 ease-out"
+                    aspectRatio="video"
+                  />
+                  {/* Floating badge */}
+                  <div className="absolute bottom-6 left-6 right-6 bg-white/95 backdrop-blur-md border border-slate-100 shadow-xl rounded-2xl p-4 flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-red-50 text-[#d8000d] flex items-center justify-center shrink-0">
+                      <CheckCircle2 className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <p className="text-xs font-black text-slate-900 leading-tight uppercase tracking-wider">Trusted Partner</p>
+                      <p className="text-[10px] text-slate-400 font-bold">100% Reliable Cargo Warehousing</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
         {/* Section 2: Insights & Updates */}
         <section className="bg-white py-24 border-t border-slate-100 animate-fade-in">
           <div className="mx-auto max-w-7xl px-6">
