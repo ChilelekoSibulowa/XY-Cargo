@@ -175,7 +175,7 @@ export const NewsletterCta = () => {
           
           <div className="relative flex flex-col items-center justify-between gap-8 lg:flex-row z-10">
             <div className="space-y-2 text-center lg:text-left max-w-xl">
-              <h2 className="text-2xl sm:text-3xl font-[900] uppercase tracking-tight text-slate-900 font-montserrat">
+              <h2 className="text-2xl sm:text-3xl font-[900] uppercase tracking-tight text-slate-900 font-satoshi">
                 Get Shipping Tips & <br className="hidden sm:inline" /> Exclusive Offers
               </h2>
               <p className="text-xs sm:text-sm text-slate-500 font-medium leading-relaxed">

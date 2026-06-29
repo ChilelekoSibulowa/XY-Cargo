@@ -792,7 +792,7 @@ const Index = () => {
                   <span className="w-2.5 h-2.5 bg-[#d8000d] shrink-0" />
                   <span className="text-xs font-extrabold text-slate-900 uppercase tracking-widest">Our Services</span>
                 </div>
-                <h2 className="text-4xl md:text-[60px] font-[900] md:leading-[60px] text-slate-900 uppercase font-montserrat tracking-tight">
+                <h2 className="text-4xl md:text-[60px] font-[900] md:leading-[60px] text-slate-900 uppercase font-satoshi tracking-tight">
                   Tailored Logistics <br /> Services For You
                 </h2>
               </div>
@@ -852,7 +852,7 @@ const Index = () => {
                     <span className="w-2.5 h-2.5 bg-[#d8000d] shrink-0" />
                     <span className="text-xs font-extrabold text-slate-900 uppercase tracking-widest">Who We Are</span>
                   </div>
-                  <h2 className="text-4xl md:text-[60px] font-[900] md:leading-[60px] text-slate-900 uppercase font-montserrat tracking-tight">
+                  <h2 className="text-4xl md:text-[60px] font-[900] md:leading-[60px] text-slate-900 uppercase font-satoshi tracking-tight">
                     About Us
                   </h2>
                 </div>
@@ -907,25 +907,25 @@ const Index = () => {
             {/* Bottom Stats Row */}
             <div className="border-t border-slate-100 pt-16 mt-16 grid grid-cols-2 md:grid-cols-4 gap-8 justify-center">
               <div className="space-y-1 text-center">
-                <p className="text-4xl sm:text-5xl font-[900] text-slate-900 tracking-tight font-montserrat">
+                <p className="text-4xl sm:text-5xl font-[900] text-slate-900 tracking-tight font-satoshi">
                   10,000<span className="text-[#d8000d] font-black">+</span>
                 </p>
                 <p className="text-[10px] uppercase tracking-wider text-slate-400 font-black">Packages Delivered</p>
               </div>
               <div className="space-y-1 text-center">
-                <p className="text-4xl sm:text-5xl font-[900] text-slate-900 tracking-tight font-montserrat">
+                <p className="text-4xl sm:text-5xl font-[900] text-slate-900 tracking-tight font-satoshi">
                   50<span className="text-[#d8000d] font-black">+</span>
                 </p>
                 <p className="text-[10px] uppercase tracking-wider text-slate-400 font-black">Global Partners</p>
               </div>
               <div className="space-y-1 text-center">
-                <p className="text-4xl sm:text-5xl font-[900] text-slate-900 tracking-tight font-montserrat">
+                <p className="text-4xl sm:text-5xl font-[900] text-slate-900 tracking-tight font-satoshi">
                   98<span className="text-[#d8000d] font-black">%</span>
                 </p>
                 <p className="text-[10px] uppercase tracking-wider text-slate-400 font-black">Delivery Success</p>
               </div>
               <div className="space-y-1 text-center">
-                <p className="text-4xl sm:text-5xl font-[900] text-slate-900 tracking-tight font-montserrat">
+                <p className="text-4xl sm:text-5xl font-[900] text-slate-900 tracking-tight font-satoshi">
                   5<span className="text-[#d8000d] font-black">+</span>
                 </p>
                 <p className="text-[10px] uppercase tracking-wider text-slate-400 font-black">Years Experience</p>
@@ -943,7 +943,7 @@ const Index = () => {
                 <span className="w-2.5 h-2.5 bg-[#d8000d] shrink-0" />
                 <span className="text-xs font-extrabold text-slate-900 uppercase tracking-widest">Insights & Updates</span>
               </div>
-              <h2 className="text-4xl md:text-[60px] font-[900] md:leading-[60px] text-slate-900 uppercase font-montserrat tracking-tight">
+              <h2 className="text-4xl md:text-[60px] font-[900] md:leading-[60px] text-slate-900 uppercase font-satoshi tracking-tight">
                 Stay Informed With <br className="sm:hidden" /> The Latest In Logistics
               </h2>
             </div>
@@ -963,7 +963,7 @@ const Index = () => {
                 <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6">
                   {/* Left Column: Heading and Info */}
                   <div className="space-y-4 max-w-2xl text-left">
-                    <h3 className="text-2xl sm:text-3xl font-[900] text-white leading-tight uppercase font-montserrat tracking-tight">
+                    <h3 className="text-2xl sm:text-3xl font-[900] text-white leading-tight uppercase font-satoshi tracking-tight">
                       5 Trends Shaping The <br className="hidden sm:inline" /> Future Of Global Logistics
                     </h3>
                     <p className="text-xs sm:text-sm text-slate-200 leading-relaxed font-medium">
@@ -998,7 +998,7 @@ const Index = () => {
                 <div className="w-12 h-12 rounded-2xl bg-red-50 text-[#d8000d] flex items-center justify-center">
                   <MessageSquare className="h-6 w-6" />
                 </div>
-                <h2 className="text-4xl md:text-[60px] font-[900] md:leading-[60px] text-slate-900 uppercase font-montserrat tracking-tight">
+                <h2 className="text-4xl md:text-[60px] font-[900] md:leading-[60px] text-slate-900 uppercase font-satoshi tracking-tight">
                   Your questions <br /> resolved in one place
                 </h2>
                 <p className="text-xs sm:text-sm text-slate-400 font-medium max-w-2xl leading-relaxed">
@@ -1070,7 +1070,7 @@ const Index = () => {
                       {/* Question Heading */}
                       <h3
                         className={cn(
-                          "font-[900] text-lg sm:text-xl font-montserrat uppercase tracking-tight leading-snug mb-4",
+                          "font-[900] text-lg sm:text-xl font-satoshi uppercase tracking-tight leading-snug mb-4",
                           isFirst
                             ? "text-white"
                             : "text-slate-900 group-hover:text-[#d8000d] transition-colors"

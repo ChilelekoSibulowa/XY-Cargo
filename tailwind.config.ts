@@ -14,9 +14,8 @@ export default {
     },
     extend: {
       fontFamily: {
-        sans: ["'Plus Jakarta Sans'", "-apple-system", "BlinkMacSystemFont", "sans-serif"],
-        jakarta: ["'Plus Jakarta Sans'", "sans-serif"],
-        montserrat: ["'Montserrat'", "sans-serif"],
+        sans: ["'Satoshi'", "-apple-system", "BlinkMacSystemFont", "sans-serif"],
+        satoshi: ["'Satoshi'", "sans-serif"],
       },
       colors: {
         border: "hsl(var(--border))",
