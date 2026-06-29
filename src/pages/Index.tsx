@@ -577,90 +577,142 @@ const Index = () => {
           </div>
         </section>
 
-        {/* Shipping Process Text Header */}
-        <section className="mx-auto max-w-6xl px-6 py-16 text-center motion-safe:animate-fade-in">
-          <div className="mx-auto max-w-3xl space-y-4">
-            <h2 className="text-3xl font-extrabold text-slate-900 uppercase tracking-tight">{home.process.title}</h2>
-            <div className="h-1 w-20 bg-[#d8000d] mx-auto rounded-full" />
-            <p className="text-base text-slate-600 mt-4 leading-relaxed">{home.process.body}</p>
-            <Button asChild className="rounded-full bg-[#d8000d] hover:bg-[#bf000c] px-8 py-5 text-sm font-semibold text-white shadow-md shadow-[#d8000d]/10">
-              <Link to="/tracking">{home.process.buttonLabel}</Link>
-            </Button>
-          </div>
-        </section>
+        {/* Shipping Process Text Header & Steps */}
+        <section className="bg-white py-24 relative overflow-hidden">
+          <div className="mx-auto max-w-6xl px-6 relative z-10">
+            <div className="text-center max-w-3xl mx-auto space-y-4 mb-16">
+              <span className="text-xs font-bold text-[#d8000d] uppercase tracking-[0.25em] bg-red-50 px-4 py-1.5 rounded-full inline-block">
+                Simple & Seamless
+              </span>
+              <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-slate-900 tracking-tight font-syne uppercase">
+                {home.process.title}
+              </h2>
+              <p className="text-sm sm:text-base text-slate-500 leading-relaxed max-w-2xl mx-auto">
+                {home.process.body}
+              </p>
+              <div className="pt-4">
+                <Button asChild className="rounded-full bg-[#d8000d] hover:bg-[#bf000c] px-8 py-6 text-xs font-bold uppercase tracking-wider text-white shadow-lg shadow-red-900/10 transition hover:scale-[1.02] group">
+                  <Link to="/tracking" className="flex items-center gap-2">
+                    <span>{home.process.buttonLabel}</span>
+                    <ArrowRight className="h-3.5 w-3.5 transition-transform duration-300 group-hover:translate-x-1" />
+                  </Link>
+                </Button>
+              </div>
+            </div>
 
-        {/* Process Steps Cards */}
-        <section className="bg-slate-50 border-y border-slate-100 py-16 motion-safe:animate-fade-in">
-          <div className="mx-auto grid max-w-7xl grid-cols-1 sm:grid-cols-2 gap-8 px-6 md:grid-cols-4">
-            {steps.map((step, index) => (
-              <Card key={step.title} className="text-center group bg-white border border-slate-200/60 rounded-2xl p-6 shadow-sm hover:shadow-md transition-all duration-300">
-                <div className="relative mx-auto h-24 w-24 overflow-hidden rounded-full ring-2 ring-transparent transition-all duration-300 group-hover:ring-[#d8000d] group-hover:scale-105">
-                  <OptimizedImage src={step.image} alt={step.title} className="h-full w-full object-cover" />
-                  <span className="absolute bottom-1 right-1 flex h-8 w-8 items-center justify-center rounded-full bg-[#d8000d] text-xs font-bold text-white shadow-lg">
-                    {String(index + 1).padStart(2, "0")}
-                  </span>
-                </div>
-                <h3 className="mt-5 text-base font-bold text-slate-900 transition-colors group-hover:text-[#d8000d]">{step.title}</h3>
-                <p className="mt-2 text-xs sm:text-sm text-slate-500 leading-relaxed">{step.body}</p>
-              </Card>
-            ))}
+            {/* Process Steps Cards */}
+            <div className="relative">
+              {/* Connecting line for desktop */}
+              <div className="absolute top-1/2 left-4 right-4 h-0.5 border-t border-dashed border-slate-200/80 -translate-y-1/2 hidden md:block z-0" />
+              
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8 relative z-10">
+                {steps.map((step, index) => (
+                  <div 
+                    key={step.title} 
+                    className="bg-white border border-slate-100 rounded-3xl p-6 text-center shadow-sm hover:shadow-xl hover:-translate-y-2 transition-all duration-300 flex flex-col items-center group relative"
+                  >
+                    <div className="relative w-24 h-24 rounded-full overflow-hidden border border-slate-100 shadow-inner group-hover:border-[#d8000d] transition-all duration-300 group-hover:scale-105">
+                      <OptimizedImage src={step.image} alt={step.title} className="h-full w-full object-cover" />
+                      <span className="absolute -top-1 -right-1 bg-[#d8000d] text-white text-[10px] font-black w-6 h-6 rounded-full flex items-center justify-center border-2 border-white shadow-md">
+                        {String(index + 1).padStart(2, "0")}
+                      </span>
+                    </div>
+                    <h3 className="mt-6 text-base font-bold text-slate-800 group-hover:text-[#d8000d] transition-colors font-jakarta leading-tight">
+                      {step.title}
+                    </h3>
+                    <p className="mt-3 text-xs sm:text-sm text-slate-500 leading-relaxed">
+                      {step.body}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         </section>
 
         {/* About Section */}
-        <section className="mx-auto max-w-6xl px-6 py-16 grid grid-cols-1 md:grid-cols-[1.1fr_0.9fr] gap-12 md:items-center motion-safe:animate-fade-in">
-          <div className="space-y-6">
-            <div className="space-y-2">
-              <span className="text-xs font-bold text-[#d8000d] uppercase tracking-widest">Who We Are</span>
-              <h2 className="text-3xl font-extrabold text-slate-900 uppercase tracking-tight">{home.about.title}</h2>
-              <div className="h-1 w-16 bg-[#d8000d] rounded-full" />
+        <section className="bg-slate-50/50 py-24 border-y border-slate-100/60 relative overflow-hidden">
+          <div className="mx-auto max-w-6xl px-6 relative z-10">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-16 items-center">
+              {/* Left Column: Text Content and Accordion */}
+              <div className="lg:col-span-7 space-y-6">
+                <div className="space-y-3">
+                  <span className="text-xs font-bold text-[#d8000d] uppercase tracking-[0.25em] bg-red-50 px-4 py-1.5 rounded-full inline-block">
+                    Who We Are
+                  </span>
+                  <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight leading-tight uppercase font-syne">
+                    {home.about.title}
+                  </h2>
+                </div>
+                <p className="text-sm sm:text-base text-slate-600 leading-relaxed">
+                  {home.about.body}
+                </p>
+                <Accordion type="single" collapsible className="space-y-3 w-full">
+                  {aboutAccordions.map((item) => (
+                    <AccordionItem 
+                      key={item.title} 
+                      value={item.title} 
+                      className="border border-slate-100 rounded-2xl bg-white shadow-sm overflow-hidden transition-all duration-300 hover:border-slate-200"
+                    >
+                      <AccordionTrigger className="text-sm font-bold text-slate-800 hover:text-[#d8000d] hover:no-underline py-4 px-5">
+                        {item.title}
+                      </AccordionTrigger>
+                      <AccordionContent className="text-xs sm:text-sm text-slate-500 leading-relaxed px-5 pb-5 pt-0 border-t border-slate-50">
+                        {item.body}
+                      </AccordionContent>
+                    </AccordionItem>
+                  ))}
+                </Accordion>
+              </div>
+
+              {/* Right Column: Visual Elements */}
+              <div className="lg:col-span-5 relative group">
+                <div className="absolute -inset-4 bg-gradient-to-tr from-[#d8000d]/5 to-transparent rounded-[36px] -z-10 blur-xl" />
+                <div className="relative rounded-3xl overflow-hidden shadow-2xl border border-slate-200/50">
+                  <OptimizedImage
+                    src={home.about.image}
+                    alt="About XY Cargo Zambia"
+                    className="w-full object-cover aspect-[4/3] transform hover:scale-[1.02] transition-all duration-700 ease-out"
+                    aspectRatio="video"
+                  />
+                  {/* Glassmorphic floating stat badge */}
+                  <div className="absolute bottom-6 left-6 right-6 bg-white/90 backdrop-blur-md border border-white/20 shadow-xl rounded-2xl p-4 flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-red-50 text-[#d8000d] flex items-center justify-center shrink-0">
+                      <CheckCircle2 className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <p className="text-xs font-black text-slate-900 leading-tight uppercase tracking-wider">Trusted & Verified</p>
+                      <p className="text-[10px] text-slate-500 font-medium">100% Secure Warehousing & Delivery</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
-            <p className="text-base text-slate-600 leading-relaxed">{home.about.body}</p>
-            <Accordion type="single" collapsible className="space-y-3 w-full">
-              {aboutAccordions.map((item, idx) => (
-                <AccordionItem key={item.title} value={item.title} className="border border-slate-200 rounded-xl px-4 bg-white">
-                  <AccordionTrigger className="text-sm font-bold text-slate-800 hover:text-[#d8000d] hover:no-underline py-3">
-                    {item.title}
-                  </AccordionTrigger>
-                  <AccordionContent className="text-xs sm:text-sm text-slate-500 leading-relaxed pb-4 pt-1 border-t border-slate-100">
-                    {item.body}
-                  </AccordionContent>
-                </AccordionItem>
-              ))}
-            </Accordion>
-          </div>
-          <div className="relative group">
-            <div className="absolute inset-0 bg-gradient-to-tr from-[#d8000d]/10 to-transparent rounded-3xl opacity-0 group-hover:opacity-100 transition-all duration-500" />
-            <OptimizedImage
-              src={home.about.image}
-              alt="About XY Cargo Zambia"
-              className="rounded-3xl shadow-lg border border-slate-200/50"
-              aspectRatio="video"
-            />
           </div>
         </section>
 
-
-
         {/* Air Freight Services Section */}
-        <section className="bg-slate-50/50 border-y border-slate-100 py-20 motion-safe:animate-fade-in">
-          <div className="mx-auto max-w-6xl space-y-8 px-6">
-            <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
-              <div className="space-y-2">
-                <span className="text-xs font-bold text-[#f04f23] uppercase tracking-widest">Air Transport</span>
-                <h2 className="text-3xl font-black text-slate-900 tracking-tight font-jakarta">Air Freight Services</h2>
-                <div className="h-1 w-16 bg-gradient-to-r from-orange-500 to-red-500 rounded-full" />
+        <section className="bg-white py-24 relative overflow-hidden">
+          <div className="mx-auto max-w-6xl space-y-12 px-6 relative z-10">
+            <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
+              <div className="space-y-3">
+                <span className="text-xs font-bold text-[#d8000d] uppercase tracking-[0.25em] bg-red-50 px-4 py-1.5 rounded-full inline-block">
+                  Air Transport
+                </span>
+                <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight font-syne uppercase">
+                  Air Freight Services
+                </h2>
               </div>
-              <div className="flex items-center gap-2.5">
+              <div className="inline-flex p-1 bg-slate-100/80 backdrop-blur rounded-full border border-slate-200/40">
                 {airRatesContent.map((rate, index) => {
                   const isActive = index === airRateIndex;
                   return (
                     <button
                       key={rate.location}
                       type="button"
-                      className={`rounded-full px-5 py-2.5 text-xs font-bold uppercase tracking-wider transition-all duration-300 ${isActive
-                        ? "bg-gradient-to-r from-orange-500 to-red-500 text-white shadow-lg shadow-orange-500/25 scale-105"
-                        : "bg-white border border-slate-200/60 text-slate-600 hover:bg-slate-50 hover:text-slate-800"
+                      className={`rounded-full px-5 py-2 text-xs font-bold uppercase tracking-wider transition-all duration-300 ${isActive
+                        ? "bg-[#d8000d] text-white shadow-md shadow-red-900/10 scale-105"
+                        : "text-slate-600 hover:text-[#d8000d]"
                         }`}
                       onClick={() => setAirRateIndex(index)}
                     >
@@ -670,17 +722,24 @@ const Index = () => {
                 })}
               </div>
             </div>
-            <div className="grid gap-6 sm:grid-cols-2 md:grid-cols-3">
+
+            <div className="grid gap-8 sm:grid-cols-2 md:grid-cols-3">
               {activeAirRate?.cards.map((card) => (
-                <Card key={card.title} className="rounded-3xl border border-slate-200/50 bg-white shadow-sm hover:shadow-xl transition-all duration-300 hover:scale-[1.02] flex flex-col justify-between overflow-hidden group p-6">
-                  <CardContent className="space-y-4 p-0 text-center flex flex-col items-center">
-                    <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-orange-50 text-[#f04f23] transition-all duration-300 group-hover:bg-gradient-to-r group-hover:from-orange-500 group-hover:to-red-500 group-hover:text-white shadow-sm">
+                <Card key={card.title} className="rounded-3xl border border-slate-100 bg-white shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-1.5 flex flex-col justify-between overflow-hidden relative group p-8">
+                  <CardContent className="space-y-5 p-0 text-center flex flex-col items-center">
+                    <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-red-50 text-[#d8000d] transition-all duration-300 group-hover:bg-[#d8000d] group-hover:text-white shadow-sm">
                       {airRateIcons[card.title] ?? <Package className="h-6 w-6" />}
                     </div>
-                    <div className="space-y-1">
-                      <h3 className="text-base font-bold text-slate-800 transition-colors duration-300 group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-orange-500 group-hover:to-red-500">{card.title}</h3>
-                      <p className="text-base font-extrabold text-[#f04f23] font-jakarta">{card.price}</p>
-                      <p className="text-xs text-slate-500 leading-relaxed max-w-xs">{card.description}</p>
+                    <div className="space-y-2">
+                      <h3 className="text-base font-bold text-slate-800 transition-colors duration-300 group-hover:text-[#d8000d] font-jakarta">
+                        {card.title}
+                      </h3>
+                      <p className="text-2xl font-extrabold text-[#d8000d] tracking-tight font-jakarta">
+                        {card.price}
+                      </p>
+                      <p className="text-xs text-slate-400 leading-relaxed max-w-xs">
+                        {card.description}
+                      </p>
                     </div>
                   </CardContent>
                 </Card>
@@ -690,24 +749,27 @@ const Index = () => {
         </section>
 
         {/* Sea Freight Services Section */}
-        <section className="bg-white py-20 border-b border-slate-100 motion-safe:animate-fade-in">
-          <div className="mx-auto max-w-6xl space-y-8 px-6">
-            <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
-              <div className="space-y-2">
-                <span className="text-xs font-bold text-[#f04f23] uppercase tracking-widest">Ocean Transport</span>
-                <h2 className="text-3xl font-black text-slate-900 tracking-tight font-jakarta">Sea Freight Services</h2>
-                <div className="h-1 w-16 bg-gradient-to-r from-orange-500 to-red-500 rounded-full" />
+        <section className="bg-slate-50/50 py-24 border-y border-slate-100/60 relative overflow-hidden">
+          <div className="mx-auto max-w-6xl space-y-12 px-6 relative z-10">
+            <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
+              <div className="space-y-3">
+                <span className="text-xs font-bold text-[#d8000d] uppercase tracking-[0.25em] bg-red-50 px-4 py-1.5 rounded-full inline-block">
+                  Ocean Transport
+                </span>
+                <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight font-syne uppercase">
+                  Sea Freight Services
+                </h2>
               </div>
-              <div className="flex items-center gap-2.5">
+              <div className="inline-flex p-1 bg-slate-100/80 backdrop-blur rounded-full border border-slate-200/40">
                 {seaRatesContent.map((rate, index) => {
                   const isActive = index === seaRateIndex;
                   return (
                     <button
                       key={rate.location}
                       type="button"
-                      className={`rounded-full px-5 py-2.5 text-xs font-bold uppercase tracking-wider transition-all duration-300 ${isActive
-                        ? "bg-gradient-to-r from-orange-500 to-red-500 text-white shadow-lg shadow-orange-500/25 scale-105"
-                        : "bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-800"
+                      className={`rounded-full px-5 py-2 text-xs font-bold uppercase tracking-wider transition-all duration-300 ${isActive
+                        ? "bg-[#d8000d] text-white shadow-md shadow-red-900/10 scale-105"
+                        : "text-slate-600 hover:text-[#d8000d]"
                         }`}
                       onClick={() => setSeaRateIndex(index)}
                     >
@@ -717,23 +779,30 @@ const Index = () => {
                 })}
               </div>
             </div>
-            <div className="grid gap-6 md:grid-cols-2">
+
+            <div className="grid gap-8 md:grid-cols-2">
               {activeSeaRate?.cards.map((card) => (
-                <Card key={card.title} className="rounded-3xl border border-slate-200/50 bg-white shadow-sm hover:shadow-xl transition-all duration-300 hover:scale-[1.02] flex flex-col justify-between overflow-hidden group p-6">
-                  <CardContent className="space-y-4 p-0 text-center flex flex-col items-center">
-                    <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-orange-50 text-[#f04f23] transition-all duration-300 group-hover:bg-gradient-to-r group-hover:from-orange-500 group-hover:to-red-500 group-hover:text-white shadow-sm">
+                <Card key={card.title} className="rounded-3xl border border-slate-100 bg-white shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-1.5 flex flex-col justify-between overflow-hidden relative group p-8">
+                  <CardContent className="space-y-5 p-0 text-center flex flex-col items-center">
+                    <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-red-50 text-[#d8000d] transition-all duration-300 group-hover:bg-[#d8000d] group-hover:text-white shadow-sm">
                       {seaRateIcons[card.title] ?? <Package className="h-6 w-6" />}
                     </div>
-                    <div className="space-y-1">
-                      <h3 className="text-base font-bold text-slate-800 transition-colors duration-300 group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-orange-500 group-hover:to-red-500">{card.title}</h3>
-                      <p className="text-base font-extrabold text-[#f04f23] font-jakarta">{card.price}</p>
-                      <p className="text-xs text-slate-500 leading-relaxed max-w-xs">{card.description}</p>
+                    <div className="space-y-2 w-full">
+                      <h3 className="text-base font-bold text-slate-800 transition-colors duration-300 group-hover:text-[#d8000d] font-jakarta">
+                        {card.title}
+                      </h3>
+                      <p className="text-2xl font-extrabold text-[#d8000d] tracking-tight font-jakarta">
+                        {card.price}
+                      </p>
+                      <p className="text-xs text-slate-400 leading-relaxed max-w-xs mx-auto">
+                        {card.description}
+                      </p>
                     </div>
                     {card.notes && (
-                      <div className="w-full bg-slate-50 rounded-2xl p-3 space-y-1 text-left text-[11px] text-slate-500 border border-slate-100">
+                      <div className="w-full bg-slate-50/50 rounded-2xl p-4 mt-2 space-y-2 text-left text-xs text-slate-500 border border-slate-100/50">
                         {card.notes.map((note) => (
-                          <p key={note} className="flex items-start gap-1">
-                            <span className="text-[#f04f23] font-bold">•</span>
+                          <p key={note} className="flex items-start gap-2.5">
+                            <Check className="h-3.5 w-3.5 text-[#d8000d] shrink-0 mt-0.5" />
                             <span>{note}</span>
                           </p>
                         ))}
@@ -746,280 +815,328 @@ const Index = () => {
           </div>
         </section>
 
-        <section className="relative mt-4 h-[280px] w-full overflow-hidden motion-safe:animate-fade-in">
-          {isVideo ? (
-            <video
-              ref={videoRef}
-              src={videoSrc}
-              className="h-full w-full object-cover"
-              controls={hasStartedVideoPlayback}
-              playsInline
-              preload="metadata"
-            />
-          ) : (
-            <OptimizedImage src={videoSrc} alt={safeVideoTitle} className="h-full w-full" />
-          )}
-          {isVideo && !hasStartedVideoPlayback ? (
-            <>
-              <div className="absolute inset-0 bg-black/40" />
-              <div className="absolute inset-0 flex items-center justify-center">
-                <Button
-                  type="button"
-                  onClick={handleVideoPlay}
-                  aria-label={`Play ${safeVideoTitle} with sound`}
-                  className="h-14 w-14 rounded-full bg-white text-brand shadow-xl transition-transform hover:scale-110 hover:shadow-2xl"
-                >
-                  <Play className="h-6 w-6" />
-                </Button>
-              </div>
-            </>
-          ) : null}
+        {/* Video / Showcase Section */}
+        <section className="bg-white py-16">
+          <div className="mx-auto max-w-5xl px-6">
+            <div className="relative h-[380px] w-full overflow-hidden rounded-3xl shadow-2xl border border-slate-100 group">
+              {isVideo ? (
+                <video
+                  ref={videoRef}
+                  src={videoSrc}
+                  className="h-full w-full object-cover"
+                  controls={hasStartedVideoPlayback}
+                  playsInline
+                  preload="metadata"
+                />
+              ) : (
+                <OptimizedImage src={videoSrc} alt={safeVideoTitle} className="h-full w-full object-cover" />
+              )}
+              {isVideo && !hasStartedVideoPlayback ? (
+                <>
+                  <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-[1px] transition-all duration-300 group-hover:backdrop-blur-[2px]" />
+                  <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-6 text-white">
+                    <Button
+                      type="button"
+                      onClick={handleVideoPlay}
+                      aria-label={`Play ${safeVideoTitle} with sound`}
+                      className="h-16 w-16 rounded-full bg-white text-[#d8000d] shadow-2xl flex items-center justify-center transition-all duration-300 hover:scale-110 hover:shadow-2xl hover:bg-[#d8000d] hover:text-white"
+                    >
+                      <Play className="h-6 w-6 fill-current ml-1" />
+                    </Button>
+                    <p className="mt-4 text-xs font-bold uppercase tracking-[0.2em] opacity-90">{safeVideoTitle}</p>
+                  </div>
+                </>
+              ) : null}
+            </div>
+          </div>
         </section>
 
-        <section id="homepage-calculator" className="mx-auto max-w-6xl px-6 py-12 motion-safe:animate-fade-in">
-          <div className="space-y-3 text-center">
-            <h2 className="text-2xl font-semibold md:text-3xl">{home.calculator.title}</h2>
-            <p className="text-sm text-slate-600">{home.calculator.subtitle}</p>
-          </div>
-          <div className="mt-8 grid gap-8 md:grid-cols-[1.1fr_0.9fr] md:items-start">
-            <div className="space-y-6">
-              <div className="grid gap-6 md:grid-cols-2">
-                <div className="space-y-2">
-                  <Label className="text-sm font-semibold text-slate-700">From</Label>
-                  <Select value={origin} onValueChange={setOrigin}>
-                    <SelectTrigger className="rounded-full border-slate-200">
-                      <SelectValue placeholder="Select origin" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="china-foshan">China (Foshan)</SelectItem>
-                      <SelectItem value="china-yiwu">China (Yiwu)</SelectItem>
-                      <SelectItem value="uae-dubai">UAE (Dubai)</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-sm font-semibold text-slate-700">To</Label>
-                  <Select value={destination} onValueChange={setDestination}>
-                    <SelectTrigger className="rounded-full border-slate-200">
-                      <SelectValue placeholder="Select destination" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="zambia-lusaka">Zambia (Lusaka)</SelectItem>
-                      <SelectItem value="zambia-ndola">Zambia (Ndola/Kitwe)</SelectItem>
-                      <SelectItem value="zambia-livingstone">Zambia (Livingstone)</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
+        {/* Calculator Section */}
+        <section id="homepage-calculator" className="bg-slate-50/50 py-24 border-y border-slate-100/60 relative overflow-hidden">
+          <div className="mx-auto max-w-6xl px-6 relative z-10">
+            <div className="text-center max-w-3xl mx-auto space-y-4 mb-16">
+              <span className="text-xs font-bold text-[#d8000d] uppercase tracking-[0.25em] bg-red-50 px-4 py-1.5 rounded-full inline-block">
+                Transparent Rates
+              </span>
+              <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight font-syne uppercase">
+                {home.calculator.title}
+              </h2>
+              <p className="text-sm sm:text-base text-slate-500 leading-relaxed max-w-2xl mx-auto">
+                {home.calculator.subtitle}
+              </p>
+            </div>
 
-              <div className="space-y-3">
-                <Label className="text-sm font-semibold text-slate-700">Service Type</Label>
-                <div className="grid gap-4 md:grid-cols-3">
-                  {serviceTypeOptions.map((option) => {
-                    const isActive = serviceType === option.id;
-                    return (
-                      <button
-                        key={option.id}
-                        type="button"
-                        onClick={() => setServiceType(option.id)}
-                        className={`relative rounded-2xl border p-3 text-left transition ${isActive
-                          ? "border-[#f04f23] ring-2 ring-[#f04f23]/20"
-                          : "border-slate-200 hover:border-slate-300"
-                          }`}
-                      >
-                        <span
-                          className={`absolute right-3 top-3 h-4 w-4 rounded-full border ${isActive ? "border-[#f04f23] bg-[#f04f23]" : "border-slate-300 bg-white"
+            <div className="grid gap-12 lg:grid-cols-12 items-start mt-8">
+              {/* Left Column: Form Controls */}
+              <div className="lg:col-span-8 bg-white border border-slate-100 rounded-3xl p-6 sm:p-8 shadow-sm space-y-6">
+                <div className="grid gap-6 sm:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label className="text-xs font-bold text-slate-500 uppercase tracking-wider">From</Label>
+                    <Select value={origin} onValueChange={setOrigin}>
+                      <SelectTrigger className="rounded-xl border-slate-200 bg-slate-50/40 py-5 focus:ring-[#d8000d]/50 focus:border-[#d8000d]">
+                        <SelectValue placeholder="Select origin" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-slate-950 text-white border border-slate-800">
+                        <SelectItem value="china-foshan">China (Foshan)</SelectItem>
+                        <SelectItem value="china-yiwu">China (Yiwu)</SelectItem>
+                        <SelectItem value="uae-dubai">UAE (Dubai)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-xs font-bold text-slate-500 uppercase tracking-wider">To</Label>
+                    <Select value={destination} onValueChange={setDestination}>
+                      <SelectTrigger className="rounded-xl border-slate-200 bg-slate-50/40 py-5 focus:ring-[#d8000d]/50 focus:border-[#d8000d]">
+                        <SelectValue placeholder="Select destination" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-slate-950 text-white border border-slate-800">
+                        <SelectItem value="zambia-lusaka">Zambia (Lusaka)</SelectItem>
+                        <SelectItem value="zambia-ndola">Zambia (Ndola/Kitwe)</SelectItem>
+                        <SelectItem value="zambia-livingstone">Zambia (Livingstone)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  <Label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Service Type</Label>
+                  <div className="grid gap-4 sm:grid-cols-3">
+                    {serviceTypeOptions.map((option) => {
+                      const isActive = serviceType === option.id;
+                      return (
+                        <button
+                          key={option.id}
+                          type="button"
+                          onClick={() => setServiceType(option.id)}
+                          className={`relative rounded-2xl border p-4 text-left transition-all duration-300 flex flex-col justify-between h-44 overflow-hidden group ${isActive
+                            ? "border-[#d8000d] bg-red-50/30 ring-2 ring-[#d8000d]/10"
+                            : "border-slate-200 hover:border-slate-300 bg-white"
                             }`}
-                        />
-                        <img src={option.image} alt={option.title} className="h-24 w-full rounded-xl object-cover" />
-                        <div className="mt-3 space-y-1">
-                          <p className="text-xs font-semibold text-slate-900">{option.title}</p>
-                          <p className="text-[10px] text-slate-500">{option.subtitle}</p>
-                        </div>
-                      </button>
-                    );
-                  })}
+                        >
+                          <span
+                            className={`absolute right-3 top-3 h-4 w-4 rounded-full border flex items-center justify-center ${isActive ? "border-[#d8000d] bg-[#d8000d]" : "border-slate-300 bg-white"
+                              }`}
+                          >
+                            {isActive && <Check className="h-2.5 w-2.5 text-white" />}
+                          </span>
+                          <img src={option.image} alt={option.title} className="h-20 w-full rounded-xl object-cover grayscale group-hover:grayscale-0 transition-all duration-500" />
+                          <div className="mt-2 space-y-0.5">
+                            <p className="text-xs font-bold text-slate-800">{option.title}</p>
+                            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">{option.subtitle}</p>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
-              </div>
 
-              <div className="space-y-4 rounded-2xl border border-slate-200/80 bg-white p-5">
-                <div className="space-y-2">
-                  <Label className="text-sm font-semibold text-slate-700">Product Type</Label>
-                  <Select
-                    value={productType}
-                    onValueChange={setProductType}
-                    disabled={productTypeOptions.length === 0}
-                  >
-                    <SelectTrigger className="rounded-full border-slate-200">
-                      <SelectValue placeholder="Select product type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {productTypeOptions.length === 0 ? (
-                        <SelectItem value="no-product-types" disabled>
-                          No product types configured
-                        </SelectItem>
-                      ) : (
-                        productTypeOptions.map((option) => (
-                          <SelectItem key={option.id} value={option.value}>
-                            {option.label}
+                <div className="space-y-4 rounded-2xl border border-slate-100 bg-slate-50/50 p-5">
+                  <div className="space-y-2">
+                    <Label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Product Type</Label>
+                    <Select
+                      value={productType}
+                      onValueChange={setProductType}
+                      disabled={productTypeOptions.length === 0}
+                    >
+                      <SelectTrigger className="rounded-xl border-slate-200 bg-white py-5 focus:ring-[#d8000d]/50 focus:border-[#d8000d]">
+                        <SelectValue placeholder="Select product type" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-slate-950 text-white border border-slate-800">
+                        {productTypeOptions.length === 0 ? (
+                          <SelectItem value="no-product-types" disabled>
+                            No product types configured
                           </SelectItem>
-                        ))
-                      )}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="grid gap-4 md:grid-cols-2">
-                  {rateBasis === "kg" && (
-                    <div className="space-y-2">
-                      <Label className="text-sm font-semibold text-slate-700">Weight (kg)</Label>
-                      <Input
-                        type="number"
-                        min="0"
-                        step="0.1"
-                        value={weight}
-                        onChange={(event) => setWeight(toNumber(event.target.value))}
-                        className="rounded-full border-slate-200"
-                      />
-                    </div>
-                  )}
-                  {rateBasis === "cbm" && (
-                    <>
-                      <div className="space-y-2">
-                        <Label className="text-sm font-semibold text-slate-700">Length (cm)</Label>
-                        <Input
-                          type="number"
-                          min="0"
-                          step="1"
-                          value={length}
-                          onChange={(event) => setLength(toNumber(event.target.value))}
-                          className="rounded-full border-slate-200"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label className="text-sm font-semibold text-slate-700">Width (cm)</Label>
-                        <Input
-                          type="number"
-                          min="0"
-                          step="1"
-                          value={width}
-                          onChange={(event) => setWidth(toNumber(event.target.value))}
-                          className="rounded-full border-slate-200"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label className="text-sm font-semibold text-slate-700">Height (cm)</Label>
-                        <Input
-                          type="number"
-                          min="0"
-                          step="1"
-                          value={height}
-                          onChange={(event) => setHeight(toNumber(event.target.value))}
-                          className="rounded-full border-slate-200"
-                        />
-                      </div>
-                    </>
-                  )}
-                </div>
-
-                <Button
-                  type="button"
-                  onClick={handleCalculate}
-                  className="w-full rounded-full bg-[#f04f23] text-white hover:bg-[#e0451b]"
-                >
-                  <Calculator className="mr-2 h-4 w-4" />
-                  Calculate
-                </Button>
-
-                <div className="rounded-2xl border border-slate-200/70 bg-slate-50 p-4">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Estimated Total</p>
-                  <div className="mt-2 flex items-end gap-3">
-                    <p className="text-2xl font-semibold text-slate-900">{formatAmount(displayedQuote.estimatedCost)}</p>
-                    <p className="text-xs text-slate-500">Based on current rates</p>
+                        ) : (
+                          productTypeOptions.map((option) => (
+                            <SelectItem key={option.id} value={option.value}>
+                              {option.label}
+                            </SelectItem>
+                          ))
+                        )}
+                      </SelectContent>
+                    </Select>
                   </div>
-                  <div className="mt-3 grid gap-2 text-xs text-slate-500 md:grid-cols-2">
-                    <div>
-                      Rate: {formatAmount(displayedQuote.rateValue)} / {displayedQuote.rateUnit}
+
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    {rateBasis === "kg" && (
+                      <div className="space-y-2 col-span-2">
+                        <Label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Weight (kg)</Label>
+                        <Input
+                          type="number"
+                          min="0"
+                          step="0.1"
+                          value={weight}
+                          onChange={(event) => setWeight(toNumber(event.target.value))}
+                          className="rounded-xl border-slate-200 bg-white focus-visible:ring-[#d8000d]/50"
+                        />
+                      </div>
+                    )}
+                    {rateBasis === "cbm" && (
+                      <>
+                        <div className="space-y-2">
+                          <Label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Length (cm)</Label>
+                          <Input
+                            type="number"
+                            min="0"
+                            step="1"
+                            value={length}
+                            onChange={(event) => setLength(toNumber(event.target.value))}
+                            className="rounded-xl border-slate-200 bg-white focus-visible:ring-[#d8000d]/50"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Width (cm)</Label>
+                          <Input
+                            type="number"
+                            min="0"
+                            step="1"
+                            value={width}
+                            onChange={(event) => setWidth(toNumber(event.target.value))}
+                            className="rounded-xl border-slate-200 bg-white focus-visible:ring-[#d8000d]/50"
+                          />
+                        </div>
+                        <div className="space-y-2 sm:col-span-2">
+                          <Label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Height (cm)</Label>
+                          <Input
+                            type="number"
+                            min="0"
+                            step="1"
+                            value={height}
+                            onChange={(event) => setHeight(toNumber(event.target.value))}
+                            className="rounded-xl border-slate-200 bg-white focus-visible:ring-[#d8000d]/50"
+                          />
+                        </div>
+                      </>
+                    )}
+                  </div>
+
+                  <div className="pt-2">
+                    <Button
+                      type="button"
+                      onClick={handleCalculate}
+                      className="w-full rounded-xl bg-[#d8000d] hover:bg-[#bf000c] text-white py-6 font-bold shadow-lg shadow-red-900/10 transition-all hover:scale-[1.01]"
+                    >
+                      <Calculator className="mr-2 h-4 w-4" />
+                      Calculate Estimate
+                    </Button>
+                  </div>
+
+                  <div className="rounded-2xl border border-red-100 bg-red-50/40 p-5 mt-4">
+                    <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">Estimated Total</p>
+                    <div className="mt-2 flex items-baseline gap-2">
+                      <p className="text-3xl font-black text-[#d8000d] font-jakarta">{formatAmount(displayedQuote.estimatedCost)}</p>
+                      <p className="text-xs text-slate-400 font-bold uppercase tracking-wider">Base Rate Estimate</p>
                     </div>
-                    <div>{displayedQuote.detail}</div>
+                    <div className="mt-4 grid gap-2 text-xs font-bold text-slate-500 border-t border-red-100/50 pt-3 sm:grid-cols-2">
+                      <div className="flex items-center gap-1.5">
+                        <span className="w-1.5 h-1.5 rounded-full bg-[#d8000d]" />
+                        <span>Rate: {formatAmount(displayedQuote.rateValue)} / {displayedQuote.rateUnit}</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <span className="w-1.5 h-1.5 rounded-full bg-[#d8000d]" />
+                        <span>{displayedQuote.detail}</span>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
 
-            <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-6">
-              <p className="text-sm font-semibold text-[#f04f23]">Ready to Calculate</p>
-              <div className="mt-4 space-y-5 text-sm text-slate-700">
-                {pricingInfo.map((section) => (
-                  <div key={section.title} className="space-y-2">
-                    <p className="font-semibold text-slate-900">{section.title}</p>
-                    <ul className="space-y-1">
-                      {section.items.map((item) => (
-                        <li key={item} className="flex items-start gap-2">
-                          <Check className="mt-1 h-4 w-4 text-slate-700" />
-                          <span>{item}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                ))}
+              {/* Right Column: Pricing Info Sidebar */}
+              <div className="lg:col-span-4 bg-slate-900 text-white rounded-3xl p-6 sm:p-8 shadow-2xl relative overflow-hidden self-stretch">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-red-600/10 rounded-full blur-2xl" />
+                <div className="space-y-1">
+                  <span className="text-[10px] font-bold text-[#d8000d] uppercase tracking-[0.2em]">Pricing Sheet</span>
+                  <h3 className="text-lg font-black uppercase font-syne tracking-tight">Active Tariffs</h3>
+                </div>
+                <div className="mt-6 space-y-6 text-xs sm:text-sm text-slate-300">
+                  {pricingInfo.map((section) => (
+                    <div key={section.title} className="space-y-2">
+                      <p className="font-extrabold text-white uppercase tracking-wider border-b border-white/10 pb-1.5 text-xs">
+                        {section.title}
+                      </p>
+                      <ul className="space-y-1.5">
+                        {section.items.map((item) => (
+                          <li key={item} className="flex items-start gap-2.5">
+                            <CheckCircle2 className="mt-0.5 h-4 w-4 text-[#d8000d] shrink-0" />
+                            <span>{item}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
           </div>
         </section>
 
-        <section className="mx-auto grid max-w-6xl items-start gap-6 px-6 pb-12 md:grid-cols-2 motion-safe:animate-fade-in">
-          <Card className="rounded-3xl border border-dashed border-slate-300 bg-white">
-            <CardContent className="space-y-6 p-6">
-              <h3 className="text-lg font-semibold text-[#f04f23]">Important Information</h3>
-              <div>
-                <p className="text-xs font-semibold text-slate-900">Minimum Requirements</p>
-                <ul className="space-y-2 text-sm text-slate-600">
-                  {minimumRequirements.map((item) => (
-                    <li key={item} className="flex items-start gap-2">
-                      <Check className="mt-1 h-4 w-4 text-slate-500" />
-                      <span>{item}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-              <div>
-                <p className="text-xs font-semibold text-slate-900">Storage Policy</p>
-                <ul className="space-y-2 text-sm text-slate-600">
-                  {storagePolicy.map((item) => (
-                    <li key={item} className="flex items-start gap-2">
-                      <Check className="mt-1 h-4 w-4 text-slate-500" />
-                      <span>{item}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="relative overflow-hidden rounded-3xl shadow-lg">
-            <img
-              src={home.infoSection.includeCard.image}
-              alt={home.infoSection.includeCard.title}
-              className="absolute inset-0 h-full w-full object-cover"
-            />
-            <div className="relative bg-slate-900/60 p-6 text-white">
-              <h3 className="text-lg font-semibold">{home.infoSection.includeCard.title}</h3>
-              <p className="text-xs uppercase tracking-[0.2em]">{home.infoSection.includeCard.subheading}</p>
-              <ul className="mt-4 space-y-2 text-sm">
-                {includeCardItems.map((item) => (
-                  <li key={item} className="flex items-start gap-2">
-                    <Check className="mt-1 h-4 w-4 text-white" />
-                    <span>{item}</span>
-                  </li>
-                ))}
-              </ul>
+        {/* Guidelines and Custom Call-to-Action section */}
+        <section className="bg-white py-24 relative overflow-hidden">
+          <div className="mx-auto max-w-6xl px-6 relative z-10">
+            <div className="grid gap-8 md:grid-cols-2 items-stretch">
+              {/* Guidelines Card */}
+              <Card className="rounded-3xl border border-slate-100 bg-white shadow-sm flex flex-col justify-between overflow-hidden p-6 sm:p-8">
+                <CardContent className="space-y-6 p-0">
+                  <div className="space-y-1">
+                    <span className="text-[10px] font-bold text-[#d8000d] uppercase tracking-[0.2em]">Legal & Terms</span>
+                    <h3 className="text-xl font-extrabold text-slate-800 font-syne uppercase">Important Information</h3>
+                  </div>
+                  <div className="space-y-4">
+                    <div>
+                      <p className="text-xs font-black text-slate-900 uppercase tracking-wider mb-2">Minimum Requirements</p>
+                      <ul className="space-y-2 text-xs sm:text-sm text-slate-500">
+                        {minimumRequirements.map((item) => (
+                          <li key={item} className="flex items-start gap-2.5">
+                            <Check className="mt-0.5 h-4 w-4 text-[#d8000d] shrink-0" />
+                            <span>{item}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                    <div>
+                      <p className="text-xs font-black text-slate-900 uppercase tracking-wider mb-2">Storage Policy</p>
+                      <ul className="space-y-2 text-xs sm:text-sm text-slate-500">
+                        {storagePolicy.map((item) => (
+                          <li key={item} className="flex items-start gap-2.5">
+                            <Check className="mt-0.5 h-4 w-4 text-[#d8000d] shrink-0" />
+                            <span>{item}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Call to Action Banner Card */}
+              <Card className="relative overflow-hidden rounded-3xl shadow-xl flex flex-col justify-between p-6 sm:p-8 min-h-[350px]">
+                <img
+                  src={home.infoSection.includeCard.image}
+                  alt={home.infoSection.includeCard.title}
+                  className="absolute inset-0 h-full w-full object-cover"
+                />
+                <div className="absolute inset-0 bg-slate-950/75 backdrop-blur-[0.5px]" />
+                <div className="relative space-y-6 text-white h-full flex flex-col justify-between z-10">
+                  <div className="space-y-2">
+                    <span className="text-[10px] font-black text-[#d8000d] uppercase tracking-[0.25em]">{home.infoSection.includeCard.subheading}</span>
+                    <h3 className="text-2xl font-black uppercase font-syne leading-tight tracking-tight max-w-md">{home.infoSection.includeCard.title}</h3>
+                  </div>
+                  <ul className="space-y-2 text-xs sm:text-sm text-slate-200">
+                    {includeCardItems.map((item) => (
+                      <li key={item} className="flex items-start gap-2.5">
+                        <Check className="mt-0.5 h-4 w-4 text-[#d8000d] shrink-0" />
+                        <span>{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </Card>
             </div>
-          </Card>
+          </div>
         </section>
       </div>
     </>
   );
-
 };
 
 export default Index;
