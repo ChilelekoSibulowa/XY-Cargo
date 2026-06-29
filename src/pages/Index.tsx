@@ -50,6 +50,15 @@ const Index = () => {
   const { formatAmount } = useDefaultCurrency();
   const { optionsByService, isLoading: isProductTypesLoading } = useProductTypes();
   const [activeSlide, setActiveSlide] = useState(0);
+  const [isScrolled, setIsScrolled] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 50);
+    };
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
   const [serviceType, setServiceType] = useState("air-standard");
   const [productType, setProductType] = useState("");
   const [origin, setOrigin] = useState("china-foshan");
@@ -306,26 +315,47 @@ const Index = () => {
       <MetaPixel />
       <div className="flex flex-col">
         {/* Transparent Overlay Navigation Bar */}
-        <header className="absolute top-0 left-0 right-0 z-50 w-full bg-slate-900/15 backdrop-blur-md border-b border-white/10">
-          <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-6 py-4">
+        <header className={cn(
+          "left-0 right-0 z-50 w-full transition-all duration-300",
+          isScrolled 
+            ? "fixed top-0 bg-white/95 backdrop-blur-md border-b border-slate-200/80 shadow-sm py-2" 
+            : "absolute top-0 bg-slate-900/15 backdrop-blur-md border-b border-white/10 py-4"
+        )}>
+          <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-6">
             {/* Logo: LogoImage + XY Cargo */}
             <Link to="/" className="flex items-center gap-3 transition-transform hover:scale-[1.01]">
               <div className="relative">
                 <LogoImage size="md" />
               </div>
               <div className="flex flex-col text-left">
-                <span className="text-base font-extrabold tracking-tight text-white leading-tight">XY Cargo Zambia</span>
+                <span className={cn(
+                  "text-base font-extrabold tracking-tight leading-tight transition-colors duration-300",
+                  isScrolled ? "text-slate-900" : "text-white"
+                )}>
+                  XY Cargo Zambia
+                </span>
               </div>
             </Link>
 
             {/* Navigation links */}
             <nav className="hidden items-center gap-8 lg:flex">
-              <Link to="/" className="text-xs font-bold uppercase tracking-wider text-white transition-colors hover:text-[#d8000d] relative py-1 group">
+              <Link 
+                to="/" 
+                className={cn(
+                  "text-xs font-bold uppercase tracking-wider transition-colors relative py-1 group",
+                  isScrolled ? "text-slate-700 hover:text-[#d8000d]" : "text-white hover:text-[#d8000d]"
+                )}
+              >
                 Home
                 <span className="absolute bottom-0 left-0 w-full h-0.5 bg-[#d8000d] scale-x-100 transition-transform origin-left" />
               </Link>
               <div className="relative group/shipping">
-                <button className="flex items-center gap-1 text-xs font-bold uppercase tracking-wider text-white transition-colors hover:text-[#d8000d] py-1">
+                <button 
+                  className={cn(
+                    "flex items-center gap-1 text-xs font-bold uppercase tracking-wider transition-colors py-1",
+                    isScrolled ? "text-slate-700 hover:text-[#d8000d]" : "text-white hover:text-[#d8000d]"
+                  )}
+                >
                   Shipping
                   <ChevronDown className="h-3.5 w-3.5" />
                 </button>
@@ -341,15 +371,33 @@ const Index = () => {
                   </Link>
                 </div>
               </div>
-              <Link to="/tracking" className="text-xs font-bold uppercase tracking-wider text-white transition-colors hover:text-[#d8000d] relative py-1 group">
+              <Link 
+                to="/tracking" 
+                className={cn(
+                  "text-xs font-bold uppercase tracking-wider transition-colors relative py-1 group",
+                  isScrolled ? "text-slate-700 hover:text-[#d8000d]" : "text-white hover:text-[#d8000d]"
+                )}
+              >
                 Tracking
                 <span className="absolute bottom-0 left-0 w-full h-0.5 bg-[#d8000d] scale-x-0 transition-transform origin-left group-hover:scale-x-100" />
               </Link>
-              <Link to="/support" className="text-xs font-bold uppercase tracking-wider text-white transition-colors hover:text-[#d8000d] relative py-1 group">
+              <Link 
+                to="/support" 
+                className={cn(
+                  "text-xs font-bold uppercase tracking-wider transition-colors relative py-1 group",
+                  isScrolled ? "text-slate-700 hover:text-[#d8000d]" : "text-white hover:text-[#d8000d]"
+                )}
+              >
                 Support
                 <span className="absolute bottom-0 left-0 w-full h-0.5 bg-[#d8000d] scale-x-0 transition-transform origin-left group-hover:scale-x-100" />
               </Link>
-              <Link to="/join-us" className="text-xs font-bold uppercase tracking-wider text-white transition-colors hover:text-[#d8000d] relative py-1 group">
+              <Link 
+                to="/join-us" 
+                className={cn(
+                  "text-xs font-bold uppercase tracking-wider transition-colors relative py-1 group",
+                  isScrolled ? "text-slate-700 hover:text-[#d8000d]" : "text-white hover:text-[#d8000d]"
+                )}
+              >
                 Career
                 <span className="absolute bottom-0 left-0 w-full h-0.5 bg-[#d8000d] scale-x-0 transition-transform origin-left group-hover:scale-x-100" />
               </Link>
@@ -360,7 +408,12 @@ const Index = () => {
               {/* Phone pill */}
               <a
                 href="tel:+260967379139"
-                className="hidden md:flex items-center gap-2 bg-white/10 backdrop-blur-md border border-white/10 text-white font-bold text-xs py-2.5 px-4 rounded-full transition hover:bg-white/20"
+                className={cn(
+                  "hidden md:flex items-center gap-2 border font-bold text-xs py-2 px-4 rounded-full transition duration-300",
+                  isScrolled 
+                    ? "bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100" 
+                    : "bg-white/10 border-white/10 text-white hover:bg-white/20"
+                )}
               >
                 <Phone className="h-3.5 w-3.5 text-[#d8000d] fill-current animate-pulse" />
                 <span>+260 967379139</span>
@@ -368,11 +421,19 @@ const Index = () => {
               {/* Get Started button */}
               <Button
                 asChild
-                className="bg-white hover:bg-slate-50 text-slate-900 font-extrabold text-xs py-3 px-5 rounded-full flex items-center gap-2 transition-all duration-300 shadow-md hover:shadow-lg border border-slate-200/50 group hover:scale-[1.02]"
+                className={cn(
+                  "font-extrabold text-xs py-3 px-5 rounded-full flex items-center gap-2 transition-all duration-300 shadow-md hover:shadow-lg group hover:scale-[1.02]",
+                  isScrolled
+                    ? "bg-[#d8000d] hover:bg-[#bf000c] text-white"
+                    : "bg-white hover:bg-slate-50 text-slate-900 border border-slate-200/50"
+                )}
               >
                 <Link to="/login" className="flex items-center gap-2">
                   <span>Get Started Now</span>
-                  <ArrowRight className="h-3.5 w-3.5 text-slate-900 transition-transform duration-300 group-hover:translate-x-1" />
+                  <ArrowRight className={cn(
+                    "h-3.5 w-3.5 transition-transform duration-300 group-hover:translate-x-1",
+                    isScrolled ? "text-white" : "text-slate-900"
+                  )} />
                 </Link>
               </Button>
             </div>
@@ -577,52 +638,55 @@ const Index = () => {
           </div>
         </section>
 
-        {/* Shipping Process Text Header & Steps */}
-        <section className="bg-white py-24 relative overflow-hidden">
-          <div className="mx-auto max-w-6xl px-6 relative z-10">
-            <div className="text-center max-w-3xl mx-auto space-y-4 mb-16">
-              <span className="text-xs font-bold text-[#d8000d] uppercase tracking-[0.25em] bg-red-50 px-4 py-1.5 rounded-full inline-block">
-                Simple & Seamless
-              </span>
-              <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-slate-900 tracking-tight font-syne uppercase">
-                {home.process.title}
-              </h2>
-              <p className="text-sm sm:text-base text-slate-500 leading-relaxed max-w-2xl mx-auto">
-                {home.process.body}
-              </p>
-              <div className="pt-4">
-                <Button asChild className="rounded-full bg-[#d8000d] hover:bg-[#bf000c] px-8 py-6 text-xs font-bold uppercase tracking-wider text-white shadow-lg shadow-red-900/10 transition hover:scale-[1.02] group">
-                  <Link to="/tracking" className="flex items-center gap-2">
-                    <span>{home.process.buttonLabel}</span>
-                    <ArrowRight className="h-3.5 w-3.5 transition-transform duration-300 group-hover:translate-x-1" />
-                  </Link>
-                </Button>
+        {/* Shipping Process Section */}
+        <section className="bg-white py-28 relative overflow-hidden border-t border-slate-100 animate-fade-in">
+          <div className="mx-auto max-w-7xl px-6 relative z-10">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-16 items-start">
+              {/* Left Column: Sticky Section Header */}
+              <div className="lg:col-span-4 lg:sticky lg:top-28 space-y-6">
+                <span className="text-xs font-bold text-[#d8000d] uppercase tracking-[0.3em] bg-red-50 px-4 py-1.5 rounded-full inline-block">
+                  Logistics Lifecycle
+                </span>
+                <h2 className="text-4xl font-extrabold text-slate-900 tracking-tight font-syne uppercase leading-[1.1]">
+                  {home.process.title}
+                </h2>
+                <p className="text-sm text-slate-500 leading-relaxed">
+                  {home.process.body}
+                </p>
+                <div className="pt-2">
+                  <Button asChild className="rounded-full bg-[#d8000d] hover:bg-[#bf000c] px-8 py-6 text-xs font-bold uppercase tracking-wider text-white shadow-lg shadow-red-900/10 transition hover:scale-[1.02] group">
+                    <Link to="/tracking" className="flex items-center gap-2">
+                      <span>{home.process.buttonLabel}</span>
+                      <ArrowRight className="h-3.5 w-3.5 transition-transform duration-300 group-hover:translate-x-1" />
+                    </Link>
+                  </Button>
+                </div>
               </div>
-            </div>
 
-            {/* Process Steps Cards */}
-            <div className="relative">
-              {/* Connecting line for desktop */}
-              <div className="absolute top-1/2 left-4 right-4 h-0.5 border-t border-dashed border-slate-200/80 -translate-y-1/2 hidden md:block z-0" />
-              
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8 relative z-10">
+              {/* Right Column: Premium Wide Cards */}
+              <div className="lg:col-span-8 space-y-8">
                 {steps.map((step, index) => (
                   <div 
-                    key={step.title} 
-                    className="bg-white border border-slate-100 rounded-3xl p-6 text-center shadow-sm hover:shadow-xl hover:-translate-y-2 transition-all duration-300 flex flex-col items-center group relative"
+                    key={step.title}
+                    className="flex flex-col sm:flex-row items-center gap-6 bg-white border border-slate-100 rounded-3xl p-6 shadow-sm hover:shadow-xl transition-all duration-300 group hover:-translate-y-1"
                   >
-                    <div className="relative w-24 h-24 rounded-full overflow-hidden border border-slate-100 shadow-inner group-hover:border-[#d8000d] transition-all duration-300 group-hover:scale-105">
+                    <div className="relative w-full sm:w-36 h-36 rounded-2xl overflow-hidden shrink-0 shadow-inner border border-slate-100">
                       <OptimizedImage src={step.image} alt={step.title} className="h-full w-full object-cover" />
-                      <span className="absolute -top-1 -right-1 bg-[#d8000d] text-white text-[10px] font-black w-6 h-6 rounded-full flex items-center justify-center border-2 border-white shadow-md">
+                      <span className="absolute top-3 left-3 bg-[#d8000d] text-white text-[10px] font-black w-6 h-6 rounded-full flex items-center justify-center border-2 border-white shadow-md">
                         {String(index + 1).padStart(2, "0")}
                       </span>
                     </div>
-                    <h3 className="mt-6 text-base font-bold text-slate-800 group-hover:text-[#d8000d] transition-colors font-jakarta leading-tight">
-                      {step.title}
-                    </h3>
-                    <p className="mt-3 text-xs sm:text-sm text-slate-500 leading-relaxed">
-                      {step.body}
-                    </p>
+                    <div className="space-y-2 flex-1 text-center sm:text-left">
+                      <span className="text-[40px] font-black text-slate-100 group-hover:text-red-500/15 transition-colors font-syne leading-none block sm:float-right">
+                        {String(index + 1).padStart(2, "0")}
+                      </span>
+                      <h3 className="text-lg font-bold text-slate-800 group-hover:text-[#d8000d] transition-colors font-jakarta leading-tight">
+                        {step.title}
+                      </h3>
+                      <p className="text-xs sm:text-sm text-slate-500 leading-relaxed max-w-xl">
+                        {step.body}
+                      </p>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -631,13 +695,13 @@ const Index = () => {
         </section>
 
         {/* About Section */}
-        <section className="bg-slate-50/50 py-24 border-y border-slate-100/60 relative overflow-hidden">
-          <div className="mx-auto max-w-6xl px-6 relative z-10">
+        <section className="bg-white py-28 relative overflow-hidden border-t border-slate-100 animate-fade-in">
+          <div className="mx-auto max-w-7xl px-6 relative z-10">
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-16 items-center">
-              {/* Left Column: Text Content and Accordion */}
-              <div className="lg:col-span-7 space-y-6">
+              {/* Left Column: Text and Accordion */}
+              <div className="lg:col-span-7 space-y-8">
                 <div className="space-y-3">
-                  <span className="text-xs font-bold text-[#d8000d] uppercase tracking-[0.25em] bg-red-50 px-4 py-1.5 rounded-full inline-block">
+                  <span className="text-xs font-bold text-[#d8000d] uppercase tracking-[0.3em] bg-red-50 px-4 py-1.5 rounded-full inline-block">
                     Who We Are
                   </span>
                   <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight leading-tight uppercase font-syne">
@@ -647,17 +711,17 @@ const Index = () => {
                 <p className="text-sm sm:text-base text-slate-600 leading-relaxed">
                   {home.about.body}
                 </p>
-                <Accordion type="single" collapsible className="space-y-3 w-full">
+                <Accordion type="single" collapsible className="space-y-4 w-full">
                   {aboutAccordions.map((item) => (
                     <AccordionItem 
                       key={item.title} 
                       value={item.title} 
-                      className="border border-slate-100 rounded-2xl bg-white shadow-sm overflow-hidden transition-all duration-300 hover:border-slate-200"
+                      className="border border-slate-100 rounded-3xl bg-white shadow-sm overflow-hidden transition-all duration-300 hover:border-slate-200"
                     >
-                      <AccordionTrigger className="text-sm font-bold text-slate-800 hover:text-[#d8000d] hover:no-underline py-4 px-5">
+                      <AccordionTrigger className="text-sm font-bold text-slate-800 hover:text-[#d8000d] hover:no-underline py-4.5 px-6">
                         {item.title}
                       </AccordionTrigger>
-                      <AccordionContent className="text-xs sm:text-sm text-slate-500 leading-relaxed px-5 pb-5 pt-0 border-t border-slate-50">
+                      <AccordionContent className="text-xs sm:text-sm text-slate-500 leading-relaxed px-6 pb-6 pt-0 border-t border-slate-50">
                         {item.body}
                       </AccordionContent>
                     </AccordionItem>
@@ -665,24 +729,25 @@ const Index = () => {
                 </Accordion>
               </div>
 
-              {/* Right Column: Visual Elements */}
+              {/* Right Column: Luxury Framed Visuals */}
               <div className="lg:col-span-5 relative group">
-                <div className="absolute -inset-4 bg-gradient-to-tr from-[#d8000d]/5 to-transparent rounded-[36px] -z-10 blur-xl" />
-                <div className="relative rounded-3xl overflow-hidden shadow-2xl border border-slate-200/50">
+                {/* Asymmetric border frame effect */}
+                <div className="absolute top-4 left-4 -right-4 -bottom-4 border-2 border-slate-100 rounded-[36px] -z-10 group-hover:border-[#d8000d]/20 transition-colors duration-500" />
+                <div className="relative rounded-[32px] overflow-hidden shadow-2xl border border-slate-200/50 bg-white">
                   <OptimizedImage
                     src={home.about.image}
                     alt="About XY Cargo Zambia"
-                    className="w-full object-cover aspect-[4/3] transform hover:scale-[1.02] transition-all duration-700 ease-out"
+                    className="w-full object-cover aspect-[4/3] transform hover:scale-[1.01] transition-all duration-700 ease-out"
                     aspectRatio="video"
                   />
-                  {/* Glassmorphic floating stat badge */}
-                  <div className="absolute bottom-6 left-6 right-6 bg-white/90 backdrop-blur-md border border-white/20 shadow-xl rounded-2xl p-4 flex items-center gap-3">
+                  {/* Floating badge */}
+                  <div className="absolute bottom-6 left-6 right-6 bg-white/95 backdrop-blur-md border border-slate-100 shadow-xl rounded-2xl p-4 flex items-center gap-3">
                     <div className="w-10 h-10 rounded-xl bg-red-50 text-[#d8000d] flex items-center justify-center shrink-0">
                       <CheckCircle2 className="h-5 w-5" />
                     </div>
                     <div>
-                      <p className="text-xs font-black text-slate-900 leading-tight uppercase tracking-wider">Trusted & Verified</p>
-                      <p className="text-[10px] text-slate-500 font-medium">100% Secure Warehousing & Delivery</p>
+                      <p className="text-xs font-black text-slate-900 leading-tight uppercase tracking-wider">Trusted Partner</p>
+                      <p className="text-[10px] text-slate-400 font-bold">100% Reliable Cargo Warehousing</p>
                     </div>
                   </div>
                 </div>
@@ -692,11 +757,11 @@ const Index = () => {
         </section>
 
         {/* Air Freight Services Section */}
-        <section className="bg-white py-24 relative overflow-hidden">
-          <div className="mx-auto max-w-6xl space-y-12 px-6 relative z-10">
-            <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
+        <section className="bg-white py-28 relative overflow-hidden border-t border-slate-100 animate-fade-in">
+          <div className="mx-auto max-w-7xl px-6 relative z-10">
+            <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between mb-12">
               <div className="space-y-3">
-                <span className="text-xs font-bold text-[#d8000d] uppercase tracking-[0.25em] bg-red-50 px-4 py-1.5 rounded-full inline-block">
+                <span className="text-xs font-bold text-[#d8000d] uppercase tracking-[0.3em] bg-red-50 px-4 py-1.5 rounded-full inline-block">
                   Air Transport
                 </span>
                 <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight font-syne uppercase">
@@ -710,7 +775,7 @@ const Index = () => {
                     <button
                       key={rate.location}
                       type="button"
-                      className={`rounded-full px-5 py-2 text-xs font-bold uppercase tracking-wider transition-all duration-300 ${isActive
+                      className={`rounded-full px-6 py-2 text-xs font-bold uppercase tracking-wider transition-all duration-300 ${isActive
                         ? "bg-[#d8000d] text-white shadow-md shadow-red-900/10 scale-105"
                         : "text-slate-600 hover:text-[#d8000d]"
                         }`}
@@ -749,11 +814,11 @@ const Index = () => {
         </section>
 
         {/* Sea Freight Services Section */}
-        <section className="bg-slate-50/50 py-24 border-y border-slate-100/60 relative overflow-hidden">
-          <div className="mx-auto max-w-6xl space-y-12 px-6 relative z-10">
-            <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
+        <section className="bg-white py-28 relative overflow-hidden border-t border-slate-100 animate-fade-in">
+          <div className="mx-auto max-w-7xl px-6 relative z-10">
+            <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between mb-12">
               <div className="space-y-3">
-                <span className="text-xs font-bold text-[#d8000d] uppercase tracking-[0.25em] bg-red-50 px-4 py-1.5 rounded-full inline-block">
+                <span className="text-xs font-bold text-[#d8000d] uppercase tracking-[0.3em] bg-red-50 px-4 py-1.5 rounded-full inline-block">
                   Ocean Transport
                 </span>
                 <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight font-syne uppercase">
@@ -767,7 +832,7 @@ const Index = () => {
                     <button
                       key={rate.location}
                       type="button"
-                      className={`rounded-full px-5 py-2 text-xs font-bold uppercase tracking-wider transition-all duration-300 ${isActive
+                      className={`rounded-full px-6 py-2 text-xs font-bold uppercase tracking-wider transition-all duration-300 ${isActive
                         ? "bg-[#d8000d] text-white shadow-md shadow-red-900/10 scale-105"
                         : "text-slate-600 hover:text-[#d8000d]"
                         }`}
@@ -816,7 +881,7 @@ const Index = () => {
         </section>
 
         {/* Video / Showcase Section */}
-        <section className="bg-white py-16">
+        <section className="bg-white py-16 border-t border-slate-100 animate-fade-in">
           <div className="mx-auto max-w-5xl px-6">
             <div className="relative h-[380px] w-full overflow-hidden rounded-3xl shadow-2xl border border-slate-100 group">
               {isVideo ? (
@@ -852,10 +917,10 @@ const Index = () => {
         </section>
 
         {/* Calculator Section */}
-        <section id="homepage-calculator" className="bg-slate-50/50 py-24 border-y border-slate-100/60 relative overflow-hidden">
-          <div className="mx-auto max-w-6xl px-6 relative z-10">
+        <section id="homepage-calculator" className="bg-white py-28 relative overflow-hidden border-t border-slate-100 animate-fade-in">
+          <div className="mx-auto max-w-7xl px-6 relative z-10">
             <div className="text-center max-w-3xl mx-auto space-y-4 mb-16">
-              <span className="text-xs font-bold text-[#d8000d] uppercase tracking-[0.25em] bg-red-50 px-4 py-1.5 rounded-full inline-block">
+              <span className="text-xs font-bold text-[#d8000d] uppercase tracking-[0.3em] bg-red-50 px-4 py-1.5 rounded-full inline-block">
                 Transparent Rates
               </span>
               <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight font-syne uppercase">
@@ -868,12 +933,12 @@ const Index = () => {
 
             <div className="grid gap-12 lg:grid-cols-12 items-start mt-8">
               {/* Left Column: Form Controls */}
-              <div className="lg:col-span-8 bg-white border border-slate-100 rounded-3xl p-6 sm:p-8 shadow-sm space-y-6">
+              <div className="lg:col-span-8 bg-white border border-slate-100 rounded-[32px] p-6 sm:p-8 shadow-sm space-y-6">
                 <div className="grid gap-6 sm:grid-cols-2">
                   <div className="space-y-2">
                     <Label className="text-xs font-bold text-slate-500 uppercase tracking-wider">From</Label>
                     <Select value={origin} onValueChange={setOrigin}>
-                      <SelectTrigger className="rounded-xl border-slate-200 bg-slate-50/40 py-5 focus:ring-[#d8000d]/50 focus:border-[#d8000d]">
+                      <SelectTrigger className="rounded-xl border-slate-200 bg-slate-50/50 py-5 focus:ring-[#d8000d]/50 focus:border-[#d8000d]">
                         <SelectValue placeholder="Select origin" />
                       </SelectTrigger>
                       <SelectContent className="bg-slate-950 text-white border border-slate-800">
@@ -886,7 +951,7 @@ const Index = () => {
                   <div className="space-y-2">
                     <Label className="text-xs font-bold text-slate-500 uppercase tracking-wider">To</Label>
                     <Select value={destination} onValueChange={setDestination}>
-                      <SelectTrigger className="rounded-xl border-slate-200 bg-slate-50/40 py-5 focus:ring-[#d8000d]/50 focus:border-[#d8000d]">
+                      <SelectTrigger className="rounded-xl border-slate-200 bg-slate-50/50 py-5 focus:ring-[#d8000d]/50 focus:border-[#d8000d]">
                         <SelectValue placeholder="Select destination" />
                       </SelectTrigger>
                       <SelectContent className="bg-slate-950 text-white border border-slate-800">
@@ -1042,7 +1107,7 @@ const Index = () => {
               </div>
 
               {/* Right Column: Pricing Info Sidebar */}
-              <div className="lg:col-span-4 bg-slate-900 text-white rounded-3xl p-6 sm:p-8 shadow-2xl relative overflow-hidden self-stretch">
+              <div className="lg:col-span-4 bg-slate-900 text-white rounded-[32px] p-6 sm:p-8 shadow-2xl relative overflow-hidden self-stretch">
                 <div className="absolute top-0 right-0 w-32 h-32 bg-red-600/10 rounded-full blur-2xl" />
                 <div className="space-y-1">
                   <span className="text-[10px] font-bold text-[#d8000d] uppercase tracking-[0.2em]">Pricing Sheet</span>
@@ -1071,11 +1136,11 @@ const Index = () => {
         </section>
 
         {/* Guidelines and Custom Call-to-Action section */}
-        <section className="bg-white py-24 relative overflow-hidden">
-          <div className="mx-auto max-w-6xl px-6 relative z-10">
+        <section className="bg-white py-28 relative overflow-hidden border-t border-slate-100 animate-fade-in">
+          <div className="mx-auto max-w-7xl px-6 relative z-10">
             <div className="grid gap-8 md:grid-cols-2 items-stretch">
               {/* Guidelines Card */}
-              <Card className="rounded-3xl border border-slate-100 bg-white shadow-sm flex flex-col justify-between overflow-hidden p-6 sm:p-8">
+              <Card className="rounded-[32px] border border-slate-100 bg-white shadow-sm flex flex-col justify-between overflow-hidden p-6 sm:p-8">
                 <CardContent className="space-y-6 p-0">
                   <div className="space-y-1">
                     <span className="text-[10px] font-bold text-[#d8000d] uppercase tracking-[0.2em]">Legal & Terms</span>
@@ -1109,7 +1174,7 @@ const Index = () => {
               </Card>
 
               {/* Call to Action Banner Card */}
-              <Card className="relative overflow-hidden rounded-3xl shadow-xl flex flex-col justify-between p-6 sm:p-8 min-h-[350px]">
+              <Card className="relative overflow-hidden rounded-[32px] shadow-xl flex flex-col justify-between p-6 sm:p-8 min-h-[350px]">
                 <img
                   src={home.infoSection.includeCard.image}
                   alt={home.infoSection.includeCard.title}
