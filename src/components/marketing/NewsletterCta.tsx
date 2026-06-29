@@ -168,31 +168,31 @@ export const NewsletterCta = () => {
   };
 
   return (
-    <section className="bg-white px-6 py-16 animate-fade-in">
+    <section className="bg-white px-6 py-16 reveal-on-scroll">
       <div className="mx-auto max-w-7xl">
-        <div className="relative overflow-hidden rounded-[32px] bg-slate-900 text-white p-8 sm:p-12 shadow-2xl border border-slate-800">
-          <div className="absolute top-0 right-0 w-64 h-64 bg-red-600/5 rounded-full blur-3xl pointer-events-none" />
+        <div className="relative overflow-hidden rounded-[32px] bg-white border border-slate-200/85 p-8 sm:p-12 shadow-xl shadow-slate-100/50">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-red-600/[0.02] rounded-full blur-3xl pointer-events-none" />
           
           <div className="relative flex flex-col items-center justify-between gap-8 lg:flex-row z-10">
             <div className="space-y-2 text-center lg:text-left max-w-xl">
-              <h2 className="text-2xl sm:text-3xl font-black uppercase tracking-tight text-white font-syne">
+              <h2 className="text-2xl sm:text-3xl font-[900] uppercase tracking-tight text-slate-900 font-montserrat">
                 Get Shipping Tips & <br className="hidden sm:inline" /> Exclusive Offers
               </h2>
-              <p className="text-xs sm:text-sm text-slate-300 font-medium leading-relaxed">
+              <p className="text-xs sm:text-sm text-slate-500 font-medium leading-relaxed">
                 Join over 5,000+ businesses and individuals receiving our weekly logistics updates, customs guides, and freight discounts.
               </p>
             </div>
 
             <div className="w-full max-w-md">
               <form onSubmit={handleSubscribe} className="space-y-3">
-                <div className="flex flex-col gap-2 sm:flex-row bg-slate-800/60 backdrop-blur-md p-1.5 rounded-full border border-slate-700/50 shadow-inner w-full focus-within:border-[#d8000d] focus-within:ring-2 focus-within:ring-[#d8000d]/10 transition-all">
+                <div className="flex flex-col gap-2 sm:flex-row bg-slate-50 p-1.5 rounded-full border border-slate-200/80 shadow-inner w-full focus-within:border-[#d8000d] focus-within:ring-2 focus-within:ring-[#d8000d]/10 transition-all">
                   <Input
                     type="email"
                     placeholder="Enter your email address"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     disabled={status === 'loading'}
-                    className="h-11 border-0 bg-transparent px-4 text-sm text-white focus-visible:ring-0 shadow-none placeholder:text-slate-400 flex-1"
+                    className="h-11 border-0 bg-transparent px-4 text-sm text-slate-900 focus-visible:ring-0 shadow-none placeholder:text-slate-400 flex-1"
                   />
                   <Button
                     type="submit"
@@ -205,14 +205,14 @@ export const NewsletterCta = () => {
 
                 {/* Status Messages */}
                 {status === 'success' && (
-                  <div className="flex items-center justify-center lg:justify-start gap-2 text-green-400 font-bold px-4 animate-fade-in">
+                  <div className="flex items-center justify-center lg:justify-start gap-2 text-green-600 font-bold px-4 animate-fade-in">
                     <CheckCircle className="h-4 w-4 shrink-0" />
                     <span className="text-xs">{message}</span>
                   </div>
                 )}
 
                 {status === 'error' && (
-                  <div className="flex items-center justify-center lg:justify-start gap-2 text-red-400 font-bold px-4 animate-fade-in">
+                  <div className="flex items-center justify-center lg:justify-start gap-2 text-red-600 font-bold px-4 animate-fade-in">
                     <AlertCircle className="h-4 w-4 shrink-0" />
                     <span className="text-xs">{message}</span>
                   </div>

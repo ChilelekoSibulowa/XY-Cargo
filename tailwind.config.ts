@@ -18,6 +18,7 @@ export default {
         jakarta: ["'Plus Jakarta Sans'", "sans-serif"],
         manrope: ["'Manrope'", "sans-serif"],
         syne: ["'Syne'", "sans-serif"],
+        montserrat: ["'Montserrat'", "sans-serif"],
       },
       colors: {
         border: "hsl(var(--border))",

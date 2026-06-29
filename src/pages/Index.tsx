@@ -19,6 +19,7 @@ import {
   HelpCircle,
   Phone,
   ChevronDown,
+  MessageSquare,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -140,6 +141,110 @@ const Index = () => {
   const [seaRateIndex, setSeaRateIndex] = useState(0);
   const [hasStartedVideoPlayback, setHasStartedVideoPlayback] = useState(false);
   const videoRef = useRef<HTMLVideoElement | null>(null);
+
+  // FAQ Category State and Data
+  const [faqTab, setFaqTab] = useState<"shipping" | "services" | "pricing">("shipping");
+  const faqData = {
+    shipping: [
+      {
+        question: "How long does shipping from China to Zambia take?",
+        answer: "Standard air freight takes 10-17 days, express air freight takes 1-5 days, and sea freight cargo takes 45-60 days from cargo departure."
+      },
+      {
+        question: "Where are your consolidation warehouses in China located?",
+        answer: "Our main receiving warehouses are in Foshan and Guangzhou. You can send items from different suppliers to these locations for free consolidation."
+      },
+      {
+        question: "Do you offer real-time tracking for all packages?",
+        answer: "Yes, every parcel is assigned a unique tracking ID. You can enter this ID on our homepage to see its step-by-step movement from China to Zambia."
+      },
+      {
+        question: "What is your minimum weight or size requirement?",
+        answer: "For air freight, the minimum weight is 0.1 kg. For sea freight, the minimum shipping volume is 0.05 CBM, making it suitable for all sizes."
+      },
+      {
+        question: "How do you handle fragile or high-value shipments?",
+        answer: "We offer special protective crating and bubble-wrapping services at our China warehouses to secure fragile cargo before transit."
+      },
+      {
+        question: "Are customs duties included in your freight rates?",
+        answer: "Yes! We offer customs clearance-inclusive options for most standard commercial and personal shipments, avoiding unexpected local fees."
+      }
+    ],
+    services: [
+      {
+        question: "What logistics services does XY Cargo Zambia offer?",
+        answer: "We offer a wide range of services including air cargo consolidation, ocean container shipping, professional customs clearance, and local warehouse storage."
+      },
+      {
+        question: "Can you source products directly from suppliers in China?",
+        answer: "Yes! We assist client sourcing requests, communicate with manufacturers on platforms like 1688 or Taobao, and verify product quality."
+      },
+      {
+        question: "Do you provide door-to-door delivery within Zambia?",
+        answer: "Currently, you can pick up from our main warehouses in Lusaka, Ndola, and Kitwe, or arrange regional dispatch to other Zambian towns."
+      },
+      {
+        question: "Do you handle clearing at Nakonde and other borders?",
+        answer: "Yes, our dedicated in-house customs agents handle transit document processing and border clearance at Nakonde, Chirundu, and Kariba."
+      },
+      {
+        question: "Can I store my cargo in your Lusaka warehouse?",
+        answer: "Yes, we provide secure short-term and long-term warehousing solutions with 24/7 CCTV surveillance at our main depot in Lusaka."
+      },
+      {
+        question: "How do I report cargo damage or file a claim?",
+        answer: "You can submit cargo claims directly through the customer dashboard within 48 hours of cargo collection, attaching photos and receipts."
+      }
+    ],
+    pricing: [
+      {
+        question: "How are shipping rates calculated for my package?",
+        answer: "Air freight is charged per kilogram. Sea freight is calculated per cubic meter (CBM) based on length, width, and height dimensions."
+      },
+      {
+        question: "Are there any hidden customs or local handling fees?",
+        answer: "No. Our quotes outline all freight costs upfront. We ensure all clearance fees, import duties, and border taxes are clear before cargo sails."
+      },
+      {
+        question: "What payment methods do you accept in Zambia?",
+        answer: "We accept local bank transfers, mobile money payments (MTN, Airtel, Zamtel), cash on collection, and international credit cards."
+      },
+      {
+        question: "Do you offer bulk cargo or container discounts?",
+        answer: "Yes, we offer special volume-based contract pricing for commercial importers and businesses shipping more than 10 CBM or 500 kg monthly."
+      },
+      {
+        question: "Is there a minimum charge for sea freight?",
+        answer: "Our sea cargo minimum charge starts at 0.05 CBM, ensuring you don't pay for empty container space if you only have small parcels."
+      },
+      {
+        question: "Can I pay for my shipment on arrival in Lusaka?",
+        answer: "Yes, cash-on-delivery and mobile money on collection are fully supported at our Lusaka, Ndola, and Kitwe distribution offices."
+      }
+    ]
+  };
+
+  // Scroll Reveal Observer Effect
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add("revealed");
+          }
+        });
+      },
+      { threshold: 0.05 }
+    );
+
+    const elements = document.querySelectorAll(".reveal-on-scroll");
+    elements.forEach((el) => observer.observe(el));
+
+    return () => {
+      elements.forEach((el) => observer.unobserve(el));
+    };
+  }, []);
   const steps = Array.isArray(home?.steps) ? home.steps : cmsDefaults.home.steps;
   const aboutAccordions = Array.isArray(home?.about?.accordions)
     ? home.about.accordions
@@ -678,7 +783,7 @@ const Index = () => {
         </section>
 
         {/* Section 1: Tailored Logistics Services */}
-        <section className="bg-white py-24 border-t border-slate-100 animate-fade-in">
+        <section className="bg-white py-24 border-t border-slate-100 reveal-on-scroll">
           <div className="mx-auto max-w-7xl px-6">
             {/* Header Area */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start mb-16">
@@ -687,7 +792,7 @@ const Index = () => {
                   <span className="w-2.5 h-2.5 bg-[#d8000d] shrink-0" />
                   <span className="text-xs font-extrabold text-slate-900 uppercase tracking-widest">Our Services</span>
                 </div>
-                <h2 className="text-4xl md:text-5xl font-extrabold text-slate-900 leading-tight uppercase font-syne tracking-tight">
+                <h2 className="text-4xl md:text-[60px] font-[900] md:leading-[60px] text-slate-900 uppercase font-montserrat tracking-tight">
                   Tailored Logistics <br /> Services For You
                 </h2>
               </div>
@@ -736,7 +841,7 @@ const Index = () => {
         </section>
 
         {/* Section 1.5: About Us Section */}
-        <section className="bg-white py-24 border-t border-slate-100 animate-fade-in">
+        <section className="bg-white py-24 border-t border-slate-100 reveal-on-scroll">
           <div className="mx-auto max-w-7xl px-6 relative z-10">
             {/* Top Grid: Copywriting & Rotated Card Stack */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-16 items-center">
@@ -747,7 +852,7 @@ const Index = () => {
                     <span className="w-2.5 h-2.5 bg-[#d8000d] shrink-0" />
                     <span className="text-xs font-extrabold text-slate-900 uppercase tracking-widest">Who We Are</span>
                   </div>
-                  <h2 className="text-4xl sm:text-5xl font-extrabold text-slate-900 tracking-tight leading-none uppercase font-syne">
+                  <h2 className="text-4xl md:text-[60px] font-[900] md:leading-[60px] text-slate-900 uppercase font-montserrat tracking-tight">
                     About Us
                   </h2>
                 </div>
@@ -770,30 +875,30 @@ const Index = () => {
               </div>
 
               {/* Right Column: Rotated Overlapping Stack & Dashed Plane Line */}
-              <div className="lg:col-span-5 relative h-[380px] sm:h-[420px] w-full z-10">
+              <div className="lg:col-span-5 relative h-[440px] sm:h-[480px] w-full z-10">
                 {/* SVG Loop Path & Airplane */}
                 <svg className="absolute inset-0 w-full h-full -z-10 pointer-events-none" viewBox="0 0 500 400" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M 40,320 Q 150,380 250,260 T 420,60" fill="none" stroke="#d8000d" strokeWidth="2" strokeDasharray="6,6" opacity="0.35" />
-                  <g transform="translate(420,60) rotate(-35)">
+                  <path d="M 30,340 Q 150,400 280,280 T 440,50" fill="none" stroke="#d8000d" strokeWidth="2.5" strokeDasharray="6,6" opacity="0.35" />
+                  <g transform="translate(440,50) rotate(-35)">
                     <path d="M0,0 L-10,-4 L-8,0 L-10,4 Z" fill="#d8000d" opacity="0.75" />
                   </g>
                 </svg>
 
-                {/* Background Rotated Card */}
-                <div className="absolute top-4 left-6 w-60 h-60 sm:w-72 sm:h-72 rounded-[32px] overflow-hidden shadow-xl border border-slate-200 transform rotate-[-4deg] bg-white">
+                {/* Background Rotated Card - Polaroid Style */}
+                <div className="absolute top-4 left-4 w-72 h-80 sm:w-[320px] sm:h-[360px] rounded-[24px] overflow-hidden shadow-2xl border border-slate-100 bg-white p-4 pb-12 transform rotate-[-6deg] hover:rotate-[-2deg] transition-all duration-500">
                   <OptimizedImage
                     src="https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?q=80&w=600&auto=format&fit=crop"
                     alt="XY Cargo Warehouse Operations"
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-cover rounded-[16px]"
                   />
                 </div>
 
-                {/* Foreground Rotated Card */}
-                <div className="absolute top-16 left-24 w-52 h-52 sm:w-64 sm:h-64 rounded-[32px] overflow-hidden shadow-2xl border border-slate-200 transform rotate-[8deg] hover:rotate-[4deg] transition-all duration-500 bg-white z-20">
+                {/* Foreground Rotated Card - Polaroid Style */}
+                <div className="absolute top-16 left-28 sm:left-36 w-72 h-80 sm:w-[320px] sm:h-[360px] rounded-[24px] overflow-hidden shadow-2xl border border-slate-100 bg-white p-4 pb-12 transform rotate-[8deg] hover:rotate-[3deg] transition-all duration-500 bg-white z-20">
                   <OptimizedImage
                     src={home?.about?.image || cmsDefaults.home.about.image}
                     alt="XY Cargo Logistics Delivery"
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-cover rounded-[16px]"
                   />
                 </div>
               </div>
@@ -802,25 +907,25 @@ const Index = () => {
             {/* Bottom Stats Row */}
             <div className="border-t border-slate-100 pt-16 mt-16 grid grid-cols-2 md:grid-cols-4 gap-8 justify-center">
               <div className="space-y-1 text-center">
-                <p className="text-4xl font-extrabold text-slate-900 tracking-tight font-jakarta">
+                <p className="text-4xl sm:text-5xl font-[900] text-slate-900 tracking-tight font-montserrat">
                   10,000<span className="text-[#d8000d] font-black">+</span>
                 </p>
                 <p className="text-[10px] uppercase tracking-wider text-slate-400 font-black">Packages Delivered</p>
               </div>
               <div className="space-y-1 text-center">
-                <p className="text-4xl font-extrabold text-slate-900 tracking-tight font-jakarta">
+                <p className="text-4xl sm:text-5xl font-[900] text-slate-900 tracking-tight font-montserrat">
                   50<span className="text-[#d8000d] font-black">+</span>
                 </p>
                 <p className="text-[10px] uppercase tracking-wider text-slate-400 font-black">Global Partners</p>
               </div>
               <div className="space-y-1 text-center">
-                <p className="text-4xl font-extrabold text-slate-900 tracking-tight font-jakarta">
+                <p className="text-4xl sm:text-5xl font-[900] text-slate-900 tracking-tight font-montserrat">
                   98<span className="text-[#d8000d] font-black">%</span>
                 </p>
                 <p className="text-[10px] uppercase tracking-wider text-slate-400 font-black">Delivery Success</p>
               </div>
               <div className="space-y-1 text-center">
-                <p className="text-4xl font-extrabold text-slate-900 tracking-tight font-jakarta">
+                <p className="text-4xl sm:text-5xl font-[900] text-slate-900 tracking-tight font-montserrat">
                   5<span className="text-[#d8000d] font-black">+</span>
                 </p>
                 <p className="text-[10px] uppercase tracking-wider text-slate-400 font-black">Years Experience</p>
@@ -830,7 +935,7 @@ const Index = () => {
         </section>
 
         {/* Section 2: Insights & Updates */}
-        <section className="bg-white py-24 border-t border-slate-100 animate-fade-in">
+        <section className="bg-white py-24 border-t border-slate-100 reveal-on-scroll">
           <div className="mx-auto max-w-7xl px-6">
             {/* Header Area */}
             <div className="text-center max-w-3xl mx-auto space-y-4 mb-16">
@@ -838,7 +943,7 @@ const Index = () => {
                 <span className="w-2.5 h-2.5 bg-[#d8000d] shrink-0" />
                 <span className="text-xs font-extrabold text-slate-900 uppercase tracking-widest">Insights & Updates</span>
               </div>
-              <h2 className="text-3xl md:text-4xl font-extrabold text-slate-900 leading-tight uppercase font-syne tracking-tight">
+              <h2 className="text-4xl md:text-[60px] font-[900] md:leading-[60px] text-slate-900 uppercase font-montserrat tracking-tight">
                 Stay Informed With <br className="sm:hidden" /> The Latest In Logistics
               </h2>
             </div>
@@ -858,7 +963,7 @@ const Index = () => {
                 <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6">
                   {/* Left Column: Heading and Info */}
                   <div className="space-y-4 max-w-2xl text-left">
-                    <h3 className="text-2xl sm:text-3xl font-black text-white leading-tight uppercase font-syne tracking-tight">
+                    <h3 className="text-2xl sm:text-3xl font-[900] text-white leading-tight uppercase font-montserrat tracking-tight">
                       5 Trends Shaping The <br className="hidden sm:inline" /> Future Of Global Logistics
                     </h3>
                     <p className="text-xs sm:text-sm text-slate-200 leading-relaxed font-medium">
@@ -880,6 +985,120 @@ const Index = () => {
                   </div>
                 </div>
               </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Section 3: FAQ Section */}
+        <section className="bg-white py-24 border-t border-slate-100 reveal-on-scroll">
+          <div className="mx-auto max-w-7xl px-6">
+            {/* Header Area */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-end justify-between mb-16">
+              <div className="lg:col-span-9 space-y-6 text-left">
+                <div className="w-12 h-12 rounded-2xl bg-red-50 text-[#d8000d] flex items-center justify-center">
+                  <MessageSquare className="h-6 w-6" />
+                </div>
+                <h2 className="text-4xl md:text-[60px] font-[900] md:leading-[60px] text-slate-900 uppercase font-montserrat tracking-tight">
+                  Your questions <br /> resolved in one place
+                </h2>
+                <p className="text-xs sm:text-sm text-slate-400 font-medium max-w-2xl leading-relaxed">
+                  We've gathered the most frequently asked questions from our users. If you don't find what you're looking for, let us know, and we'll be happy to assist you.
+                </p>
+              </div>
+              <div className="lg:col-span-3 flex lg:justify-end">
+                <Button asChild className="rounded-2xl bg-[#d8000d] hover:bg-[#bf000c] text-white font-extrabold text-xs uppercase tracking-widest px-8 py-5 shadow-lg shadow-red-900/10 transition-all duration-300">
+                  <Link to="/support">Contact us</Link>
+                </Button>
+              </div>
+            </div>
+
+            {/* Category Pills */}
+            <div className="flex items-center gap-2 bg-slate-50 border border-slate-200/40 p-1.5 rounded-full w-fit mb-12">
+              {(["shipping", "services", "pricing"] as const).map((tab) => (
+                <button
+                  key={tab}
+                  type="button"
+                  onClick={() => setFaqTab(tab)}
+                  className={cn(
+                    "px-6 py-2.5 rounded-full text-xs font-extrabold uppercase tracking-wider transition-all duration-300",
+                    faqTab === tab
+                      ? "bg-white text-slate-900 shadow-sm border border-slate-200/30"
+                      : "text-slate-400 hover:text-slate-900"
+                  )}
+                >
+                  {tab}
+                </button>
+              ))}
+            </div>
+
+            {/* FAQ Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {faqData[faqTab].map((faq, index) => {
+                const isFirst = index === 0;
+                return (
+                  <div
+                    key={faq.question}
+                    className={cn(
+                      "rounded-3xl p-8 text-left transition-all duration-300 hover:scale-[1.02] relative group shadow-sm flex flex-col justify-between min-h-[260px]",
+                      isFirst
+                        ? "bg-[#d8000d] text-white shadow-xl shadow-red-900/10"
+                        : "bg-white border border-slate-200/60 hover:border-slate-300 hover:shadow-md"
+                    )}
+                  >
+                    <div>
+                      {/* Circle Question Icon */}
+                      <div
+                        className={cn(
+                          "w-10 h-10 rounded-full border-2 flex items-center justify-center mb-6 transition-all duration-300",
+                          isFirst
+                            ? "border-white"
+                            : "border-slate-900 group-hover:border-[#d8000d] group-hover:bg-[#d8000d]/5"
+                        )}
+                      >
+                        <span
+                          className={cn(
+                            "font-extrabold text-lg font-syne",
+                            isFirst
+                              ? "text-white"
+                              : "text-slate-900 group-hover:text-[#d8000d]"
+                          )}
+                        >
+                          ?
+                        </span>
+                      </div>
+
+                      {/* Question Heading */}
+                      <h3
+                        className={cn(
+                          "font-[900] text-lg sm:text-xl font-montserrat uppercase tracking-tight leading-snug mb-4",
+                          isFirst
+                            ? "text-white"
+                            : "text-slate-900 group-hover:text-[#d8000d] transition-colors"
+                        )}
+                      >
+                        {faq.question}
+                      </h3>
+                    </div>
+
+                    {/* Answer text */}
+                    <p
+                      className={cn(
+                        "text-xs sm:text-sm leading-relaxed font-medium mt-auto pt-2",
+                        isFirst ? "text-red-100" : "text-slate-500"
+                      )}
+                    >
+                      {faq.answer}
+                    </p>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Bottom Button */}
+            <div className="flex justify-center mt-16">
+              <Button asChild className="rounded-full bg-slate-950 hover:bg-slate-900 text-white font-extrabold text-xs uppercase tracking-widest px-8 py-5 shadow-xl transition-all duration-300 hover:scale-[1.02]">
+                <Link to="/faq">See all questions</Link>
+              </Button>
             </div>
           </div>
         </section>
