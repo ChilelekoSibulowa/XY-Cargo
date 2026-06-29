@@ -601,7 +601,7 @@ const Index = () => {
           <div className="relative mx-auto w-full max-w-7xl px-6 py-24 md:py-32 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center h-full z-10">
             {/* Left Column: Headline & Description */}
             <div className="lg:col-span-8 flex flex-col gap-6 text-left text-white animate-fade-up">
-              <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-[68px] font-black tracking-tighter !text-white leading-[1.0] lg:leading-[0.95] font-syne uppercase select-none">
+              <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-[68px] font-black tracking-tighter !text-white leading-[1.0] lg:leading-[0.95] font-satoshi uppercase select-none">
                 We Keep Your <br />
                 Supply Chain <br />
                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#d8000d] via-[#ff4d4d] to-[#ff8080] font-black">
@@ -740,19 +740,19 @@ const Index = () => {
             <div className="mx-auto max-w-5xl rounded-3xl bg-slate-950/65 backdrop-blur-md border border-white/10 p-5 shadow-2xl">
               <div className="grid grid-cols-4 gap-6 text-white divide-x divide-white/10 text-center">
                 <div className="px-4">
-                  <p className="text-2xl font-black tracking-tight text-white font-jakarta">2000+</p>
+                  <p className="text-2xl font-black tracking-tight text-white font-satoshi">2000+</p>
                   <p className="text-[10px] uppercase tracking-wider text-slate-400 mt-1 font-bold">Satisfied Clients</p>
                 </div>
                 <div className="px-4">
-                  <p className="text-2xl font-black tracking-tight text-white font-jakarta">2.98%</p>
+                  <p className="text-2xl font-black tracking-tight text-white font-satoshi">2.98%</p>
                   <p className="text-[10px] uppercase tracking-wider text-slate-400 mt-1 font-bold">On-Time Delivery Rate</p>
                 </div>
                 <div className="px-4">
-                  <p className="text-2xl font-black tracking-tight text-white font-jakarta">150+</p>
+                  <p className="text-2xl font-black tracking-tight text-white font-satoshi">150+</p>
                   <p className="text-[10px] uppercase tracking-wider text-slate-400 mt-1 font-bold">Countries Served</p>
                 </div>
                 <div className="px-4">
-                  <p className="text-2xl font-black tracking-tight text-white font-jakarta">24/7</p>
+                  <p className="text-2xl font-black tracking-tight text-white font-satoshi">24/7</p>
                   <p className="text-[10px] uppercase tracking-wider text-slate-400 mt-1 font-bold">Customer Support</p>
                 </div>
               </div>
@@ -764,19 +764,19 @@ const Index = () => {
         <section className="bg-slate-950 border-b border-slate-900 py-8 lg:hidden">
           <div className="mx-auto grid grid-cols-2 gap-y-6 gap-x-4 px-6 text-center text-white">
             <div>
-              <p className="text-2xl font-black text-white font-jakarta">2000+</p>
+              <p className="text-2xl font-black text-white font-satoshi">2000+</p>
               <p className="text-[10px] uppercase tracking-wider text-slate-400 mt-1 font-bold">Satisfied Clients</p>
             </div>
             <div>
-              <p className="text-2xl font-black text-white font-jakarta">2.98%</p>
+              <p className="text-2xl font-black text-white font-satoshi">2.98%</p>
               <p className="text-[10px] uppercase tracking-wider text-slate-400 mt-1 font-bold">On-Time Delivery Rate</p>
             </div>
             <div>
-              <p className="text-2xl font-black text-white font-jakarta">150+</p>
+              <p className="text-2xl font-black text-white font-satoshi">150+</p>
               <p className="text-[10px] uppercase tracking-wider text-slate-400 mt-1 font-bold">Countries Served</p>
             </div>
             <div>
-              <p className="text-2xl font-black text-white font-jakarta">24/7</p>
+              <p className="text-2xl font-black text-white font-satoshi">24/7</p>
               <p className="text-[10px] uppercase tracking-wider text-slate-400 mt-1 font-bold">Customer Support</p>
             </div>
           </div>
@@ -875,7 +875,7 @@ const Index = () => {
               </div>
 
               {/* Right Column: Rotated Overlapping Stack & Dashed Plane Line */}
-              <div className="lg:col-span-5 relative h-[440px] sm:h-[480px] w-full z-10">
+              <div className="lg:col-span-5 relative h-[460px] sm:h-[500px] w-full z-10">
                 {/* SVG Loop Path & Airplane */}
                 <svg className="absolute inset-0 w-full h-full -z-10 pointer-events-none" viewBox="0 0 500 400" fill="none" xmlns="http://www.w3.org/2000/svg">
                   <path d="M 30,340 Q 150,400 280,280 T 440,50" fill="none" stroke="#d8000d" strokeWidth="2.5" strokeDasharray="6,6" opacity="0.35" />
@@ -885,7 +885,7 @@ const Index = () => {
                 </svg>
 
                 {/* Background Rotated Card - Polaroid Style */}
-                <div className="absolute top-4 left-4 w-72 h-80 sm:w-[320px] sm:h-[360px] rounded-[24px] overflow-hidden shadow-2xl border border-slate-100 bg-white p-4 pb-12 transform rotate-[-6deg] hover:rotate-[-2deg] transition-all duration-500">
+                <div className="absolute top-2 left-6 w-[280px] h-[320px] sm:w-[340px] sm:h-[380px] rounded-[24px] overflow-hidden shadow-2xl border border-slate-100 bg-white p-3.5 pb-16 transform rotate-[-6deg] hover:rotate-[-2deg] transition-all duration-500">
                   <OptimizedImage
                     src="https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?q=80&w=600&auto=format&fit=crop"
                     alt="XY Cargo Warehouse Operations"
@@ -894,7 +894,7 @@ const Index = () => {
                 </div>
 
                 {/* Foreground Rotated Card - Polaroid Style */}
-                <div className="absolute top-16 left-28 sm:left-36 w-72 h-80 sm:w-[320px] sm:h-[360px] rounded-[24px] overflow-hidden shadow-2xl border border-slate-100 bg-white p-4 pb-12 transform rotate-[8deg] hover:rotate-[3deg] transition-all duration-500 bg-white z-20">
+                <div className="absolute top-14 left-24 sm:left-36 w-[260px] h-[300px] sm:w-[320px] sm:h-[360px] rounded-[24px] overflow-hidden shadow-2xl border border-slate-100 bg-white p-3.5 pb-16 transform rotate-[8deg] hover:rotate-[3deg] transition-all duration-500 bg-white z-20">
                   <OptimizedImage
                     src={home?.about?.image || cmsDefaults.home.about.image}
                     alt="XY Cargo Logistics Delivery"
@@ -926,7 +926,7 @@ const Index = () => {
               </div>
               <div className="space-y-1 text-center">
                 <p className="text-4xl sm:text-5xl font-[900] text-slate-900 tracking-tight font-satoshi">
-                  5<span className="text-[#d8000d] font-black">+</span>
+                  15<span className="text-[#d8000d] font-black">+</span>
                 </p>
                 <p className="text-[10px] uppercase tracking-wider text-slate-400 font-black">Years Experience</p>
               </div>
