@@ -64,6 +64,45 @@ const Index = () => {
   const [origin, setOrigin] = useState("china-foshan");
   const [destination, setDestination] = useState("zambia-lusaka");
 
+  const services = [
+    {
+      title: "Cargo Transport",
+      id: "01",
+      image: "https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?q=80&w=600&auto=format&fit=crop",
+      description: "Safe And Efficient Cargo Movement By Land, Sea, And Air, Ensuring Your Goods Reach Their Destination Securely And On Time."
+    },
+    {
+      title: "Supply Chain",
+      id: "02",
+      image: "https://images.unsplash.com/photo-1580674684081-7617fbf3d745?q=80&w=600&auto=format&fit=crop",
+      description: "End-To-End Supply Chain Solutions That Streamline Operations, Reduce Costs, And Improve Overall Efficiency For Businesses Of Any Scale."
+    },
+    {
+      title: "Express Delivery",
+      id: "03",
+      image: "https://images.unsplash.com/photo-1530587191325-3db32d826c18?q=80&w=600&auto=format&fit=crop",
+      description: "Rapid And Secure Delivery Services Designed To Meet Urgent Demands, Providing Your Customers With Faster Turnaround Times."
+    },
+    {
+      title: "Inventory Solutions",
+      id: "04",
+      image: "https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?q=80&w=600&auto=format&fit=crop",
+      description: "Smart Warehousing With Real-Time Tracking And Flexible Storage Options, Giving You Full Visibility And Control Over Your Stock."
+    },
+    {
+      title: "Customs & Compliance",
+      id: "05",
+      image: "https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?q=80&w=600&auto=format&fit=crop",
+      description: "Expert Handling Of Customs Clearance And International Regulations, Minimizing Delays And Ensuring Smooth Cross-Border Transactions."
+    },
+    {
+      title: "Distribution Services",
+      id: "06",
+      image: "https://images.unsplash.com/photo-1553413719-875871274712?q=80&w=600&auto=format&fit=crop",
+      description: "Seamless Distribution Networks That Connect Your Products To Customers Quickly And Efficiently, No Matter Where They Are Located."
+    }
+  ];
+
   // State variables for transparent overlay navigation and tabs in the hero section
   const [heroActiveTab, setHeroActiveTab] = useState<"track" | "ship">("track");
   const [heroTrackingNumber, setHeroTrackingNumber] = useState("");
@@ -638,564 +677,115 @@ const Index = () => {
           </div>
         </section>
 
-        {/* Shipping Process Section */}
-        <section className="bg-white py-28 relative overflow-hidden border-t border-slate-100 animate-fade-in">
-          <div className="mx-auto max-w-7xl px-6 relative z-10">
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-16 items-start">
-              {/* Left Column: Sticky Section Header */}
-              <div className="lg:col-span-4 lg:sticky lg:top-28 space-y-6">
-                <span className="text-xs font-bold text-[#d8000d] uppercase tracking-[0.3em] bg-red-50 px-4 py-1.5 rounded-full inline-block">
-                  Logistics Lifecycle
-                </span>
-                <h2 className="text-4xl font-extrabold text-slate-900 tracking-tight font-syne uppercase leading-[1.1]">
-                  {home.process.title}
+        {/* Section 1: Tailored Logistics Services */}
+        <section className="bg-white py-24 border-t border-slate-100 animate-fade-in">
+          <div className="mx-auto max-w-7xl px-6">
+            {/* Header Area */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start mb-16">
+              <div className="space-y-4">
+                <div className="flex items-center gap-2">
+                  <span className="w-2.5 h-2.5 bg-[#d8000d] shrink-0" />
+                  <span className="text-xs font-extrabold text-slate-900 uppercase tracking-widest">Our Services</span>
+                </div>
+                <h2 className="text-4xl md:text-5xl font-extrabold text-slate-900 leading-tight uppercase font-syne tracking-tight">
+                  Tailored Logistics <br /> Services For You
                 </h2>
-                <p className="text-sm text-slate-500 leading-relaxed">
-                  {home.process.body}
+              </div>
+              <div className="md:pt-8">
+                <p className="text-sm sm:text-base text-slate-500 leading-relaxed max-w-xl font-medium">
+                  From Transportation To Supply Chain Optimization, XY Cargo Provides End-To-End Services That Help Your Business Move Faster And Smarter.
                 </p>
-                <div className="pt-2">
-                  <Button asChild className="rounded-full bg-[#d8000d] hover:bg-[#bf000c] px-8 py-6 text-xs font-bold uppercase tracking-wider text-white shadow-lg shadow-red-900/10 transition hover:scale-[1.02] group">
-                    <Link to="/tracking" className="flex items-center gap-2">
-                      <span>{home.process.buttonLabel}</span>
-                      <ArrowRight className="h-3.5 w-3.5 transition-transform duration-300 group-hover:translate-x-1" />
-                    </Link>
-                  </Button>
-                </div>
-              </div>
-
-              {/* Right Column: Premium Wide Cards */}
-              <div className="lg:col-span-8 space-y-8">
-                {steps.map((step, index) => (
-                  <div 
-                    key={step.title}
-                    className="flex flex-col sm:flex-row items-center gap-6 bg-white border border-slate-100 rounded-3xl p-6 shadow-sm hover:shadow-xl transition-all duration-300 group hover:-translate-y-1"
-                  >
-                    <div className="relative w-full sm:w-36 h-36 rounded-2xl overflow-hidden shrink-0 shadow-inner border border-slate-100">
-                      <OptimizedImage src={step.image} alt={step.title} className="h-full w-full object-cover" />
-                      <span className="absolute top-3 left-3 bg-[#d8000d] text-white text-[10px] font-black w-6 h-6 rounded-full flex items-center justify-center border-2 border-white shadow-md">
-                        {String(index + 1).padStart(2, "0")}
-                      </span>
-                    </div>
-                    <div className="space-y-2 flex-1 text-center sm:text-left">
-                      <span className="text-[40px] font-black text-slate-100 group-hover:text-red-500/15 transition-colors font-syne leading-none block sm:float-right">
-                        {String(index + 1).padStart(2, "0")}
-                      </span>
-                      <h3 className="text-lg font-bold text-slate-800 group-hover:text-[#d8000d] transition-colors font-jakarta leading-tight">
-                        {step.title}
-                      </h3>
-                      <p className="text-xs sm:text-sm text-slate-500 leading-relaxed max-w-xl">
-                        {step.body}
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* About Section */}
-        <section className="bg-white py-28 relative overflow-hidden border-t border-slate-100 animate-fade-in">
-          <div className="mx-auto max-w-7xl px-6 relative z-10">
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-16 items-center">
-              {/* Left Column: Text and Accordion */}
-              <div className="lg:col-span-7 space-y-8">
-                <div className="space-y-3">
-                  <span className="text-xs font-bold text-[#d8000d] uppercase tracking-[0.3em] bg-red-50 px-4 py-1.5 rounded-full inline-block">
-                    Who We Are
-                  </span>
-                  <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight leading-tight uppercase font-syne">
-                    {home.about.title}
-                  </h2>
-                </div>
-                <p className="text-sm sm:text-base text-slate-600 leading-relaxed">
-                  {home.about.body}
-                </p>
-                <Accordion type="single" collapsible className="space-y-4 w-full">
-                  {aboutAccordions.map((item) => (
-                    <AccordionItem 
-                      key={item.title} 
-                      value={item.title} 
-                      className="border border-slate-100 rounded-3xl bg-white shadow-sm overflow-hidden transition-all duration-300 hover:border-slate-200"
-                    >
-                      <AccordionTrigger className="text-sm font-bold text-slate-800 hover:text-[#d8000d] hover:no-underline py-4.5 px-6">
-                        {item.title}
-                      </AccordionTrigger>
-                      <AccordionContent className="text-xs sm:text-sm text-slate-500 leading-relaxed px-6 pb-6 pt-0 border-t border-slate-50">
-                        {item.body}
-                      </AccordionContent>
-                    </AccordionItem>
-                  ))}
-                </Accordion>
-              </div>
-
-              {/* Right Column: Luxury Framed Visuals */}
-              <div className="lg:col-span-5 relative group">
-                {/* Asymmetric border frame effect */}
-                <div className="absolute top-4 left-4 -right-4 -bottom-4 border-2 border-slate-100 rounded-[36px] -z-10 group-hover:border-[#d8000d]/20 transition-colors duration-500" />
-                <div className="relative rounded-[32px] overflow-hidden shadow-2xl border border-slate-200/50 bg-white">
-                  <OptimizedImage
-                    src={home.about.image}
-                    alt="About XY Cargo Zambia"
-                    className="w-full object-cover aspect-[4/3] transform hover:scale-[1.01] transition-all duration-700 ease-out"
-                    aspectRatio="video"
-                  />
-                  {/* Floating badge */}
-                  <div className="absolute bottom-6 left-6 right-6 bg-white/95 backdrop-blur-md border border-slate-100 shadow-xl rounded-2xl p-4 flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-red-50 text-[#d8000d] flex items-center justify-center shrink-0">
-                      <CheckCircle2 className="h-5 w-5" />
-                    </div>
-                    <div>
-                      <p className="text-xs font-black text-slate-900 leading-tight uppercase tracking-wider">Trusted Partner</p>
-                      <p className="text-[10px] text-slate-400 font-bold">100% Reliable Cargo Warehousing</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* Air Freight Services Section */}
-        <section className="bg-white py-28 relative overflow-hidden border-t border-slate-100 animate-fade-in">
-          <div className="mx-auto max-w-7xl px-6 relative z-10">
-            <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between mb-12">
-              <div className="space-y-3">
-                <span className="text-xs font-bold text-[#d8000d] uppercase tracking-[0.3em] bg-red-50 px-4 py-1.5 rounded-full inline-block">
-                  Air Transport
-                </span>
-                <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight font-syne uppercase">
-                  Air Freight Services
-                </h2>
-              </div>
-              <div className="inline-flex p-1 bg-slate-100/80 backdrop-blur rounded-full border border-slate-200/40">
-                {airRatesContent.map((rate, index) => {
-                  const isActive = index === airRateIndex;
-                  return (
-                    <button
-                      key={rate.location}
-                      type="button"
-                      className={`rounded-full px-6 py-2 text-xs font-bold uppercase tracking-wider transition-all duration-300 ${isActive
-                        ? "bg-[#d8000d] text-white shadow-md shadow-red-900/10 scale-105"
-                        : "text-slate-600 hover:text-[#d8000d]"
-                        }`}
-                      onClick={() => setAirRateIndex(index)}
-                    >
-                      {rate.location}
-                    </button>
-                  );
-                })}
               </div>
             </div>
 
-            <div className="grid gap-8 sm:grid-cols-2 md:grid-cols-3">
-              {activeAirRate?.cards.map((card) => (
-                <Card key={card.title} className="rounded-3xl border border-slate-100 bg-white shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-1.5 flex flex-col justify-between overflow-hidden relative group p-8">
-                  <CardContent className="space-y-5 p-0 text-center flex flex-col items-center">
-                    <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-red-50 text-[#d8000d] transition-all duration-300 group-hover:bg-[#d8000d] group-hover:text-white shadow-sm">
-                      {airRateIcons[card.title] ?? <Package className="h-6 w-6" />}
+            {/* 3x2 Border Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 border-t border-l border-slate-200">
+              {services.map((service) => (
+                <div 
+                  key={service.id} 
+                  className="border-r border-b border-slate-200 bg-white group overflow-hidden flex flex-col justify-between"
+                >
+                  <div>
+                    {/* Seamless Image Container */}
+                    <div className="relative w-full aspect-[16/10] overflow-hidden bg-slate-100">
+                      <OptimizedImage 
+                        src={service.image} 
+                        alt={service.title} 
+                        className="h-full w-full object-cover grayscale group-hover:grayscale-0 group-hover:scale-105 transition-all duration-700 ease-out" 
+                      />
                     </div>
-                    <div className="space-y-2">
-                      <h3 className="text-base font-bold text-slate-800 transition-colors duration-300 group-hover:text-[#d8000d] font-jakarta">
-                        {card.title}
-                      </h3>
-                      <p className="text-2xl font-extrabold text-[#d8000d] tracking-tight font-jakarta">
-                        {card.price}
-                      </p>
-                      <p className="text-xs text-slate-400 leading-relaxed max-w-xs">
-                        {card.description}
-                      </p>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* Sea Freight Services Section */}
-        <section className="bg-white py-28 relative overflow-hidden border-t border-slate-100 animate-fade-in">
-          <div className="mx-auto max-w-7xl px-6 relative z-10">
-            <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between mb-12">
-              <div className="space-y-3">
-                <span className="text-xs font-bold text-[#d8000d] uppercase tracking-[0.3em] bg-red-50 px-4 py-1.5 rounded-full inline-block">
-                  Ocean Transport
-                </span>
-                <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight font-syne uppercase">
-                  Sea Freight Services
-                </h2>
-              </div>
-              <div className="inline-flex p-1 bg-slate-100/80 backdrop-blur rounded-full border border-slate-200/40">
-                {seaRatesContent.map((rate, index) => {
-                  const isActive = index === seaRateIndex;
-                  return (
-                    <button
-                      key={rate.location}
-                      type="button"
-                      className={`rounded-full px-6 py-2 text-xs font-bold uppercase tracking-wider transition-all duration-300 ${isActive
-                        ? "bg-[#d8000d] text-white shadow-md shadow-red-900/10 scale-105"
-                        : "text-slate-600 hover:text-[#d8000d]"
-                        }`}
-                      onClick={() => setSeaRateIndex(index)}
-                    >
-                      {rate.location}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            <div className="grid gap-8 md:grid-cols-2">
-              {activeSeaRate?.cards.map((card) => (
-                <Card key={card.title} className="rounded-3xl border border-slate-100 bg-white shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-1.5 flex flex-col justify-between overflow-hidden relative group p-8">
-                  <CardContent className="space-y-5 p-0 text-center flex flex-col items-center">
-                    <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-red-50 text-[#d8000d] transition-all duration-300 group-hover:bg-[#d8000d] group-hover:text-white shadow-sm">
-                      {seaRateIcons[card.title] ?? <Package className="h-6 w-6" />}
-                    </div>
-                    <div className="space-y-2 w-full">
-                      <h3 className="text-base font-bold text-slate-800 transition-colors duration-300 group-hover:text-[#d8000d] font-jakarta">
-                        {card.title}
-                      </h3>
-                      <p className="text-2xl font-extrabold text-[#d8000d] tracking-tight font-jakarta">
-                        {card.price}
-                      </p>
-                      <p className="text-xs text-slate-400 leading-relaxed max-w-xs mx-auto">
-                        {card.description}
-                      </p>
-                    </div>
-                    {card.notes && (
-                      <div className="w-full bg-slate-50/50 rounded-2xl p-4 mt-2 space-y-2 text-left text-xs text-slate-500 border border-slate-100/50">
-                        {card.notes.map((note) => (
-                          <p key={note} className="flex items-start gap-2.5">
-                            <Check className="h-3.5 w-3.5 text-[#d8000d] shrink-0 mt-0.5" />
-                            <span>{note}</span>
-                          </p>
-                        ))}
+                    {/* Text Block */}
+                    <div className="p-8 space-y-4">
+                      <div className="flex items-center justify-between gap-4">
+                        <h3 className="text-lg font-extrabold text-slate-900 uppercase tracking-tight font-syne group-hover:text-[#d8000d] transition-colors duration-300">
+                          {service.title}
+                        </h3>
+                        <span className="text-sm font-bold text-slate-400 font-mono tracking-wider">
+                          {service.id}
+                        </span>
                       </div>
-                    )}
-                  </CardContent>
-                </Card>
+                      <p className="text-xs sm:text-sm text-slate-500 leading-relaxed font-medium">
+                        {service.description}
+                      </p>
+                    </div>
+                  </div>
+                </div>
               ))}
             </div>
           </div>
         </section>
 
-        {/* Video / Showcase Section */}
-        <section className="bg-white py-16 border-t border-slate-100 animate-fade-in">
-          <div className="mx-auto max-w-5xl px-6">
-            <div className="relative h-[380px] w-full overflow-hidden rounded-3xl shadow-2xl border border-slate-100 group">
-              {isVideo ? (
-                <video
-                  ref={videoRef}
-                  src={videoSrc}
-                  className="h-full w-full object-cover"
-                  controls={hasStartedVideoPlayback}
-                  playsInline
-                  preload="metadata"
-                />
-              ) : (
-                <OptimizedImage src={videoSrc} alt={safeVideoTitle} className="h-full w-full object-cover" />
-              )}
-              {isVideo && !hasStartedVideoPlayback ? (
-                <>
-                  <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-[1px] transition-all duration-300 group-hover:backdrop-blur-[2px]" />
-                  <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-6 text-white">
-                    <Button
-                      type="button"
-                      onClick={handleVideoPlay}
-                      aria-label={`Play ${safeVideoTitle} with sound`}
-                      className="h-16 w-16 rounded-full bg-white text-[#d8000d] shadow-2xl flex items-center justify-center transition-all duration-300 hover:scale-110 hover:shadow-2xl hover:bg-[#d8000d] hover:text-white"
-                    >
-                      <Play className="h-6 w-6 fill-current ml-1" />
-                    </Button>
-                    <p className="mt-4 text-xs font-bold uppercase tracking-[0.2em] opacity-90">{safeVideoTitle}</p>
-                  </div>
-                </>
-              ) : null}
-            </div>
-          </div>
-        </section>
-
-        {/* Calculator Section */}
-        <section id="homepage-calculator" className="bg-white py-28 relative overflow-hidden border-t border-slate-100 animate-fade-in">
-          <div className="mx-auto max-w-7xl px-6 relative z-10">
+        {/* Section 2: Insights & Updates */}
+        <section className="bg-white py-24 border-t border-slate-100 animate-fade-in">
+          <div className="mx-auto max-w-7xl px-6">
+            {/* Header Area */}
             <div className="text-center max-w-3xl mx-auto space-y-4 mb-16">
-              <span className="text-xs font-bold text-[#d8000d] uppercase tracking-[0.3em] bg-red-50 px-4 py-1.5 rounded-full inline-block">
-                Transparent Rates
-              </span>
-              <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight font-syne uppercase">
-                {home.calculator.title}
+              <div className="flex items-center justify-center gap-2">
+                <span className="w-2.5 h-2.5 bg-[#d8000d] shrink-0" />
+                <span className="text-xs font-extrabold text-slate-900 uppercase tracking-widest">Insights & Updates</span>
+              </div>
+              <h2 className="text-3xl md:text-4xl font-extrabold text-slate-900 leading-tight uppercase font-syne tracking-tight">
+                Stay Informed With <br className="sm:hidden" /> The Latest In Logistics
               </h2>
-              <p className="text-sm sm:text-base text-slate-500 leading-relaxed max-w-2xl mx-auto">
-                {home.calculator.subtitle}
-              </p>
             </div>
 
-            <div className="grid gap-12 lg:grid-cols-12 items-start mt-8">
-              {/* Left Column: Form Controls */}
-              <div className="lg:col-span-8 bg-white border border-slate-100 rounded-[32px] p-6 sm:p-8 shadow-sm space-y-6">
-                <div className="grid gap-6 sm:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label className="text-xs font-bold text-slate-500 uppercase tracking-wider">From</Label>
-                    <Select value={origin} onValueChange={setOrigin}>
-                      <SelectTrigger className="rounded-xl border-slate-200 bg-slate-50/50 py-5 focus:ring-[#d8000d]/50 focus:border-[#d8000d]">
-                        <SelectValue placeholder="Select origin" />
-                      </SelectTrigger>
-                      <SelectContent className="bg-slate-950 text-white border border-slate-800">
-                        <SelectItem value="china-foshan">China (Foshan)</SelectItem>
-                        <SelectItem value="china-yiwu">China (Yiwu)</SelectItem>
-                        <SelectItem value="uae-dubai">UAE (Dubai)</SelectItem>
-                      </SelectContent>
-                    </Select>
+            {/* Featured Article Card */}
+            <div className="relative h-[480px] w-full overflow-hidden rounded-[32px] shadow-2xl border border-slate-100 group">
+              <OptimizedImage 
+                src="https://images.unsplash.com/photo-1494412574643-ff11b0a5c1c3?q=80&w=1200&auto=format&fit=crop" 
+                alt="5 Trends Shaping The Future Of Global Logistics" 
+                className="h-full w-full object-cover transform scale-100 group-hover:scale-[1.02] transition-all duration-700 ease-out" 
+              />
+              {/* Linear Gradient Overlay */}
+              <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent" />
+              
+              {/* Overlaid Content Grid */}
+              <div className="absolute inset-0 p-8 sm:p-12 flex flex-col justify-end">
+                <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6">
+                  {/* Left Column: Heading and Info */}
+                  <div className="space-y-4 max-w-2xl text-left">
+                    <h3 className="text-2xl sm:text-3xl font-black text-white leading-tight uppercase font-syne tracking-tight">
+                      5 Trends Shaping The <br className="hidden sm:inline" /> Future Of Global Logistics
+                    </h3>
+                    <p className="text-xs sm:text-sm text-slate-200 leading-relaxed font-medium">
+                      Discover The Key Innovations Transforming Supply Chains Worldwide, From Automation To Sustainable Shipping.
+                    </p>
                   </div>
-                  <div className="space-y-2">
-                    <Label className="text-xs font-bold text-slate-500 uppercase tracking-wider">To</Label>
-                    <Select value={destination} onValueChange={setDestination}>
-                      <SelectTrigger className="rounded-xl border-slate-200 bg-slate-50/50 py-5 focus:ring-[#d8000d]/50 focus:border-[#d8000d]">
-                        <SelectValue placeholder="Select destination" />
-                      </SelectTrigger>
-                      <SelectContent className="bg-slate-950 text-white border border-slate-800">
-                        <SelectItem value="zambia-lusaka">Zambia (Lusaka)</SelectItem>
-                        <SelectItem value="zambia-ndola">Zambia (Ndola/Kitwe)</SelectItem>
-                        <SelectItem value="zambia-livingstone">Zambia (Livingstone)</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-
-                <div className="space-y-3">
-                  <Label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Service Type</Label>
-                  <div className="grid gap-4 sm:grid-cols-3">
-                    {serviceTypeOptions.map((option) => {
-                      const isActive = serviceType === option.id;
-                      return (
-                        <button
-                          key={option.id}
-                          type="button"
-                          onClick={() => setServiceType(option.id)}
-                          className={`relative rounded-2xl border p-4 text-left transition-all duration-300 flex flex-col justify-between h-44 overflow-hidden group ${isActive
-                            ? "border-[#d8000d] bg-red-50/30 ring-2 ring-[#d8000d]/10"
-                            : "border-slate-200 hover:border-slate-300 bg-white"
-                            }`}
-                        >
-                          <span
-                            className={`absolute right-3 top-3 h-4 w-4 rounded-full border flex items-center justify-center ${isActive ? "border-[#d8000d] bg-[#d8000d]" : "border-slate-300 bg-white"
-                              }`}
-                          >
-                            {isActive && <Check className="h-2.5 w-2.5 text-white" />}
-                          </span>
-                          <img src={option.image} alt={option.title} className="h-20 w-full rounded-xl object-cover grayscale group-hover:grayscale-0 transition-all duration-500" />
-                          <div className="mt-2 space-y-0.5">
-                            <p className="text-xs font-bold text-slate-800">{option.title}</p>
-                            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">{option.subtitle}</p>
-                          </div>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                <div className="space-y-4 rounded-2xl border border-slate-100 bg-slate-50/50 p-5">
-                  <div className="space-y-2">
-                    <Label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Product Type</Label>
-                    <Select
-                      value={productType}
-                      onValueChange={setProductType}
-                      disabled={productTypeOptions.length === 0}
+                  
+                  {/* Right Column: Read More Button */}
+                  <div className="shrink-0">
+                    <Link 
+                      to="/blog" 
+                      className="flex items-center gap-4 text-white font-bold text-xs uppercase tracking-widest group/link hover:text-[#d8000d] transition-colors"
                     >
-                      <SelectTrigger className="rounded-xl border-slate-200 bg-white py-5 focus:ring-[#d8000d]/50 focus:border-[#d8000d]">
-                        <SelectValue placeholder="Select product type" />
-                      </SelectTrigger>
-                      <SelectContent className="bg-slate-950 text-white border border-slate-800">
-                        {productTypeOptions.length === 0 ? (
-                          <SelectItem value="no-product-types" disabled>
-                            No product types configured
-                          </SelectItem>
-                        ) : (
-                          productTypeOptions.map((option) => (
-                            <SelectItem key={option.id} value={option.value}>
-                              {option.label}
-                            </SelectItem>
-                          ))
-                        )}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="grid gap-4 sm:grid-cols-2">
-                    {rateBasis === "kg" && (
-                      <div className="space-y-2 col-span-2">
-                        <Label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Weight (kg)</Label>
-                        <Input
-                          type="number"
-                          min="0"
-                          step="0.1"
-                          value={weight}
-                          onChange={(event) => setWeight(toNumber(event.target.value))}
-                          className="rounded-xl border-slate-200 bg-white focus-visible:ring-[#d8000d]/50"
-                        />
+                      <span>Read More</span>
+                      <div className="w-12 h-12 bg-[#d8000d] flex items-center justify-center rounded-2xl text-white font-bold transition-all duration-300 group-hover/link:scale-110 group-hover/link:bg-[#bf000c] shadow-lg shadow-red-900/30">
+                        <ArrowRight className="h-5 w-5 text-white transform rotate-[-45deg]" />
                       </div>
-                    )}
-                    {rateBasis === "cbm" && (
-                      <>
-                        <div className="space-y-2">
-                          <Label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Length (cm)</Label>
-                          <Input
-                            type="number"
-                            min="0"
-                            step="1"
-                            value={length}
-                            onChange={(event) => setLength(toNumber(event.target.value))}
-                            className="rounded-xl border-slate-200 bg-white focus-visible:ring-[#d8000d]/50"
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Width (cm)</Label>
-                          <Input
-                            type="number"
-                            min="0"
-                            step="1"
-                            value={width}
-                            onChange={(event) => setWidth(toNumber(event.target.value))}
-                            className="rounded-xl border-slate-200 bg-white focus-visible:ring-[#d8000d]/50"
-                          />
-                        </div>
-                        <div className="space-y-2 sm:col-span-2">
-                          <Label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Height (cm)</Label>
-                          <Input
-                            type="number"
-                            min="0"
-                            step="1"
-                            value={height}
-                            onChange={(event) => setHeight(toNumber(event.target.value))}
-                            className="rounded-xl border-slate-200 bg-white focus-visible:ring-[#d8000d]/50"
-                          />
-                        </div>
-                      </>
-                    )}
-                  </div>
-
-                  <div className="pt-2">
-                    <Button
-                      type="button"
-                      onClick={handleCalculate}
-                      className="w-full rounded-xl bg-[#d8000d] hover:bg-[#bf000c] text-white py-6 font-bold shadow-lg shadow-red-900/10 transition-all hover:scale-[1.01]"
-                    >
-                      <Calculator className="mr-2 h-4 w-4" />
-                      Calculate Estimate
-                    </Button>
-                  </div>
-
-                  <div className="rounded-2xl border border-red-100 bg-red-50/40 p-5 mt-4">
-                    <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">Estimated Total</p>
-                    <div className="mt-2 flex items-baseline gap-2">
-                      <p className="text-3xl font-black text-[#d8000d] font-jakarta">{formatAmount(displayedQuote.estimatedCost)}</p>
-                      <p className="text-xs text-slate-400 font-bold uppercase tracking-wider">Base Rate Estimate</p>
-                    </div>
-                    <div className="mt-4 grid gap-2 text-xs font-bold text-slate-500 border-t border-red-100/50 pt-3 sm:grid-cols-2">
-                      <div className="flex items-center gap-1.5">
-                        <span className="w-1.5 h-1.5 rounded-full bg-[#d8000d]" />
-                        <span>Rate: {formatAmount(displayedQuote.rateValue)} / {displayedQuote.rateUnit}</span>
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <span className="w-1.5 h-1.5 rounded-full bg-[#d8000d]" />
-                        <span>{displayedQuote.detail}</span>
-                      </div>
-                    </div>
+                    </Link>
                   </div>
                 </div>
               </div>
-
-              {/* Right Column: Pricing Info Sidebar */}
-              <div className="lg:col-span-4 bg-slate-900 text-white rounded-[32px] p-6 sm:p-8 shadow-2xl relative overflow-hidden self-stretch">
-                <div className="absolute top-0 right-0 w-32 h-32 bg-red-600/10 rounded-full blur-2xl" />
-                <div className="space-y-1">
-                  <span className="text-[10px] font-bold text-[#d8000d] uppercase tracking-[0.2em]">Pricing Sheet</span>
-                  <h3 className="text-lg font-black uppercase font-syne tracking-tight">Active Tariffs</h3>
-                </div>
-                <div className="mt-6 space-y-6 text-xs sm:text-sm text-slate-300">
-                  {pricingInfo.map((section) => (
-                    <div key={section.title} className="space-y-2">
-                      <p className="font-extrabold text-white uppercase tracking-wider border-b border-white/10 pb-1.5 text-xs">
-                        {section.title}
-                      </p>
-                      <ul className="space-y-1.5">
-                        {section.items.map((item) => (
-                          <li key={item} className="flex items-start gap-2.5">
-                            <CheckCircle2 className="mt-0.5 h-4 w-4 text-[#d8000d] shrink-0" />
-                            <span>{item}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* Guidelines and Custom Call-to-Action section */}
-        <section className="bg-white py-28 relative overflow-hidden border-t border-slate-100 animate-fade-in">
-          <div className="mx-auto max-w-7xl px-6 relative z-10">
-            <div className="grid gap-8 md:grid-cols-2 items-stretch">
-              {/* Guidelines Card */}
-              <Card className="rounded-[32px] border border-slate-100 bg-white shadow-sm flex flex-col justify-between overflow-hidden p-6 sm:p-8">
-                <CardContent className="space-y-6 p-0">
-                  <div className="space-y-1">
-                    <span className="text-[10px] font-bold text-[#d8000d] uppercase tracking-[0.2em]">Legal & Terms</span>
-                    <h3 className="text-xl font-extrabold text-slate-800 font-syne uppercase">Important Information</h3>
-                  </div>
-                  <div className="space-y-4">
-                    <div>
-                      <p className="text-xs font-black text-slate-900 uppercase tracking-wider mb-2">Minimum Requirements</p>
-                      <ul className="space-y-2 text-xs sm:text-sm text-slate-500">
-                        {minimumRequirements.map((item) => (
-                          <li key={item} className="flex items-start gap-2.5">
-                            <Check className="mt-0.5 h-4 w-4 text-[#d8000d] shrink-0" />
-                            <span>{item}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                    <div>
-                      <p className="text-xs font-black text-slate-900 uppercase tracking-wider mb-2">Storage Policy</p>
-                      <ul className="space-y-2 text-xs sm:text-sm text-slate-500">
-                        {storagePolicy.map((item) => (
-                          <li key={item} className="flex items-start gap-2.5">
-                            <Check className="mt-0.5 h-4 w-4 text-[#d8000d] shrink-0" />
-                            <span>{item}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Call to Action Banner Card */}
-              <Card className="relative overflow-hidden rounded-[32px] shadow-xl flex flex-col justify-between p-6 sm:p-8 min-h-[350px]">
-                <img
-                  src={home.infoSection.includeCard.image}
-                  alt={home.infoSection.includeCard.title}
-                  className="absolute inset-0 h-full w-full object-cover"
-                />
-                <div className="absolute inset-0 bg-slate-950/75 backdrop-blur-[0.5px]" />
-                <div className="relative space-y-6 text-white h-full flex flex-col justify-between z-10">
-                  <div className="space-y-2">
-                    <span className="text-[10px] font-black text-[#d8000d] uppercase tracking-[0.25em]">{home.infoSection.includeCard.subheading}</span>
-                    <h3 className="text-2xl font-black uppercase font-syne leading-tight tracking-tight max-w-md">{home.infoSection.includeCard.title}</h3>
-                  </div>
-                  <ul className="space-y-2 text-xs sm:text-sm text-slate-200">
-                    {includeCardItems.map((item) => (
-                      <li key={item} className="flex items-start gap-2.5">
-                        <Check className="mt-0.5 h-4 w-4 text-[#d8000d] shrink-0" />
-                        <span>{item}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              </Card>
             </div>
           </div>
         </section>
