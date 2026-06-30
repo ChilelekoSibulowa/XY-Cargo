@@ -324,21 +324,21 @@ export const cmsDefaults = {
         subtitle: "Fast, Reliable & Affordable",
         description:
           "Reliable air and sea freight from China to Zambia with competitive rates and transparent pricing. Your trusted logistics partner connecting two nations.",
-      image: "/hero/hero-1.jpg",
+      image: "https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?q=80&w=1920&auto=format&fit=crop",
       },
       {
         title: "China to Zambia Shipping",
         subtitle: "Fast, Reliable & Affordable",
         description:
           "Reliable air and sea freight from China to Zambia with competitive rates and transparent pricing. Your trusted logistics partner connecting two nations.",
-        image: "/hero/hero-2.jpg",
+        image: "https://images.unsplash.com/photo-1540962351504-03099e0a754b?q=80&w=1920&auto=format&fit=crop",
       },
       {
         title: "China to Zambia Shipping",
         subtitle: "Fast, Reliable & Affordable",
         description:
           "Reliable air and sea freight from China to Zambia with competitive rates and transparent pricing. Your trusted logistics partner connecting two nations.",
-        image: "/hero/hero-3.jpg",
+        image: "https://images.unsplash.com/photo-1494412574643-ff11b0a5c1c3?q=80&w=1920&auto=format&fit=crop",
       },
     ],
     process: {
@@ -391,7 +391,7 @@ export const cmsDefaults = {
             "To redefine logistics in Africa by building a connected, efficient, and technology-driven cargo network that empowers trade and supports economic growth.",
         },
       ],
-      image: "/hero/about-home.jpg",
+      image: "https://images.unsplash.com/photo-1578575437130-527eed3abbec?q=80&w=1200&auto=format&fit=crop",
     },
     stats: [
       { label: "Countries served", value: "200+" },

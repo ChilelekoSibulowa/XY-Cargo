@@ -320,19 +320,19 @@ const Index = () => {
       id: "air-standard",
       title: "Standard Air Freight",
       subtitle: "10-17 days",
-      image: "/hero/hero-1.jpg",
+      image: "https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?q=80&w=600&auto=format&fit=crop",
     },
     {
       id: "air-express",
       title: "Express Air Freight",
       subtitle: "1-5 days",
-      image: "/hero/hero-2.jpg",
+      image: "https://images.unsplash.com/photo-1540962351504-03099e0a754b?q=80&w=600&auto=format&fit=crop",
     },
     {
       id: "sea-freight",
       title: "Sea Freight",
       subtitle: "45-60 days",
-      image: "/hero/hero-3.jpg",
+      image: "https://images.unsplash.com/photo-1494412574643-ff11b0a5c1c3?q=80&w=600&auto=format&fit=crop",
     },
   ];
 
