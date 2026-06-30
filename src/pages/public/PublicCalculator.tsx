@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useDefaultCurrency } from "@/hooks/useDefaultCurrency";
 import { Calculator, Check } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -46,15 +47,30 @@ const toNumber = (value: string) => {
 const PublicCalculator = () => {
   const { formatAmount } = useDefaultCurrency();
   const { optionsByService, isLoading: isProductTypesLoading } = useProductTypes();
-  const [serviceType, setServiceType] = useState("air-standard");
+  const [searchParams] = useSearchParams();
+  const [serviceType, setServiceType] = useState(() => searchParams.get("serviceType") || "air-standard");
   const [productType, setProductType] = useState("");
-  const [origin, setOrigin] = useState("china-foshan");
-  const [destination, setDestination] = useState("zambia-lusaka");
-  const [weight, setWeight] = useState(10);
+  const [origin, setOrigin] = useState(() => searchParams.get("origin") || "china-foshan");
+  const [destination, setDestination] = useState(() => searchParams.get("destination") || "zambia-lusaka");
+  const [weight, setWeight] = useState(() => {
+    const w = searchParams.get("weight");
+    return w ? toNumber(w) : 10;
+  });
   const [length, setLength] = useState(40);
   const [width, setWidth] = useState(30);
   const [height, setHeight] = useState(25);
   const [rates, setRates] = useState<PublicShippingRate[]>([]);
+
+  useEffect(() => {
+    const o = searchParams.get("origin");
+    const d = searchParams.get("destination");
+    const w = searchParams.get("weight");
+    const s = searchParams.get("serviceType");
+    if (o) setOrigin(o);
+    if (d) setDestination(d);
+    if (w) setWeight(toNumber(w));
+    if (s) setServiceType(s);
+  }, [searchParams]);
 
   useEffect(() => {
     const fetchRates = async () => {

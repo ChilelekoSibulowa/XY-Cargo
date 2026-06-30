@@ -1,4 +1,6 @@
+import { useState } from "react";
 import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
+import { createPortal } from "react-dom";
 import { Clock, Mail, MapPin, Phone, Facebook, Instagram, AlignRight, Linkedin, Youtube, Music, X, ChevronRight, User, ChevronDown, ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -24,6 +26,7 @@ const navItems = [
 ];
 
 export const PublicLayout = () => {
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { data: site } = useCmsPage<CmsSiteData>("site", cmsDefaults.site);
   const location = useLocation();
   const topBar = {
@@ -111,7 +114,8 @@ export const PublicLayout = () => {
   return (
     <div className="public-scope min-h-screen bg-white text-slate-900">
       {location.pathname !== "/" && (
-        <header className="sticky top-0 z-50 w-full bg-white/95 backdrop-blur-md border-b border-slate-200/80 shadow-sm py-2">
+        <>
+          <header className="sticky top-0 z-50 w-full bg-white/95 backdrop-blur-md border-b border-slate-200/80 shadow-sm py-2">
           <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-6">
             {/* Logo: LogoImage + XY Cargo */}
             <Link to="/" className="flex items-center gap-3 transition-transform hover:scale-[1.01]">
@@ -204,7 +208,7 @@ export const PublicLayout = () => {
               {/* Get Started button */}
               <Button
                 asChild
-                className="bg-[#d8000d] hover:bg-[#bf000c] text-white font-extrabold text-xs py-3 px-5 rounded-full flex items-center gap-2 transition-all duration-300 shadow-md hover:shadow-lg group hover:scale-[1.02]"
+                className="hidden sm:flex bg-[#d8000d] hover:bg-[#bf000c] text-white font-extrabold text-xs py-3 px-5 rounded-full items-center gap-2 transition-all duration-300 shadow-md hover:shadow-lg group hover:scale-[1.02]"
               >
                 <Link to="/login" className="flex items-center gap-2">
                   <span>Get Started Now</span>
@@ -212,76 +216,139 @@ export const PublicLayout = () => {
                 </Link>
               </Button>
 
-              {/* Mobile Drawer Button */}
-              <Sheet>
-                <SheetTrigger asChild>
-                  <Button variant="ghost" size="icon" className="group h-10 w-10 lg:hidden">
-                    <AlignRight className="h-7 w-7 text-slate-900 stroke-[2.5px] transition-colors group-hover:text-[#d8000d]" />
-                  </Button>
-                </SheetTrigger>
-                <SheetContent side="right" className="w-[300px] border-l border-slate-100 bg-white p-0">
-                  <div className="flex flex-col h-full">
-                    <div className="flex items-center p-6 border-b border-slate-100">
-                      <div className="flex items-center gap-3">
-                        <LogoImage size="md" />
-                        <span className="text-lg font-bold text-slate-900 leading-tight">XY Cargo Zambia</span>
-                      </div>
-                    </div>
-
-                    <nav className="flex-1 overflow-y-auto px-6 py-8">
-                      <div className="flex flex-col gap-4">
-                        <SheetClose asChild>
-                          <Link to="/" className="flex items-center py-1.5 text-lg font-bold text-slate-900 hover:text-[#d8000d]">Home</Link>
-                        </SheetClose>
-                        <SheetClose asChild>
-                          <Link to="/calculator" className="flex items-center py-1.5 text-lg font-bold text-slate-900 hover:text-[#d8000d]">Shipping Calculator</Link>
-                        </SheetClose>
-                        <SheetClose asChild>
-                          <Link to="/services" className="flex items-center py-1.5 text-lg font-bold text-slate-900 hover:text-[#d8000d]">Our Services</Link>
-                        </SheetClose>
-                        <SheetClose asChild>
-                          <Link to="/pricing" className="flex items-center py-1.5 text-lg font-bold text-slate-900 hover:text-[#d8000d]">Pricing Rates</Link>
-                        </SheetClose>
-                        <SheetClose asChild>
-                          <Link to="/tracking" className="flex items-center py-1.5 text-lg font-bold text-slate-900 hover:text-[#d8000d]">Tracking</Link>
-                        </SheetClose>
-                        <SheetClose asChild>
-                          <Link to="/support" className="flex items-center py-1.5 text-lg font-bold text-slate-900 hover:text-[#d8000d]">Support</Link>
-                        </SheetClose>
-                        <SheetClose asChild>
-                          <Link to="/join-us" className="flex items-center py-1.5 text-lg font-bold text-slate-900 hover:text-[#d8000d]">Career</Link>
-                        </SheetClose>
-                      </div>
-                    </nav>
-
-                    <div className="p-6 bg-slate-50 border-t border-slate-100 space-y-6">
-                      <div className="space-y-4">
-                        <a href="tel:+260967379139" className="flex items-center gap-4 group">
-                          <div className="flex h-11 w-11 items-center justify-center rounded-full bg-slate-900 text-white transition-colors group-hover:bg-[#d8000d]">
-                            <Phone className="h-4 w-4" />
-                          </div>
-                          <span className="text-sm font-bold text-slate-900">+260 967379139</span>
-                        </a>
-                      </div>
-
-                      <div className="space-y-3 pt-2">
-                        <SheetClose asChild>
-                          <Button asChild className="w-full rounded-xl bg-[#d8000d] h-12 text-sm font-bold shadow-lg shadow-[#d8000d]/20">
-                            <Link to="/login" className="flex items-center justify-center gap-2">
-                              <User className="h-4 w-4" />
-                              Get Started Now
-                            </Link>
-                          </Button>
-                        </SheetClose>
-                      </div>
-                    </div>
-                  </div>
-                </SheetContent>
-              </Sheet>
+              {/* Custom Morphing Hamburger Button */}
+              <button
+                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                className="relative h-10 w-10 flex items-center justify-center lg:hidden z-50 focus:outline-none"
+                aria-label="Toggle Menu"
+              >
+                <div className="relative w-6 h-5">
+                  <span className={cn(
+                    "absolute left-0 w-6 h-0.5 rounded-full transition-all duration-300 ease-in-out bg-slate-900",
+                    isMobileMenuOpen ? "top-2.5 rotate-45" : "top-0"
+                  )} />
+                  <span className={cn(
+                    "absolute left-0 top-2.5 w-6 h-0.5 rounded-full transition-all duration-300 ease-in-out bg-slate-900",
+                    isMobileMenuOpen ? "opacity-0 scale-0" : "opacity-100"
+                  )} />
+                  <span className={cn(
+                    "absolute left-0 w-6 h-0.5 rounded-full transition-all duration-300 ease-in-out bg-slate-900",
+                    isMobileMenuOpen ? "top-2.5 -rotate-45" : "top-5"
+                  )} />
+                </div>
+              </button>
             </div>
           </div>
         </header>
-      )}
+
+        {/* Custom Mobile Drawer Portalled */}
+        {createPortal(
+          <>
+            {/* Custom Mobile Drawer Overlay */}
+            <div 
+              onClick={() => setIsMobileMenuOpen(false)}
+              className={cn(
+                "fixed inset-0 z-[100] bg-slate-950/60 backdrop-blur-sm transition-all duration-300 ease-in-out lg:hidden",
+                isMobileMenuOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
+              )}
+            />
+
+            {/* Custom Mobile Drawer Panel */}
+            <div 
+              className={cn(
+                "fixed top-0 right-0 bottom-0 z-[101] w-[300px] max-w-[85vw] bg-white shadow-2xl border-l border-slate-100 p-6 pt-20 flex flex-col justify-between transition-transform duration-300 ease-in-out lg:hidden",
+                isMobileMenuOpen ? "translate-x-0" : "translate-x-full"
+              )}
+            >
+              <div className="flex flex-col gap-8">
+                <div className="flex items-center gap-3 pb-6 border-b border-slate-100">
+                  <LogoImage size="md" />
+                  <span className="text-lg font-bold text-slate-900 leading-tight">XY Cargo Zambia</span>
+                </div>
+
+                <nav className="flex flex-col gap-5">
+                  <Link 
+                    to="/" 
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="text-base font-bold text-slate-900 hover:text-[#d8000d] transition-colors py-1 flex items-center justify-between group"
+                  >
+                    <span>Home</span>
+                    <ChevronRight className="h-4 w-4 text-slate-400 group-hover:text-[#d8000d] group-hover:translate-x-1 transition-all" />
+                  </Link>
+                  <Link 
+                    to="/calculator" 
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="text-base font-bold text-slate-900 hover:text-[#d8000d] transition-colors py-1 flex items-center justify-between group"
+                  >
+                    <span>Shipping Calculator</span>
+                    <ChevronRight className="h-4 w-4 text-slate-400 group-hover:text-[#d8000d] group-hover:translate-x-1 transition-all" />
+                  </Link>
+                  <Link 
+                    to="/services" 
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="text-base font-bold text-slate-900 hover:text-[#d8000d] transition-colors py-1 flex items-center justify-between group"
+                  >
+                    <span>Our Services</span>
+                    <ChevronRight className="h-4 w-4 text-slate-400 group-hover:text-[#d8000d] group-hover:translate-x-1 transition-all" />
+                  </Link>
+                  <Link 
+                    to="/pricing" 
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="text-base font-bold text-slate-900 hover:text-[#d8000d] transition-colors py-1 flex items-center justify-between group"
+                  >
+                    <span>Pricing Rates</span>
+                    <ChevronRight className="h-4 w-4 text-slate-400 group-hover:text-[#d8000d] group-hover:translate-x-1 transition-all" />
+                  </Link>
+                  <Link 
+                    to="/tracking" 
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="text-base font-bold text-slate-900 hover:text-[#d8000d] transition-colors py-1 flex items-center justify-between group"
+                  >
+                    <span>Tracking</span>
+                    <ChevronRight className="h-4 w-4 text-slate-400 group-hover:text-[#d8000d] group-hover:translate-x-1 transition-all" />
+                  </Link>
+                  <Link 
+                    to="/support" 
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="text-base font-bold text-slate-900 hover:text-[#d8000d] transition-colors py-1 flex items-center justify-between group"
+                  >
+                    <span>Support</span>
+                    <ChevronRight className="h-4 w-4 text-slate-400 group-hover:text-[#d8000d] group-hover:translate-x-1 transition-all" />
+                  </Link>
+                  <Link 
+                    to="/join-us" 
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="text-base font-bold text-slate-900 hover:text-[#d8000d] transition-colors py-1 flex items-center justify-between group"
+                  >
+                    <span>Career</span>
+                    <ChevronRight className="h-4 w-4 text-slate-400 group-hover:text-[#d8000d] group-hover:translate-x-1 transition-all" />
+                  </Link>
+                </nav>
+              </div>
+
+              <div className="space-y-6 pt-6 border-t border-slate-100">
+                <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                  <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Customer Support</p>
+                  <a href="tel:+260967379139" className="flex items-center gap-3 group text-slate-700 hover:text-[#d8000d] transition-colors">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white shadow-sm border border-slate-100 text-slate-800 transition-colors group-hover:bg-[#d8000d] group-hover:text-white">
+                      <Phone className="h-4 w-4" />
+                    </div>
+                    <span className="text-sm font-bold">+260 967379139</span>
+                  </a>
+                </div>
+
+                <Button asChild onClick={() => setIsMobileMenuOpen(false)} className="w-full rounded-xl bg-[#d8000d] hover:bg-[#bf000c] h-12 text-sm font-bold shadow-lg shadow-[#d8000d]/10">
+                  <Link to="/login" className="flex items-center justify-center gap-2">
+                    <User className="h-4 w-4" />
+                    Get Started Now
+                  </Link>
+                </Button>
+              </div>
+            </div>
+          </>,
+          document.body
+        )}
+      </>)}
 
       <main>
         <div key={location.pathname} className="motion-safe:animate-fade-in">

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { createPortal } from "react-dom";
 import {
   ArrowRight,
   BatteryCharging,
@@ -20,8 +21,12 @@ import {
   Phone,
   ChevronDown,
   MessageSquare,
+  AlignRight,
+  User,
+  ChevronRight,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Sheet, SheetClose, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Card, CardContent } from "@/components/ui/card";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Label } from "@/components/ui/label";
@@ -52,6 +57,7 @@ const Index = () => {
   const { optionsByService, isLoading: isProductTypesLoading } = useProductTypes();
   const [activeSlide, setActiveSlide] = useState(0);
   const [isScrolled, setIsScrolled] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -69,37 +75,37 @@ const Index = () => {
     {
       title: "Cargo Transport",
       id: "01",
-      image: "https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?q=80&w=600&auto=format&fit=crop",
+      image: "/services/grid-cargo-transport.png",
       description: "Safe And Efficient Cargo Movement By Land, Sea, And Air, Ensuring Your Goods Reach Their Destination Securely And On Time."
     },
     {
       title: "Supply Chain",
       id: "02",
-      image: "https://images.unsplash.com/photo-1580674684081-7617fbf3d745?q=80&w=600&auto=format&fit=crop",
+      image: "/services/grid-supply-chain.png",
       description: "End-To-End Supply Chain Solutions That Streamline Operations, Reduce Costs, And Improve Overall Efficiency For Businesses Of Any Scale."
     },
     {
       title: "Express Delivery",
       id: "03",
-      image: "https://images.unsplash.com/photo-1530587191325-3db32d826c18?q=80&w=600&auto=format&fit=crop",
+      image: "/services/grid-express-delivery.png",
       description: "Rapid And Secure Delivery Services Designed To Meet Urgent Demands, Providing Your Customers With Faster Turnaround Times."
     },
     {
       title: "Inventory Solutions",
       id: "04",
-      image: "https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?q=80&w=600&auto=format&fit=crop",
+      image: "/services/grid-inventory-solutions.png",
       description: "Smart Warehousing With Real-Time Tracking And Flexible Storage Options, Giving You Full Visibility And Control Over Your Stock."
     },
     {
       title: "Customs & Compliance",
       id: "05",
-      image: "https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?q=80&w=600&auto=format&fit=crop",
+      image: "/services/grid-customs-compliance.png",
       description: "Expert Handling Of Customs Clearance And International Regulations, Minimizing Delays And Ensuring Smooth Cross-Border Transactions."
     },
     {
       title: "Distribution Services",
       id: "06",
-      image: "https://images.unsplash.com/photo-1553413719-875871274712?q=80&w=600&auto=format&fit=crop",
+      image: "/services/grid-distribution-services.png",
       description: "Seamless Distribution Networks That Connect Your Products To Customers Quickly And Efficiently, No Matter Where They Are Located."
     }
   ];
@@ -122,14 +128,11 @@ const Index = () => {
 
   const handleHeroShipSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setOrigin(heroShipOrigin);
-    setDestination(heroShipDestination);
-    setWeight(heroShipWeight);
-    setServiceType("air-standard");
-    const calcElement = document.getElementById("homepage-calculator");
-    if (calcElement) {
-      calcElement.scrollIntoView({ behavior: "smooth" });
-    }
+    navigate(
+      `/calculator?origin=${encodeURIComponent(heroShipOrigin)}&destination=${encodeURIComponent(
+        heroShipDestination
+      )}&weight=${heroShipWeight}&serviceType=air-standard`
+    );
   };
 
   const [weight, setWeight] = useState(10);
@@ -566,7 +569,7 @@ const Index = () => {
               <Button
                 asChild
                 className={cn(
-                  "font-extrabold text-xs py-3 px-5 rounded-full flex items-center gap-2 transition-all duration-300 shadow-md hover:shadow-lg group hover:scale-[1.02]",
+                  "hidden sm:flex font-extrabold text-xs py-3 px-5 rounded-full items-center gap-2 transition-all duration-300 shadow-md hover:shadow-lg group hover:scale-[1.02]",
                   isScrolled
                     ? "bg-[#d8000d] hover:bg-[#bf000c] text-white"
                     : "bg-white hover:bg-slate-50 text-slate-900 border border-slate-200/50"
@@ -580,9 +583,142 @@ const Index = () => {
                   )} />
                 </Link>
               </Button>
+
+              {/* Custom Morphing Hamburger Button */}
+              <button
+                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                className="relative h-10 w-10 flex items-center justify-center lg:hidden z-50 focus:outline-none"
+                aria-label="Toggle Menu"
+              >
+                <div className="relative w-6 h-5">
+                  <span className={cn(
+                    "absolute left-0 w-6 h-0.5 rounded-full transition-all duration-300 ease-in-out",
+                    isMobileMenuOpen ? "top-2.5 rotate-45" : "top-0",
+                    isScrolled || isMobileMenuOpen ? "bg-slate-900" : "bg-white"
+                  )} />
+                  <span className={cn(
+                    "absolute left-0 top-2.5 w-6 h-0.5 rounded-full transition-all duration-300 ease-in-out",
+                    isMobileMenuOpen ? "opacity-0 scale-0" : "opacity-100",
+                    isScrolled || isMobileMenuOpen ? "bg-slate-900" : "bg-white"
+                  )} />
+                  <span className={cn(
+                    "absolute left-0 w-6 h-0.5 rounded-full transition-all duration-300 ease-in-out",
+                    isMobileMenuOpen ? "top-2.5 -rotate-45" : "top-5",
+                    isScrolled || isMobileMenuOpen ? "bg-slate-900" : "bg-white"
+                  )} />
+                </div>
+              </button>
             </div>
           </div>
         </header>
+
+        {/* Custom Mobile Drawer Portalled */}
+        {createPortal(
+          <>
+            {/* Custom Mobile Drawer Overlay */}
+            <div 
+              onClick={() => setIsMobileMenuOpen(false)}
+              className={cn(
+                "fixed inset-0 z-[100] bg-slate-950/60 backdrop-blur-sm transition-all duration-300 ease-in-out lg:hidden",
+                isMobileMenuOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
+              )}
+            />
+
+            {/* Custom Mobile Drawer Panel */}
+            <div 
+              className={cn(
+                "fixed top-0 right-0 bottom-0 z-[101] w-[300px] max-w-[85vw] bg-white shadow-2xl border-l border-slate-100 p-6 pt-20 flex flex-col justify-between transition-transform duration-300 ease-in-out lg:hidden",
+                isMobileMenuOpen ? "translate-x-0" : "translate-x-full"
+              )}
+            >
+              <div className="flex flex-col gap-8">
+                <div className="flex items-center gap-3 pb-6 border-b border-slate-100">
+                  <LogoImage size="md" />
+                  <span className="text-lg font-bold text-slate-900 leading-tight">XY Cargo Zambia</span>
+                </div>
+
+                <nav className="flex flex-col gap-5">
+                  <Link 
+                    to="/" 
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="text-base font-bold text-slate-900 hover:text-[#d8000d] transition-colors py-1 flex items-center justify-between group"
+                  >
+                    <span>Home</span>
+                    <ChevronRight className="h-4 w-4 text-slate-400 group-hover:text-[#d8000d] group-hover:translate-x-1 transition-all" />
+                  </Link>
+                  <Link 
+                    to="/calculator" 
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="text-base font-bold text-slate-900 hover:text-[#d8000d] transition-colors py-1 flex items-center justify-between group"
+                  >
+                    <span>Shipping Calculator</span>
+                    <ChevronRight className="h-4 w-4 text-slate-400 group-hover:text-[#d8000d] group-hover:translate-x-1 transition-all" />
+                  </Link>
+                  <Link 
+                    to="/services" 
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="text-base font-bold text-slate-900 hover:text-[#d8000d] transition-colors py-1 flex items-center justify-between group"
+                  >
+                    <span>Our Services</span>
+                    <ChevronRight className="h-4 w-4 text-slate-400 group-hover:text-[#d8000d] group-hover:translate-x-1 transition-all" />
+                  </Link>
+                  <Link 
+                    to="/pricing" 
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="text-base font-bold text-slate-900 hover:text-[#d8000d] transition-colors py-1 flex items-center justify-between group"
+                  >
+                    <span>Pricing Rates</span>
+                    <ChevronRight className="h-4 w-4 text-slate-400 group-hover:text-[#d8000d] group-hover:translate-x-1 transition-all" />
+                  </Link>
+                  <Link 
+                    to="/tracking" 
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="text-base font-bold text-slate-900 hover:text-[#d8000d] transition-colors py-1 flex items-center justify-between group"
+                  >
+                    <span>Tracking</span>
+                    <ChevronRight className="h-4 w-4 text-slate-400 group-hover:text-[#d8000d] group-hover:translate-x-1 transition-all" />
+                  </Link>
+                  <Link 
+                    to="/support" 
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="text-base font-bold text-slate-900 hover:text-[#d8000d] transition-colors py-1 flex items-center justify-between group"
+                  >
+                    <span>Support</span>
+                    <ChevronRight className="h-4 w-4 text-slate-400 group-hover:text-[#d8000d] group-hover:translate-x-1 transition-all" />
+                  </Link>
+                  <Link 
+                    to="/join-us" 
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="text-base font-bold text-slate-900 hover:text-[#d8000d] transition-colors py-1 flex items-center justify-between group"
+                  >
+                    <span>Career</span>
+                    <ChevronRight className="h-4 w-4 text-slate-400 group-hover:text-[#d8000d] group-hover:translate-x-1 transition-all" />
+                  </Link>
+                </nav>
+              </div>
+
+              <div className="space-y-6 pt-6 border-t border-slate-100">
+                <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                  <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Customer Support</p>
+                  <a href="tel:+260967379139" className="flex items-center gap-3 group text-slate-700 hover:text-[#d8000d] transition-colors">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white shadow-sm border border-slate-100 text-slate-800 transition-colors group-hover:bg-[#d8000d] group-hover:text-white">
+                      <Phone className="h-4 w-4" />
+                    </div>
+                    <span className="text-sm font-bold">+260 967379139</span>
+                  </a>
+                </div>
+
+                <Button asChild onClick={() => setIsMobileMenuOpen(false)} className="w-full rounded-xl bg-[#d8000d] hover:bg-[#bf000c] h-12 text-sm font-bold shadow-lg shadow-[#d8000d]/10">
+                  <Link to="/login" className="flex items-center justify-center gap-2">
+                    <User className="h-4 w-4" />
+                    Get Started Now
+                  </Link>
+                </Button>
+              </div>
+            </div>
+          </>,
+          document.body
+        )}
 
         {/* Hero Section Container */}
         <section className="relative w-full overflow-hidden bg-slate-950 h-screen min-h-[700px] flex items-center">
@@ -816,7 +952,7 @@ const Index = () => {
                       <OptimizedImage 
                         src={service.image} 
                         alt={service.title} 
-                        className="h-full w-full object-cover grayscale group-hover:grayscale-0 group-hover:scale-105 transition-all duration-700 ease-out" 
+                        className="h-full w-full object-cover group-hover:scale-105 transition-all duration-700 ease-out" 
                       />
                     </div>
                     {/* Text Block */}

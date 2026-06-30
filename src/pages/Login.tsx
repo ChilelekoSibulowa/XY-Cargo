@@ -132,7 +132,7 @@ const Login = () => {
       <div className="hidden lg:flex lg:w-1/2 xl:w-[60%] relative bg-slate-900 overflow-hidden">
         <div className="absolute inset-0 bg-[#d8000d]/10 z-10" />
         <img
-          src="https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?q=80&w=2070&auto=format&fit=crop"
+          src="/services/grid-cargo-transport.png"
           alt="Logistics Background"
           className="absolute inset-0 w-full h-full object-cover opacity-60 scale-105"
         />
