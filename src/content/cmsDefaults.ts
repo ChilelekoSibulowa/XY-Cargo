@@ -258,7 +258,7 @@ export const cmsDefaults = {
     topBar: {
       hours: "8:00am-5:00pm (Zambia Time)",
       email: "info@xycargozm.com",
-      address: "Shop #94 Carousel Mall, Lusaka, Zambia",
+      address: "Plot 26592, Kafue Road, Lusaka",
       phone: "+260 211220012",
       facebookUrl: "https://www.facebook.com/share/1AwnHQ7TFp/?mibextid=wwXIfr",
       instagramUrl: "https://www.instagram.com/xy_cargo_zm?igsh=MWVoNHowcDFjMHY3ag==",
@@ -300,7 +300,7 @@ export const cmsDefaults = {
         "WhatsApp: +260 967379139 / +260 769481203",
         "Live Chat: chat with us at xycargozm.com",
         "Get in touch with us: info@xycargozm.com",
-        "Address: Shop #94 Carousel Mall, Lusaka, Zambia",
+        "Address: Plot 26592, Kafue Road, Lusaka",
       ],
       bottomLeft:
         "(c) 2026 XY Cargo Zambia. All Rights Reserved. China to Zambia Shipping Specialists - Designed by",
@@ -765,7 +765,7 @@ export const cmsDefaults = {
       body:
         "Get help when you need it. Our expert support team is here to assist you with any questions or concerns about your shipments.",
       email: "info@xycargozm.com",
-      address: "Shop #94 Carousel Mall, Lusaka, Zambia",
+      address: "Plot 26592, Kafue Road, Lusaka",
       phone: "Call : +260 211220012",
       whatsapp: "WhatsApp: +260 967379139 / +260 769481203",
       whatsappUrl: "https://wa.me/260967379139",

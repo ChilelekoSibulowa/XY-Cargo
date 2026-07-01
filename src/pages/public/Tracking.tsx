@@ -125,6 +125,7 @@ const Tracking = () => {
     setEmbedContext(immediateParams);
     syncTrackingSearchParams(query, immediateParams?.transport ?? preferredTransport ?? null);
     setIsLoading(true);
+    setIsEmbedLoading(true);
 
     const details = await lookupTrackingDetails(query);
 
@@ -170,9 +171,14 @@ const Tracking = () => {
     }
 
     if (!details && !hasExternalTracking) {
-      setEmbedContext(null);
-      setEmbedUrl(DEFAULT_SHIPSGO_EMBED_URL);
-      setErrorMessage("No shipment found with that tracking number.");
+      if (immediateParams) {
+        // If it's a valid container/AWB format, keep the embed URL & context as a fallback
+        setErrorMessage("No local shipment record found. Displaying map search fallback...");
+      } else {
+        setEmbedContext(null);
+        setEmbedUrl(DEFAULT_SHIPSGO_EMBED_URL);
+        setErrorMessage("No shipment found with that tracking number.");
+      }
     }
 
     setIsEmbedLoading(false);

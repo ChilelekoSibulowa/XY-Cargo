@@ -9,7 +9,7 @@ const JoinUs = () => {
       <div className="space-y-3">
         <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">Join us</p>
         <h1 className="text-3xl font-semibold text-slate-900 md:text-4xl">
-          Partner with Clever Freight.
+          Partner with XY Cargo.
         </h1>
         <p className="text-sm text-slate-600 md:text-base">
           Become an agent, partner, or team member. We will help you expand your reach and revenue.

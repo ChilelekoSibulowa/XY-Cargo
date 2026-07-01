@@ -176,7 +176,7 @@ const PublicCalculator = () => {
         <p className="text-sm text-slate-600 md:text-base">Get instant quotes for your shipments from China to Zambia</p>
       </div>
 
-      <div className="mt-10 grid gap-8 md:grid-cols-[1.1fr_0.9fr] md:items-start">
+      <div className="mt-10 mx-auto max-w-3xl">
         <div className="space-y-6">
           <div className="grid gap-6 md:grid-cols-2">
             <div className="space-y-2">
@@ -337,25 +337,6 @@ const PublicCalculator = () => {
                 <div>{displayedQuote.detail}</div>
               </div>
             </div>
-          </div>
-        </div>
-
-        <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-6">
-          <p className="text-sm font-semibold text-[#d8000d]">Ready to Calculate</p>
-          <div className="mt-4 space-y-5 text-sm text-slate-700">
-            {dynamicPricingInfo.map((section) => (
-              <div key={section.title} className="space-y-2">
-                <p className="font-semibold text-slate-900">{section.title}</p>
-                <ul className="space-y-1">
-                  {section.items.map((item) => (
-                    <li key={item} className="flex items-start gap-2">
-                      <Check className="mt-1 h-4 w-4 text-slate-700" />
-                      <span>{item}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
           </div>
         </div>
       </div>

@@ -24,6 +24,9 @@ import {
   AlignRight,
   User,
   ChevronRight,
+  Loader2,
+  AlertCircle,
+  MapPin,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetClose, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -36,11 +39,17 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useCmsPage } from "@/hooks/useCmsPage";
 import { cmsDefaults, CmsHomeData } from "@/content/cmsDefaults";
 import { OptimizedImage } from "@/components/shared/OptimizedImage";
-import { LogoImage } from "@/components/shared/LogoImage";
-import MetaPixel from "@/components/marketing/MetaPixel";
-import { useDefaultCurrency } from "@/hooks/useDefaultCurrency";
-import { useProductTypes } from "@/hooks/useProductTypes";
-import { supabase } from "@/integrations/supabase/client";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { ShipsGoEmbedCard } from "@/components/tracking/ShipsGoEmbedCard";
+import { Badge } from "@/components/ui/badge";
+import { format } from "date-fns";
+import {
+  lookupTrackingDetails,
+  buildShipsGoEmbedUrl,
+  getShipsGoEmbedParams,
+  guessShipsGoEmbedParamsFromQuery,
+  type TrackingDetails,
+} from "@/lib/tracking";
 import {
   getRateBasis,
   getRateValue,
@@ -50,6 +59,11 @@ import {
   selectSystemShippingRate,
 } from "@/lib/publicShippingRates";
 import { fallbackProductTypeOptions } from "@/lib/publicProductTypeOptions";
+import { LogoImage } from "@/components/shared/LogoImage";
+import MetaPixel from "@/components/marketing/MetaPixel";
+import { useDefaultCurrency } from "@/hooks/useDefaultCurrency";
+import { useProductTypes } from "@/hooks/useProductTypes";
+import { supabase } from "@/integrations/supabase/client";
 
 const Index = () => {
   const { data: home } = useCmsPage<CmsHomeData>("home", cmsDefaults.home);
@@ -73,40 +87,40 @@ const Index = () => {
 
   const services = [
     {
-      title: "Cargo Transport",
+      title: "Air Freight",
       id: "01",
       image: "/services/grid-cargo-transport.png",
-      description: "Safe And Efficient Cargo Movement By Land, Sea, And Air, Ensuring Your Goods Reach Their Destination Securely And On Time."
+      description: "Fast and reliable air cargo consolidation from China to Zambia in just 10-17 days. Perfect for time-sensitive shipments and packages."
     },
     {
-      title: "Supply Chain",
+      title: "Sea Freight",
       id: "02",
       image: "/services/grid-supply-chain.png",
-      description: "End-To-End Supply Chain Solutions That Streamline Operations, Reduce Costs, And Improve Overall Efficiency For Businesses Of Any Scale."
+      description: "Cost-effective ocean shipping for bulk cargo, machinery, and large shipments with regular departures and transit times of 45-60 days."
     },
     {
-      title: "Express Delivery",
+      title: "Product Sourcing",
       id: "03",
       image: "/services/grid-express-delivery.png",
-      description: "Rapid And Secure Delivery Services Designed To Meet Urgent Demands, Providing Your Customers With Faster Turnaround Times."
+      description: "Expert assistance sourcing products directly from factories and suppliers in China, including quality verification and order consolidation."
     },
     {
-      title: "Inventory Solutions",
+      title: "Supplier Payment",
       id: "04",
       image: "/services/grid-inventory-solutions.png",
-      description: "Smart Warehousing With Real-Time Tracking And Flexible Storage Options, Giving You Full Visibility And Control Over Your Stock."
+      description: "Secure and convenient currency exchange solutions to pay your Chinese suppliers directly in RMB or USD, avoiding payment delays."
     },
     {
-      title: "Customs & Compliance",
+      title: "Customs Clearance",
       id: "05",
       image: "/services/grid-customs-compliance.png",
-      description: "Expert Handling Of Customs Clearance And International Regulations, Minimizing Delays And Ensuring Smooth Cross-Border Transactions."
+      description: "End-to-end import clearance and transit documentation handled by our expert in-house customs agents at Nakonde and other borders."
     },
     {
-      title: "Distribution Services",
+      title: "Regional Distribution",
       id: "06",
       image: "/services/grid-distribution-services.png",
-      description: "Seamless Distribution Networks That Connect Your Products To Customers Quickly And Efficiently, No Matter Where They Are Located."
+      description: "Secure warehousing at our Lusaka hub with regional dispatch and pick-up options in Ndola, Kitwe, and other Zambian cities."
     }
   ];
 
@@ -119,20 +133,83 @@ const Index = () => {
   const [heroShipDestination, setHeroShipDestination] = useState("zambia-lusaka");
   const [heroShipWeight, setHeroShipWeight] = useState(10);
 
-  const handleHeroTrackSubmit = (e: React.FormEvent) => {
+  // Dialog Open States
+  const [isTrackingDialogOpen, setIsTrackingDialogOpen] = useState(false);
+  const [isCalculatorDialogOpen, setIsCalculatorDialogOpen] = useState(false);
+
+  // Tracking Modal States
+  const [trackingLoading, setTrackingLoading] = useState(false);
+  const [trackingResult, setTrackingResult] = useState<TrackingDetails | null>(null);
+  const [trackingError, setTrackingError] = useState<string | null>(null);
+  const [trackingEmbedUrl, setTrackingEmbedUrl] = useState<string | null>(null);
+  const [trackingEmbedContext, setTrackingEmbedContext] = useState<any>(null);
+  const [trackingLiveData, setTrackingLiveData] = useState<any>(null);
+  const [trackingEmbedLoading, setTrackingEmbedLoading] = useState(false);
+
+  // Calculator Modal States
+  const [calcServiceType, setCalcServiceType] = useState("air-standard");
+  const [calcProductType, setCalcProductType] = useState("");
+  const [calcLength, setCalcLength] = useState(40);
+  const [calcWidth, setCalcWidth] = useState(30);
+  const [calcHeight, setCalcHeight] = useState(25);
+
+  const handleHeroTrackSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (heroTrackingNumber.trim()) {
-      navigate(`/tracking?query=${encodeURIComponent(heroTrackingNumber.trim())}`);
+    const query = heroTrackingNumber.trim();
+    if (!query) return;
+
+    setTrackingLoading(true);
+    setTrackingResult(null);
+    setTrackingError(null);
+    setTrackingLiveData(null);
+    setTrackingEmbedUrl(null);
+    setTrackingEmbedContext(null);
+    setTrackingEmbedLoading(true);
+    setIsTrackingDialogOpen(true);
+
+    try {
+      const details = await lookupTrackingDetails(query);
+      if (details) {
+        setTrackingResult(details);
+        const resolvedParams = getShipsGoEmbedParams(details) || guessShipsGoEmbedParamsFromQuery(query);
+        if (resolvedParams) {
+          setTrackingEmbedUrl(buildShipsGoEmbedUrl(null, resolvedParams));
+          setTrackingEmbedContext(resolvedParams);
+          if (resolvedParams.transport === "ocean") {
+            const response = await supabase.functions.invoke("shipsgo-tracking", {
+              body: { action: "track", tracking_number: resolvedParams.query }
+            });
+            if (!response.error && response.data?.success && response.data?.data) {
+              setTrackingLiveData(response.data.data);
+            }
+          }
+        }
+      } else {
+        const resolvedParams = guessShipsGoEmbedParamsFromQuery(query);
+        if (resolvedParams) {
+          setTrackingEmbedUrl(buildShipsGoEmbedUrl(null, resolvedParams));
+          setTrackingEmbedContext(resolvedParams);
+        } else {
+          setTrackingError("No shipment found with that tracking number.");
+        }
+      }
+    } catch (err) {
+      console.error(err);
+      setTrackingError("Failed to fetch tracking details. Please try again.");
+    } finally {
+      setTrackingLoading(false);
+      setTrackingEmbedLoading(false);
     }
   };
 
   const handleHeroShipSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    navigate(
-      `/calculator?origin=${encodeURIComponent(heroShipOrigin)}&destination=${encodeURIComponent(
-        heroShipDestination
-      )}&weight=${heroShipWeight}&serviceType=air-standard`
-    );
+    setOrigin(heroShipOrigin);
+    setDestination(heroShipDestination);
+    setWeight(heroShipWeight);
+    setCalcServiceType("air-standard");
+    setCalcProductType("");
+    setIsCalculatorDialogOpen(true);
   };
 
   const [weight, setWeight] = useState(10);
@@ -155,11 +232,11 @@ const Index = () => {
       },
       {
         question: "Where are your consolidation warehouses in China located?",
-        answer: "Our main receiving warehouses are in Foshan and Guangzhou. You can send items from different suppliers to these locations for free consolidation."
+        answer: "Our main receiving warehouses are in Foshan and Yiwu. You can send items from different suppliers to these locations for free consolidation."
       },
       {
         question: "Do you offer real-time tracking for all packages?",
-        answer: "Yes, every parcel is assigned a unique tracking ID. You can enter this ID on our homepage to see its step-by-step movement from China to Zambia."
+        answer: "Yes, every parcel is assigned a unique tracking ID. You can enter this ID on our homepage or your portal to see its step-by-step movement from China to Zambia."
       },
       {
         question: "What is your minimum weight or size requirement?",
@@ -377,6 +454,58 @@ const Index = () => {
     "Special Goods": <Box className="h-6 w-6 text-slate-500" />,
   };
 
+  // Mini-calculator memoized states
+  const calcIsSea = calcServiceType === "sea-freight";
+  const calcProductServiceType = calcIsSea ? "sea" : "air";
+  const calcSystemProductTypeOptions = useMemo(
+    () => getSystemProductTypeOptions(shippingRates, calcProductServiceType),
+    [calcProductServiceType, shippingRates]
+  );
+  const calcConfiguredProductTypeOptions = optionsByService[calcProductServiceType] || [];
+  const calcBaseProductTypeOptions =
+    !isProductTypesLoading && calcConfiguredProductTypeOptions.length > 0
+      ? calcConfiguredProductTypeOptions
+      : fallbackProductTypeOptions[calcProductServiceType];
+  const calcProductTypeOptions = useMemo(
+    () => mergeProductTypeOptions(calcBaseProductTypeOptions, calcSystemProductTypeOptions),
+    [calcBaseProductTypeOptions, calcSystemProductTypeOptions]
+  );
+  const calcSelectedRate = useMemo(
+    () => selectSystemShippingRate(shippingRates, calcProductServiceType, heroShipDestination, calcProductType),
+    [heroShipDestination, calcProductServiceType, calcProductType, shippingRates]
+  );
+  const calcRateBasis = getRateBasis(calcSelectedRate, calcProductServiceType);
+  const calcRateValue = getRateValue(calcSelectedRate, calcProductServiceType);
+  const calcCbm = useMemo(() => (calcLength * calcWidth * calcHeight) / 1000000, [calcLength, calcWidth, calcHeight]);
+  const calcRateUnit = calcRateBasis === "cbm" ? "CBM" : "kg";
+
+  const calcCurrentQuote = useMemo(() => {
+    const minimumCharge = calcSelectedRate?.minimum_charge || 0;
+    const estimatedCost =
+      calcRateBasis === "cbm"
+        ? Math.max(calcCbm * calcRateValue, minimumCharge)
+        : Math.max(weight * calcRateValue, minimumCharge);
+    return {
+      estimatedCost,
+      rateValue: calcRateValue,
+      rateUnit: calcRateUnit,
+      detail: calcRateBasis === "cbm" ? `CBM: ${calcCbm.toFixed(3)}` : `Weight: ${weight.toFixed(1)} kg`,
+    };
+  }, [calcCbm, calcRateBasis, calcRateValue, weight, calcSelectedRate, calcRateUnit]);
+
+  useEffect(() => {
+    if (calcProductTypeOptions.length === 0) {
+      if (calcProductType) {
+        setCalcProductType("");
+      }
+      return;
+    }
+    const hasSelectedType = calcProductTypeOptions.some((option) => option.value === calcProductType);
+    if (!hasSelectedType) {
+      setCalcProductType(calcProductTypeOptions[0].value);
+    }
+  }, [calcProductType, calcProductTypeOptions]);
+
   const isSea = serviceType === "sea-freight";
   const productServiceType = isSea ? "sea" : "air";
   const systemProductTypeOptions = useMemo(
@@ -554,7 +683,7 @@ const Index = () => {
             <div className="flex items-center gap-4">
               {/* Phone pill */}
               <a
-                href="tel:+260967379139"
+                href="tel:+260211220012"
                 className={cn(
                   "hidden md:flex items-center gap-2 border font-bold text-xs py-2 px-4 rounded-full transition duration-300",
                   isScrolled 
@@ -563,7 +692,7 @@ const Index = () => {
                 )}
               >
                 <Phone className="h-3.5 w-3.5 text-[#d8000d] fill-current animate-pulse" />
-                <span>+260 967379139</span>
+                <span>+260 211220012</span>
               </a>
               {/* Get Started button */}
               <Button
@@ -700,11 +829,11 @@ const Index = () => {
               <div className="space-y-6 pt-6 border-t border-slate-100">
                 <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
                   <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Customer Support</p>
-                  <a href="tel:+260967379139" className="flex items-center gap-3 group text-slate-700 hover:text-[#d8000d] transition-colors">
+                  <a href="tel:+260211220012" className="flex items-center gap-3 group text-slate-700 hover:text-[#d8000d] transition-colors">
                     <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white shadow-sm border border-slate-100 text-slate-800 transition-colors group-hover:bg-[#d8000d] group-hover:text-white">
                       <Phone className="h-4 w-4" />
                     </div>
-                    <span className="text-sm font-bold">+260 967379139</span>
+                    <span className="text-sm font-bold">+260 211220012</span>
                   </a>
                 </div>
 
@@ -773,7 +902,7 @@ const Index = () => {
                       heroActiveTab === "track" ? "text-white" : "text-white/50 hover:text-white/70"
                     )}
                   >
-                    Tracking Order
+                    Track Shipment
                     {heroActiveTab === "track" && (
                       <span className="absolute bottom-0 left-0 right-0 h-1 bg-[#d8000d] rounded-full" />
                     )}
@@ -786,7 +915,7 @@ const Index = () => {
                       heroActiveTab === "ship" ? "text-white" : "text-white/50 hover:text-white/70"
                     )}
                   >
-                    Ship Order
+                    Calculate Shipment
                     {heroActiveTab === "ship" && (
                       <span className="absolute bottom-0 left-0 right-0 h-1 bg-[#d8000d] rounded-full" />
                     )}
@@ -1238,6 +1367,236 @@ const Index = () => {
             </div>
           </div>
         </section>
+
+        {/* Inline Tracking Dialog */}
+        <Dialog open={isTrackingDialogOpen} onOpenChange={setIsTrackingDialogOpen}>
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-white rounded-3xl p-6 border-slate-100 shadow-2xl">
+            <DialogHeader>
+              <DialogTitle className="text-xl font-bold flex items-center gap-2">
+                <Package className="h-5 w-5 text-[#d8000d]" />
+                Tracking Shipment: <span className="font-mono text-slate-600">{heroTrackingNumber}</span>
+              </DialogTitle>
+            </DialogHeader>
+
+            {trackingLoading ? (
+              <div className="flex flex-col items-center justify-center gap-3 py-16 text-slate-500">
+                <Loader2 className="h-8 w-8 animate-spin text-[#d8000d]" />
+                <span className="text-sm font-semibold">Fetching live shipment coordinates and status...</span>
+              </div>
+            ) : trackingError ? (
+              <div className="flex flex-col items-center justify-center gap-2 py-12 text-center">
+                <AlertCircle className="h-10 w-10 text-destructive" />
+                <p className="text-sm font-bold text-slate-900">{trackingError}</p>
+                <p className="text-xs text-slate-500 max-w-md">Double check your tracking number or reach out to support if you believe this is an error.</p>
+              </div>
+            ) : (
+              <div className="space-y-6 mt-4">
+                {/* Basic Details */}
+                {trackingResult && (
+                  <div className="rounded-2xl border border-slate-100 bg-slate-50 p-5 text-sm grid gap-4 sm:grid-cols-2 md:grid-cols-4">
+                    <div>
+                      <p className="text-xs text-slate-400 font-bold uppercase">Status</p>
+                      <Badge className="bg-[#d8000d] text-white hover:bg-[#d8000d]/90 font-bold mt-1 text-[10px]">
+                        {trackingResult.status.replace(/_/g, " ").toUpperCase()}
+                      </Badge>
+                    </div>
+                    <div>
+                      <p className="text-xs text-slate-400 font-bold uppercase">Route</p>
+                      <p className="font-semibold text-slate-700 mt-1">
+                        {trackingResult.origin || "Origin"} → {trackingResult.destination || "Destination"}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-slate-400 font-bold uppercase">Weight / CBM</p>
+                      <p className="font-semibold text-slate-700 mt-1">
+                        {Number(trackingResult.weight || 0).toFixed(1)} kg / {Number(trackingResult.cbm || 0).toFixed(3)} CBM
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-slate-400 font-bold uppercase">Shipping Method</p>
+                      <p className="font-semibold text-slate-700 mt-1 capitalize">
+                        {trackingResult.shipsgo_transport || "Standard Freight"}
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {/* ShipsGo Embed Map Widget */}
+                <ShipsGoEmbedCard
+                  embedUrl={trackingEmbedUrl}
+                  fallbackMapUrl={
+                    trackingLiveData?.mapPoints && trackingLiveData.mapPoints.length > 0
+                      ? `https://www.openstreetmap.org/export/embed.html?bbox=${trackingLiveData.mapPoints[trackingLiveData.mapPoints.length - 1].lng - 2},${trackingLiveData.mapPoints[trackingLiveData.mapPoints.length - 1].lat - 2},${trackingLiveData.mapPoints[trackingLiveData.mapPoints.length - 1].lng + 2},${trackingLiveData.mapPoints[trackingLiveData.mapPoints.length - 1].lat + 2}&layer=mapnik&marker=${trackingLiveData.mapPoints[trackingLiveData.mapPoints.length - 1].lat},${trackingLiveData.mapPoints[trackingLiveData.mapPoints.length - 1].lng}`
+                      : null
+                  }
+                  isLoading={trackingEmbedLoading}
+                  transport={trackingEmbedContext?.transport ?? null}
+                  carrierQuery={trackingEmbedContext?.query ?? null}
+                  showPlaceholder={Boolean(trackingEmbedContext?.query)}
+                />
+
+                {/* Status History Events */}
+                {trackingResult && trackingResult.events && trackingResult.events.length > 0 && (
+                  <div className="space-y-3">
+                    <h3 className="font-bold text-sm text-slate-800 uppercase tracking-wide">Status History</h3>
+                    <div className="space-y-3">
+                      {trackingResult.events.map((event: any, idx: number) => (
+                        <div key={idx} className="rounded-xl border border-slate-100 p-4 text-xs bg-slate-50/50 flex flex-col gap-1">
+                          <div className="flex items-center justify-between">
+                            <span className="font-bold text-slate-800 text-sm">{event.title}</span>
+                            <span className="text-slate-400 font-medium">
+                              {format(new Date(event.created_at), "PP p")}
+                            </span>
+                          </div>
+                          <p className="text-slate-600 font-medium">{event.message}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
+
+        {/* Inline Calculator Dialog */}
+        <Dialog open={isCalculatorDialogOpen} onOpenChange={setIsCalculatorDialogOpen}>
+          <DialogContent className="max-w-2xl bg-white rounded-3xl p-6 border-slate-100 shadow-2xl">
+            <DialogHeader>
+              <DialogTitle className="text-xl font-bold flex items-center gap-2">
+                <Calculator className="h-5 w-5 text-[#d8000d]" />
+                Shipping Quote: <span className="text-[#d8000d] font-syne">Instant Estimate</span>
+              </DialogTitle>
+            </DialogHeader>
+
+            <div className="space-y-5 mt-4">
+              {/* Service Type Selection */}
+              <div className="space-y-2">
+                <Label className="text-xs font-bold text-slate-500 uppercase">Service Type</Label>
+                <div className="grid gap-3 grid-cols-3">
+                  {[
+                    { id: "air-standard", label: "Std Air (10-17d)" },
+                    { id: "air-express", label: "Exp Air (1-5d)" },
+                    { id: "sea-freight", label: "Sea (45-60d)" },
+                  ].map((opt) => (
+                    <button
+                      key={opt.id}
+                      type="button"
+                      onClick={() => setCalcServiceType(opt.id)}
+                      className={cn(
+                        "py-2.5 px-3 rounded-xl border text-[11px] font-black uppercase tracking-wider text-center transition",
+                        calcServiceType === opt.id
+                          ? "border-[#d8000d] bg-[#d8000d]/5 text-[#d8000d]"
+                          : "border-slate-200 hover:border-slate-300 text-slate-600"
+                      )}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Product Type Dropdown */}
+              <div className="space-y-2">
+                <Label className="text-xs font-bold text-slate-500 uppercase">Product Type</Label>
+                <Select value={calcProductType} onValueChange={setCalcProductType}>
+                  <SelectTrigger className="rounded-full border-slate-200 text-xs font-semibold text-slate-700">
+                    <SelectValue placeholder="Select product type" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-white text-slate-900 border border-slate-200">
+                    {calcProductTypeOptions.map((opt) => (
+                      <SelectItem key={opt.id} value={opt.value} className="text-xs font-semibold">
+                        {opt.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Form Inputs based on basis */}
+              <div className="grid gap-4 grid-cols-2">
+                {calcRateBasis === "kg" ? (
+                  <div className="space-y-2 col-span-2">
+                    <Label className="text-xs font-bold text-slate-500 uppercase">Est. Weight (kg)</Label>
+                    <Input
+                      type="number"
+                      min="1"
+                      value={weight}
+                      onChange={(e) => setWeight(toNumber(e.target.value))}
+                      className="rounded-full border-slate-200 text-xs font-semibold"
+                    />
+                  </div>
+                ) : (
+                  <>
+                    <div className="space-y-1">
+                      <Label className="text-[10px] font-bold text-slate-400 uppercase">Length (cm)</Label>
+                      <Input
+                        type="number"
+                        min="0"
+                        value={calcLength}
+                        onChange={(e) => setCalcLength(toNumber(e.target.value))}
+                        className="rounded-full border-slate-200 text-xs font-semibold"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-[10px] font-bold text-slate-400 uppercase">Width (cm)</Label>
+                      <Input
+                        type="number"
+                        min="0"
+                        value={calcWidth}
+                        onChange={(e) => setCalcWidth(toNumber(e.target.value))}
+                        className="rounded-full border-slate-200 text-xs font-semibold"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-[10px] font-bold text-slate-400 uppercase">Height (cm)</Label>
+                      <Input
+                        type="number"
+                        min="0"
+                        value={calcHeight}
+                        onChange={(e) => setCalcHeight(toNumber(e.target.value))}
+                        className="rounded-full border-slate-200 text-xs font-semibold"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-[10px] font-bold text-slate-400 uppercase">Est. Weight (kg)</Label>
+                      <Input
+                        type="number"
+                        min="0"
+                        value={weight}
+                        onChange={(e) => setWeight(toNumber(e.target.value))}
+                        className="rounded-full border-slate-200 text-xs font-semibold"
+                      />
+                    </div>
+                  </>
+                )}
+              </div>
+
+              {/* Calculated Estimate Box */}
+              <div className="rounded-2xl border border-slate-100 bg-slate-50 p-5 mt-4">
+                <p className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400">Estimated Total Cost</p>
+                <div className="mt-2 flex items-end justify-between">
+                  <p className="text-3xl font-black text-slate-900 font-syne">{formatAmount(calcCurrentQuote.estimatedCost)}</p>
+                  <div className="text-right text-xs text-slate-500 font-bold">
+                    <div>Rate: {formatAmount(calcCurrentQuote.rateValue)} / {calcCurrentQuote.rateUnit}</div>
+                    <div className="text-[10px] text-slate-400 font-medium">{calcCurrentQuote.detail}</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* CTA */}
+              <Button
+                onClick={() => {
+                  setIsCalculatorDialogOpen(false);
+                  navigate("/login");
+                }}
+                className="w-full bg-[#d8000d] hover:bg-[#bf000c] text-white py-5 rounded-full font-bold shadow-lg mt-2 text-xs uppercase tracking-wider"
+              >
+                Sign In to Place Shipment Order
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </>
   );

@@ -199,11 +199,11 @@ export const PublicLayout = () => {
               <CurrencySwitcher />
               {/* Phone pill */}
               <a
-                href="tel:+260967379139"
+                href="tel:+260211220012"
                 className="hidden md:flex items-center gap-2 border border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100 font-bold text-xs py-2 px-4 rounded-full transition duration-300"
               >
                 <Phone className="h-3.5 w-3.5 text-[#d8000d] fill-current animate-pulse" />
-                <span>+260 967379139</span>
+                <span>+260 211220012</span>
               </a>
               {/* Get Started button */}
               <Button
@@ -329,11 +329,11 @@ export const PublicLayout = () => {
               <div className="space-y-6 pt-6 border-t border-slate-100">
                 <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
                   <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Customer Support</p>
-                  <a href="tel:+260967379139" className="flex items-center gap-3 group text-slate-700 hover:text-[#d8000d] transition-colors">
+                  <a href="tel:+260211220012" className="flex items-center gap-3 group text-slate-700 hover:text-[#d8000d] transition-colors">
                     <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white shadow-sm border border-slate-100 text-slate-800 transition-colors group-hover:bg-[#d8000d] group-hover:text-white">
                       <Phone className="h-4 w-4" />
                     </div>
-                    <span className="text-sm font-bold">+260 967379139</span>
+                    <span className="text-sm font-bold">+260 211220012</span>
                   </a>
                 </div>
 
