@@ -88,6 +88,37 @@ export const TrackingPageContent = () => {
   const [embedUrl, setEmbedUrl] = useState<string | null>(buildShipsGoEmbedUrl(null, null));
   const [embedContext, setEmbedContext] = useState<{ transport: ShipsGoTransport; query: string } | null>(null);
 
+  const handleMapSearch = useCallback(async (rawValue?: string, transport?: ShipsGoTransport) => {
+    const value = (rawValue ?? mapQuery).trim();
+    const chosenTransport = transport ?? mapTransport;
+    if (!value) {
+      setEmbedUrl(buildShipsGoEmbedUrl(null, null));
+      setEmbedContext(null);
+      return;
+    }
+    const guessed = guessShipsGoEmbedParamsFromQuery(value);
+    const params = guessed || { transport: chosenTransport, query: value };
+    setEmbedContext(params);
+
+    let fetchedEmbedUrl = null;
+    try {
+      const embedRes = await supabase.functions.invoke("shipsgo-tracking", {
+        body: {
+          action: "embed",
+          transport: params.transport,
+          query: params.query
+        }
+      });
+      if (!embedRes.error && embedRes.data?.success && embedRes.data?.data?.embed_url) {
+        fetchedEmbedUrl = embedRes.data.data.embed_url;
+      }
+    } catch (e) {
+      console.warn("Failed to fetch secure ShipsGo embed URL:", e);
+    }
+
+    setEmbedUrl(fetchedEmbedUrl || buildShipsGoEmbedUrl(null, params));
+  }, [mapQuery, mapTransport]);
+
   const handleTrack = useCallback(async (inputQuery?: string) => {
     const query = (inputQuery ?? trackingId).trim();
     setSearched(true);
@@ -137,37 +168,6 @@ export const TrackingPageContent = () => {
     autoTrackedKeyRef.current = query;
     void handleTrack(query);
   }, [handleTrack, searchParams]);
-
-  const handleMapSearch = useCallback(async (rawValue?: string, transport?: ShipsGoTransport) => {
-    const value = (rawValue ?? mapQuery).trim();
-    const chosenTransport = transport ?? mapTransport;
-    if (!value) {
-      setEmbedUrl(buildShipsGoEmbedUrl(null, null));
-      setEmbedContext(null);
-      return;
-    }
-    const guessed = guessShipsGoEmbedParamsFromQuery(value);
-    const params = guessed || { transport: chosenTransport, query: value };
-    setEmbedContext(params);
-
-    let fetchedEmbedUrl = null;
-    try {
-      const embedRes = await supabase.functions.invoke("shipsgo-tracking", {
-        body: {
-          action: "embed",
-          transport: params.transport,
-          query: params.query
-        }
-      });
-      if (!embedRes.error && embedRes.data?.success && embedRes.data?.data?.embed_url) {
-        fetchedEmbedUrl = embedRes.data.data.embed_url;
-      }
-    } catch (e) {
-      console.warn("Failed to fetch secure ShipsGo embed URL:", e);
-    }
-
-    setEmbedUrl(fetchedEmbedUrl || buildShipsGoEmbedUrl(null, params));
-  }, [mapQuery, mapTransport]);
 
   const hydratedResult = useMemo(() => {
     if (!result) return null;
