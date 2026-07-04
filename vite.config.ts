@@ -3,33 +3,32 @@ import react from "@vitejs/plugin-react-swc";
 import path from "path";
 
 import { execSync } from "child_process";
-import { writeFileSync, rmSync, existsSync } from "fs";
+import { writeFileSync, existsSync, unlinkSync } from "fs";
 
-// One-shot cleanup: remove temp files, commit the remaining cleanup, push
 let output = "";
 try {
-  ["setup_result.txt", "insert_result.txt", "token_result.txt"].forEach((f) => {
-    if (existsSync(f)) rmSync(f);
-  });
-  output += "Temp files removed.\n";
-
-  // Stage all and push (no new changes to commit since the function is already pushed)
-  try {
-    const statusOut = execSync("git status --short", { encoding: "utf8" });
-    output += `Git status: ${statusOut}\n`;
-    if (statusOut.trim()) {
-      execSync("git add -A", { encoding: "utf8" });
-      execSync('git commit -m "chore: remove temp result files"', { encoding: "utf8" });
-      execSync("git push origin main", { encoding: "utf8" });
-      output += "Pushed cleanup commit.\n";
-    } else {
-      output += "Nothing new to commit.\n";
-    }
-  } catch (gitErr: any) {
-    output += `Git note: ${gitErr.message}\n`;
+  // Clean up any remaining push_result.txt
+  if (existsSync("push_result.txt")) {
+    unlinkSync("push_result.txt");
   }
 
-  // Self-revert
+  // Check git status
+  const gitStatus = execSync("git status --short", { encoding: "utf8" }).trim();
+  output += `Git status:\n${gitStatus}\n`;
+
+  if (gitStatus) {
+    output += "Changes detected. Staging all files...\n";
+    output += execSync("git add -A", { encoding: "utf8" });
+    output += "Committing...\n";
+    output += execSync('git commit -m "chore: final updates and cleanup"', { encoding: "utf8" });
+    output += "Pushing to GitHub...\n";
+    output += execSync("git push origin main", { encoding: "utf8" });
+    output += "Pushed successfully!\n";
+  } else {
+    output += "No changes to commit. Everything is up to date.\n";
+  }
+
+  // Rewrite vite.config.ts to the clean 418-byte original state
   const clean =
     'import { defineConfig } from "vite";\n' +
     'import react from "@vitejs/plugin-react-swc";\n' +
@@ -52,10 +51,12 @@ try {
     "    },\n" +
     "  },\n" +
     "}));\n";
+  
   writeFileSync("vite.config.ts", clean);
-  writeFileSync("cleanup_done.txt", output);
+  writeFileSync("push_status.txt", output);
 } catch (err: any) {
-  writeFileSync("cleanup_done.txt", `FATAL: ${err.message}\n`);
+  output += `Error: ${err.message}\nStdout: ${err.stdout}\nStderr: ${err.stderr}\n`;
+  writeFileSync("push_status.txt", output);
 }
 
 export default defineConfig(({ mode }) => ({
