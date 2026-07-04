@@ -1,0 +1,17 @@
+Deleted: vite.config.ts.timestamp-1783188252932-a521856ada88f8.mjs
+Deleted cleanup_info.txt
+Staging files...
+
+
+Unstaged changes after reset:
+M	vite.config.ts
+
+Committing .gitignore changes and cleanup...
+[main 47087d8] chore: ignore Vite config timestamp files and clean up repository
+ 2 files changed, 1 insertion(+), 60 deletions(-)
+ delete mode 100644 vite.config.ts.timestamp-1783188218821-e2d923ba455b28.mjs
+
+Pushing to GitHub...
+
+Final push completed successfully.
+Restored vite.config.ts to clean state.
