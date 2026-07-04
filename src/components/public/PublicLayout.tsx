@@ -477,7 +477,7 @@ export const PublicLayout = () => {
                   </li>
                   <li className="space-y-1">
                     <span className="font-semibold !text-white block">Email:</span>
-                    <a href="mailto:Support@xycargozm.com" className="text-xs !text-slate-400 hover:!text-white block transition-colors">Support@xycargozm.com</a>
+                    <a href="mailto:support@xycargozm.com" className="text-xs !text-slate-400 hover:!text-white block transition-colors">support@xycargozm.com</a>
                   </li>
                   <li className="space-y-1">
                     <span className="font-semibold !text-white block">Customer Care:</span>

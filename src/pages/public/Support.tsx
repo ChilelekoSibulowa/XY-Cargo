@@ -47,7 +47,12 @@ const Support = () => {
               <div className="space-y-3 text-xs text-slate-600">
                 <div className="flex items-center gap-2">
                   <Mail className="h-4 w-4 text-[#d8000d]" />
-                  {intro.email}
+                  <a
+                    href={`mailto:${intro.email}`}
+                    className="hover:text-[#d8000d] transition-colors"
+                  >
+                    {intro.email}
+                  </a>
                 </div>
                 <div className="flex items-start gap-2">
                   <MapPin className="h-4 w-4 text-[#d8000d] mt-0.5 shrink-0" />

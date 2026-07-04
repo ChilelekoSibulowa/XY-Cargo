@@ -22,7 +22,7 @@ const JoinUs = () => {
             title: "Agent Network",
             detail: "Register customers, book shipments, and earn commissions.",
             icon: UserPlus,
-            to: "/register",
+            to: "/support",
           },
           {
             title: "Partner Warehouses",

@@ -257,7 +257,7 @@ export const cmsDefaults = {
   site: {
     topBar: {
       hours: "8:00am-5:00pm (Zambia Time)",
-      email: "Support@xycargozm.com",
+      email: "support@xycargozm.com",
       address: "De la motte Zambia Ltd Building, Plot 26592, Kafue Road, Lusaka, Zambia, 10101",
       phone: "+260 211220012",
       facebookUrl: "https://www.facebook.com/share/1AwnHQ7TFp/?mibextid=wwXIfr",
@@ -765,7 +765,7 @@ export const cmsDefaults = {
       title: "Customer Support Center",
       body:
         "Get help when you need it. Our expert support team is here to assist you with any questions or concerns about your shipments.",
-      email: "Support@xycargozm.com",
+      email: "support@xycargozm.com",
       address: "Lusaka HQ:\nDe la motte Zambia Ltd Building, Plot 26592, Kafue Road, Lusaka, Zambia, 10101\n\nCopperbelt Office:\nReal masters complex, shinde street corner of kabelenga road",
       phone: "Lusaka Customer Care: +260 211220012\nCopperbelt Customer Care: 0958 977 051",
       whatsapp: "WhatsApp Support: +260 95 8977049 / +260 95 8977051",
