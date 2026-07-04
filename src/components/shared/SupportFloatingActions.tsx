@@ -107,9 +107,14 @@ Please ensure that your unique XY Cargo client code is clearly marked on all pac
       } else if (query.includes("support") || query.includes("contact") || query.includes("human") || query === "contact human support") {
         botResponseText = `You can reach our customer support team directly through the following channels:
         
-1. Official landline: +260 211220012
-2. Support email: info@xycargozm.com
-3. Physical office: Plot 26592, Kafue Road, Lusaka, Zambia`;
+1. Official landline:
+   - Lusaka HQ: +260 211220012
+   - Copperbelt Customer Care: 0958 977 051
+2. WhatsApp: +260 95 8977049 / +260 95 8977051
+3. Support email: Support@xycargozm.com
+4. Physical offices:
+   - Lusaka HQ: De la motte Zambia Ltd Building, Plot 26592, Kafue Road, Lusaka, Zambia, 10101
+   - Ndola (Copperbelt): Real masters complex, shinde street corner of kabelenga road`;
         suggestions = ["China Warehouse Address", "Shipping Rates"];
       } else {
         botResponseText = "I am sorry, I did not catch that. You can ask me about shipment tracking, shipping rates, consolidation warehouses, or how to contact our customer support team.";

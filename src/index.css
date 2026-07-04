@@ -518,12 +518,34 @@
 /* Scroll Reveal Animations */
 .reveal-on-scroll {
   opacity: 0;
-  transform: translateY(30px);
-  transition: opacity 1s cubic-bezier(0.16, 1, 0.3, 1), transform 1s cubic-bezier(0.16, 1, 0.3, 1);
+  transform: translateY(40px);
+  transition: opacity 1.2s cubic-bezier(0.16, 1, 0.3, 1), transform 1.2s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: transform, opacity;
 }
 
 .reveal-on-scroll.revealed {
   opacity: 1;
   transform: translateY(0);
+}
+
+.reveal-on-scroll.reveal-left {
+  transform: translateX(-50px) translateY(0);
+}
+.reveal-on-scroll.reveal-left.revealed {
+  transform: translateX(0) translateY(0);
+}
+
+.reveal-on-scroll.reveal-right {
+  transform: translateX(50px) translateY(0);
+}
+.reveal-on-scroll.reveal-right.revealed {
+  transform: translateX(0) translateY(0);
+}
+
+.reveal-on-scroll.reveal-scale {
+  transform: scale(0.95) translateY(20px);
+}
+.reveal-on-scroll.reveal-scale.revealed {
+  transform: scale(1) translateY(0);
 }
 

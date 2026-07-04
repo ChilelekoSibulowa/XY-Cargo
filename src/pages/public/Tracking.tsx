@@ -141,11 +141,30 @@ const Tracking = () => {
     const resolvedTransport = resolvedTrackingParams?.transport ?? preferredTransport ?? null;
     autoTrackedKeyRef.current = `${resolvedTransport || ""}:${query}`;
 
-    setIsEmbedLoading(false);
     setIsLiveLoading(shouldFetchLiveData);
-    setEmbedUrl(buildShipsGoEmbedUrl(null, resolvedTrackingParams));
     setEmbedContext(resolvedTrackingParams);
     syncTrackingSearchParams(query, resolvedTransport);
+
+    let fetchedEmbedUrl = null;
+    if (resolvedTrackingParams) {
+      try {
+        const embedRes = await supabase.functions.invoke("shipsgo-tracking", {
+          body: {
+            action: "embed",
+            transport: resolvedTrackingParams.transport,
+            query: resolvedTrackingParams.query
+          }
+        });
+        if (!embedRes.error && embedRes.data?.success && embedRes.data?.data?.embed_url) {
+          fetchedEmbedUrl = embedRes.data.data.embed_url;
+        }
+      } catch (e) {
+        console.warn("Failed to fetch secure ShipsGo embed URL from edge function:", e);
+      }
+    }
+
+    setEmbedUrl(fetchedEmbedUrl || buildShipsGoEmbedUrl(null, resolvedTrackingParams));
+    setIsEmbedLoading(false);
 
     const liveResponse = await (shouldFetchLiveData
       ? Promise.resolve(

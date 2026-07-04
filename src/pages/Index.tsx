@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { createPortal } from "react-dom";
 import {
   ArrowRight,
+  FileText,
   BatteryCharging,
   Box,
   Calculator,
@@ -39,6 +40,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useCmsPage } from "@/hooks/useCmsPage";
 import { cmsDefaults, CmsHomeData } from "@/content/cmsDefaults";
 import { OptimizedImage } from "@/components/shared/OptimizedImage";
+import { CurrencySwitcher } from "@/components/shared/CurrencySwitcher";
+import { CountUp } from "@/components/shared/CountUp";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ShipsGoEmbedCard } from "@/components/tracking/ShipsGoEmbedCard";
 import { Badge } from "@/components/ui/badge";
@@ -124,6 +127,16 @@ const Index = () => {
     }
   ];
 
+  const getServiceLink = (title: string) => {
+    const normalized = title.trim().toLowerCase();
+    if (normalized.includes("air")) return "/calculator";
+    if (normalized.includes("sea")) return "/calculator";
+    if (normalized.includes("sourcing")) return "/services/product-sourcing";
+    if (normalized.includes("payment") || normalized.includes("supplier")) return "/services/supplier-payment-facilitation";
+    if (normalized.includes("clearance") || normalized.includes("customs")) return "/services/customs-clearance";
+    return "/services";
+  };
+
   // State variables for transparent overlay navigation and tabs in the hero section
   const [heroActiveTab, setHeroActiveTab] = useState<"track" | "ship">("track");
   const [heroTrackingNumber, setHeroTrackingNumber] = useState("");
@@ -169,28 +182,51 @@ const Index = () => {
 
     try {
       const details = await lookupTrackingDetails(query);
+      let resolvedParams = null;
       if (details) {
         setTrackingResult(details);
-        const resolvedParams = getShipsGoEmbedParams(details) || guessShipsGoEmbedParamsFromQuery(query);
-        if (resolvedParams) {
-          setTrackingEmbedUrl(buildShipsGoEmbedUrl(null, resolvedParams));
-          setTrackingEmbedContext(resolvedParams);
-          if (resolvedParams.transport === "ocean") {
+        resolvedParams = getShipsGoEmbedParams(details) || guessShipsGoEmbedParamsFromQuery(query);
+      } else {
+        resolvedParams = guessShipsGoEmbedParamsFromQuery(query);
+        if (!resolvedParams) {
+          setTrackingError("No shipment found with that tracking number.");
+        }
+      }
+
+      if (resolvedParams) {
+        setTrackingEmbedContext(resolvedParams);
+
+        // Try to fetch secure embed URL from the edge function
+        let fetchedEmbedUrl = null;
+        try {
+          const embedRes = await supabase.functions.invoke("shipsgo-tracking", {
+            body: {
+              action: "embed",
+              transport: resolvedParams.transport,
+              query: resolvedParams.query
+            }
+          });
+          if (!embedRes.error && embedRes.data?.success && embedRes.data?.data?.embed_url) {
+            fetchedEmbedUrl = embedRes.data.data.embed_url;
+          }
+        } catch (e) {
+          console.warn("Failed to fetch secure ShipsGo embed URL from edge function:", e);
+        }
+
+        setTrackingEmbedUrl(fetchedEmbedUrl || buildShipsGoEmbedUrl(null, resolvedParams));
+
+        // Fetch live data for ocean shipments
+        if (resolvedParams.transport === "ocean") {
+          try {
             const response = await supabase.functions.invoke("shipsgo-tracking", {
               body: { action: "track", tracking_number: resolvedParams.query }
             });
             if (!response.error && response.data?.success && response.data?.data) {
               setTrackingLiveData(response.data.data);
             }
+          } catch (e) {
+            console.warn("Failed to fetch ShipsGo live map points:", e);
           }
-        }
-      } else {
-        const resolvedParams = guessShipsGoEmbedParamsFromQuery(query);
-        if (resolvedParams) {
-          setTrackingEmbedUrl(buildShipsGoEmbedUrl(null, resolvedParams));
-          setTrackingEmbedContext(resolvedParams);
-        } else {
-          setTrackingError("No shipment found with that tracking number.");
         }
       }
     } catch (err) {
@@ -594,16 +630,16 @@ const Index = () => {
         <header className={cn(
           "left-0 right-0 z-50 w-full transition-all duration-300",
           isScrolled 
-            ? "fixed top-0 bg-white/95 backdrop-blur-md border-b border-slate-200/80 shadow-sm py-2" 
-            : "absolute top-0 bg-slate-900/15 backdrop-blur-md border-b border-white/10 py-4"
+            ? "fixed top-0 bg-white/80 backdrop-blur-md border-b border-slate-100 py-4 px-8" 
+            : "absolute top-0 bg-transparent border-b border-white/10 py-6 px-8"
         )}>
-          <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-6">
+          <div className="mx-auto flex max-w-7xl items-center justify-between gap-4">
             {/* Logo: LogoImage + XY Cargo */}
             <Link to="/" className="flex items-center gap-3 transition-transform hover:scale-[1.01]">
               <div className="relative">
                 <LogoImage size="md" />
               </div>
-              <div className="flex flex-col text-left">
+              <div className="flex flex-col text-left font-satoshi">
                 <span className={cn(
                   "text-base font-extrabold tracking-tight leading-tight transition-colors duration-300",
                   isScrolled ? "text-slate-900" : "text-white"
@@ -614,109 +650,143 @@ const Index = () => {
             </Link>
 
             {/* Navigation links */}
-            <nav className="hidden items-center gap-8 lg:flex">
+            <nav className="hidden items-center gap-6 xl:gap-8 lg:flex">
               <Link 
                 to="/" 
                 className={cn(
-                  "text-xs font-bold uppercase tracking-wider transition-colors relative py-1 group",
-                  isScrolled ? "text-slate-700 hover:text-[#d8000d]" : "text-white hover:text-[#d8000d]"
+                  "text-sm font-medium tracking-wide transition-colors relative py-1",
+                  isScrolled 
+                    ? "text-slate-600 hover:text-slate-900" 
+                    : "text-white/90 hover:text-white"
                 )}
               >
                 Home
-                <span className="absolute bottom-0 left-0 w-full h-0.5 bg-[#d8000d] scale-x-100 transition-transform origin-left" />
               </Link>
-              <div className="relative group/shipping">
-                <button 
-                  className={cn(
-                    "flex items-center gap-1 text-xs font-bold uppercase tracking-wider transition-colors py-1",
-                    isScrolled ? "text-slate-700 hover:text-[#d8000d]" : "text-white hover:text-[#d8000d]"
-                  )}
-                >
-                  Shipping
-                  <ChevronDown className="h-3.5 w-3.5" />
+
+              {/* Shipping Dropdown */}
+              <div className="relative group/dropdown">
+                <button className={cn(
+                  "flex items-center gap-1 text-sm font-medium tracking-wide py-1 focus:outline-none transition-colors",
+                  isScrolled 
+                    ? "text-slate-600 hover:text-slate-900" 
+                    : "text-white/90 hover:text-white"
+                )}>
+                  <span>Shipping</span>
+                  <ChevronDown className={cn(
+                    "h-3.5 w-3.5 transition-transform duration-300 group-hover:rotate-180",
+                    isScrolled ? "text-slate-400 group-hover:text-slate-600" : "text-white/60 group-hover:text-white"
+                  )} />
                 </button>
-                <div className="absolute top-full left-0 hidden group-hover/shipping:block bg-slate-950/90 backdrop-blur-md text-white rounded-2xl shadow-2xl border border-white/10 py-2.5 w-48 mt-1 z-50 transition-all duration-300 animate-fade-in">
-                  <Link to="/calculator" className="block px-4 py-2.5 text-xs font-bold uppercase tracking-wider hover:bg-white/10 hover:text-[#d8000d] transition-colors">
+                <div className="absolute top-full left-0 hidden group-hover/dropdown:block bg-white/95 backdrop-blur-md rounded-2xl shadow-xl border border-slate-200/50 py-2.5 w-48 mt-1 z-50 transition-all duration-300 animate-fade-in text-slate-800">
+                  <Link to="/calculator" className="block px-4 py-2 hover:bg-slate-50 hover:text-[#E11D48] rounded-lg text-xs font-semibold text-slate-600 transition-colors mx-1">
                     Shipping Calculator
                   </Link>
-                  <Link to="/services" className="block px-4 py-2.5 text-xs font-bold uppercase tracking-wider hover:bg-white/10 hover:text-[#d8000d] transition-colors">
+                  <Link to="/services" className="block px-4 py-2 hover:bg-slate-50 hover:text-[#E11D48] rounded-lg text-xs font-semibold text-slate-600 transition-colors mx-1">
                     Our Services
                   </Link>
-                  <Link to="/pricing" className="block px-4 py-2.5 text-xs font-bold uppercase tracking-wider hover:bg-white/10 hover:text-[#d8000d] transition-colors">
-                    Pricing Rates
+                  <Link to="/how-we-work" className="block px-4 py-2 hover:bg-slate-50 hover:text-[#E11D48] rounded-lg text-xs font-semibold text-slate-600 transition-colors mx-1">
+                    How We Work
                   </Link>
                 </div>
               </div>
+
+              {/* Tracking */}
               <Link 
                 to="/tracking" 
                 className={cn(
-                  "text-xs font-bold uppercase tracking-wider transition-colors relative py-1 group",
-                  isScrolled ? "text-slate-700 hover:text-[#d8000d]" : "text-white hover:text-[#d8000d]"
+                  "text-sm font-medium tracking-wide transition-colors relative py-1",
+                  isScrolled 
+                    ? "text-slate-600 hover:text-slate-900" 
+                    : "text-white/90 hover:text-white"
                 )}
               >
                 Tracking
-                <span className="absolute bottom-0 left-0 w-full h-0.5 bg-[#d8000d] scale-x-0 transition-transform origin-left group-hover:scale-x-100" />
               </Link>
-              <Link 
-                to="/support" 
-                className={cn(
-                  "text-xs font-bold uppercase tracking-wider transition-colors relative py-1 group",
-                  isScrolled ? "text-slate-700 hover:text-[#d8000d]" : "text-white hover:text-[#d8000d]"
-                )}
-              >
-                Support
-                <span className="absolute bottom-0 left-0 w-full h-0.5 bg-[#d8000d] scale-x-0 transition-transform origin-left group-hover:scale-x-100" />
-              </Link>
-              <Link 
-                to="/join-us" 
-                className={cn(
-                  "text-xs font-bold uppercase tracking-wider transition-colors relative py-1 group",
-                  isScrolled ? "text-slate-700 hover:text-[#d8000d]" : "text-white hover:text-[#d8000d]"
-                )}
-              >
-                Career
-                <span className="absolute bottom-0 left-0 w-full h-0.5 bg-[#d8000d] scale-x-0 transition-transform origin-left group-hover:scale-x-100" />
-              </Link>
+
+              {/* Media & Resources Dropdown */}
+              <div className="relative group/dropdown">
+                <button className={cn(
+                  "flex items-center gap-1 text-sm font-medium tracking-wide py-1 focus:outline-none transition-colors",
+                  isScrolled 
+                    ? "text-slate-600 hover:text-slate-900" 
+                    : "text-white/90 hover:text-white"
+                )}>
+                  <span>Media & Resources</span>
+                  <ChevronDown className={cn(
+                    "h-3.5 w-3.5 transition-transform duration-300 group-hover:rotate-180",
+                    isScrolled ? "text-slate-400 group-hover:text-slate-600" : "text-white/60 group-hover:text-white"
+                  )} />
+                </button>
+                <div className="absolute top-full left-0 hidden group-hover/dropdown:block bg-white/95 backdrop-blur-md rounded-2xl shadow-xl border border-slate-200/50 py-2.5 w-48 mt-1 z-50 transition-all duration-300 animate-fade-in text-slate-800">
+                  <Link to="/gallery" className="block px-4 py-2 hover:bg-slate-50 hover:text-[#E11D48] rounded-lg text-xs font-semibold text-slate-600 transition-colors mx-1">
+                    Gallery
+                  </Link>
+                  <Link to="/podcast" className="block px-4 py-2 hover:bg-slate-50 hover:text-[#E11D48] rounded-lg text-xs font-semibold text-slate-600 transition-colors mx-1">
+                    Podcast
+                  </Link>
+                  <Link to="/blog" className="block px-4 py-2 hover:bg-slate-50 hover:text-[#E11D48] rounded-lg text-xs font-semibold text-slate-600 transition-colors mx-1 flex items-center justify-between">
+                    <span>Blog</span>
+                    <span className="text-[9px] font-bold bg-rose-50 text-[#E11D48] px-1.5 py-0.5 rounded-full border border-rose-100">NEW</span>
+                  </Link>
+                </div>
+              </div>
+
+              {/* Company Dropdown */}
+              <div className="relative group/dropdown">
+                <button className={cn(
+                  "flex items-center gap-1 text-sm font-medium tracking-wide py-1 focus:outline-none transition-colors",
+                  isScrolled 
+                    ? "text-slate-600 hover:text-slate-900" 
+                    : "text-white/90 hover:text-white"
+                )}>
+                  <span>Company</span>
+                  <ChevronDown className={cn(
+                    "h-3.5 w-3.5 transition-transform duration-300 group-hover:rotate-180",
+                    isScrolled ? "text-slate-400 group-hover:text-slate-600" : "text-white/60 group-hover:text-white"
+                  )} />
+                </button>
+                <div className="absolute top-full left-0 hidden group-hover/dropdown:block bg-white/95 backdrop-blur-md rounded-2xl shadow-xl border border-slate-200/50 py-2.5 w-48 mt-1 z-50 transition-all duration-300 animate-fade-in text-slate-800">
+                  <Link to="/support" className="block px-4 py-2 hover:bg-slate-50 hover:text-[#E11D48] rounded-lg text-xs font-semibold text-slate-600 transition-colors mx-1">
+                    Support
+                  </Link>
+                  <Link to="/join-us" className="block px-4 py-2 hover:bg-slate-50 hover:text-[#E11D48] rounded-lg text-xs font-semibold text-slate-600 transition-colors mx-1">
+                    Careers
+                  </Link>
+                </div>
+              </div>
             </nav>
 
-            {/* Right: Phone and CTA */}
+            {/* Right Side Actions */}
             <div className="flex items-center gap-4">
-              {/* Phone pill */}
               <a
                 href="tel:+260211220012"
                 className={cn(
-                  "hidden md:flex items-center gap-2 border font-bold text-xs py-2 px-4 rounded-full transition duration-300",
-                  isScrolled 
-                    ? "bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100" 
-                    : "bg-white/10 border-white/10 text-white hover:bg-white/20"
+                  "hidden md:flex items-center gap-2 text-sm font-medium transition-colors",
+                  isScrolled ? "text-slate-600 hover:text-[#E11D48]" : "text-white/90 hover:text-white"
                 )}
               >
-                <Phone className="h-3.5 w-3.5 text-[#d8000d] fill-current animate-pulse" />
+                <Phone className={cn("h-4 w-4", isScrolled ? "text-slate-400" : "text-white/60")} />
                 <span>+260 211220012</span>
               </a>
-              {/* Get Started button */}
               <Button
                 asChild
                 className={cn(
-                  "hidden sm:flex font-extrabold text-xs py-3 px-5 rounded-full items-center gap-2 transition-all duration-300 shadow-md hover:shadow-lg group hover:scale-[1.02]",
+                  "hidden sm:flex text-sm font-medium px-5 py-2.5 rounded-full shadow-sm hover:shadow transition-all duration-200 ease-in-out border-none",
                   isScrolled
-                    ? "bg-[#d8000d] hover:bg-[#bf000c] text-white"
-                    : "bg-white hover:bg-slate-50 text-slate-900 border border-slate-200/50"
+                    ? "bg-[#E11D48] hover:bg-[#BE123C] text-white"
+                    : "bg-white hover:bg-slate-50 text-slate-900"
                 )}
               >
                 <Link to="/login" className="flex items-center gap-2">
                   <span>Get Started Now</span>
-                  <ArrowRight className={cn(
-                    "h-3.5 w-3.5 transition-transform duration-300 group-hover:translate-x-1",
-                    isScrolled ? "text-white" : "text-slate-900"
-                  )} />
+                  <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
                 </Link>
               </Button>
 
-              {/* Custom Morphing Hamburger Button */}
+              {/* Mobile Hamburger Button */}
               <button
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                className="relative h-10 w-10 flex items-center justify-center lg:hidden z-50 focus:outline-none"
+                className="relative h-10 w-10 flex items-center justify-center lg:hidden z-[102] focus:outline-none"
                 aria-label="Toggle Menu"
               >
                 <div className="relative w-6 h-5">
@@ -760,68 +830,78 @@ const Index = () => {
                 isMobileMenuOpen ? "translate-x-0" : "translate-x-full"
               )}
             >
-              <div className="flex flex-col gap-8">
+              <div className="flex flex-col gap-6">
                 <div className="flex items-center gap-3 pb-6 border-b border-slate-100">
                   <LogoImage size="md" />
                   <span className="text-lg font-bold text-slate-900 leading-tight">XY Cargo Zambia</span>
                 </div>
 
-                <nav className="flex flex-col gap-5">
+                <nav className="flex flex-col gap-4">
                   <Link 
                     to="/" 
                     onClick={() => setIsMobileMenuOpen(false)}
-                    className="text-base font-bold text-slate-900 hover:text-[#d8000d] transition-colors py-1 flex items-center justify-between group"
+                    className="text-sm font-semibold text-slate-700 hover:text-rose-600 transition-colors py-2 border-b border-slate-50"
                   >
-                    <span>Home</span>
-                    <ChevronRight className="h-4 w-4 text-slate-400 group-hover:text-[#d8000d] group-hover:translate-x-1 transition-all" />
+                    Home
                   </Link>
-                  <Link 
-                    to="/calculator" 
-                    onClick={() => setIsMobileMenuOpen(false)}
-                    className="text-base font-bold text-slate-900 hover:text-[#d8000d] transition-colors py-1 flex items-center justify-between group"
-                  >
-                    <span>Shipping Calculator</span>
-                    <ChevronRight className="h-4 w-4 text-slate-400 group-hover:text-[#d8000d] group-hover:translate-x-1 transition-all" />
-                  </Link>
-                  <Link 
-                    to="/services" 
-                    onClick={() => setIsMobileMenuOpen(false)}
-                    className="text-base font-bold text-slate-900 hover:text-[#d8000d] transition-colors py-1 flex items-center justify-between group"
-                  >
-                    <span>Our Services</span>
-                    <ChevronRight className="h-4 w-4 text-slate-400 group-hover:text-[#d8000d] group-hover:translate-x-1 transition-all" />
-                  </Link>
-                  <Link 
-                    to="/pricing" 
-                    onClick={() => setIsMobileMenuOpen(false)}
-                    className="text-base font-bold text-slate-900 hover:text-[#d8000d] transition-colors py-1 flex items-center justify-between group"
-                  >
-                    <span>Pricing Rates</span>
-                    <ChevronRight className="h-4 w-4 text-slate-400 group-hover:text-[#d8000d] group-hover:translate-x-1 transition-all" />
-                  </Link>
+
+                  <Accordion type="single" collapsible className="w-full border-none">
+                    <AccordionItem value="shipping" className="border-b border-slate-50">
+                      <AccordionTrigger className="text-sm font-semibold hover:no-underline py-2 text-slate-700 hover:text-rose-600">
+                        Shipping
+                      </AccordionTrigger>
+                      <AccordionContent className="pl-4 pt-1 pb-2 flex flex-col gap-2">
+                        <Link to="/calculator" onClick={() => setIsMobileMenuOpen(false)} className="text-xs font-medium text-slate-500 hover:text-rose-600 py-1">
+                          Shipping Calculator
+                        </Link>
+                        <Link to="/services" onClick={() => setIsMobileMenuOpen(false)} className="text-xs font-medium text-slate-500 hover:text-rose-600 py-1">
+                          Our Services
+                        </Link>
+                        <Link to="/how-we-work" onClick={() => setIsMobileMenuOpen(false)} className="text-xs font-medium text-slate-500 hover:text-rose-600 py-1">
+                          How We Work
+                        </Link>
+                      </AccordionContent>
+                    </AccordionItem>
+
+                    <AccordionItem value="media" className="border-b border-slate-50">
+                      <AccordionTrigger className="text-sm font-semibold hover:no-underline py-2 text-slate-700 hover:text-rose-600">
+                        Media & Resources
+                      </AccordionTrigger>
+                      <AccordionContent className="pl-4 pt-1 pb-2 flex flex-col gap-2">
+                        <Link to="/gallery" onClick={() => setIsMobileMenuOpen(false)} className="text-xs font-medium text-slate-500 hover:text-rose-600 py-1">
+                          Gallery
+                        </Link>
+                        <Link to="/podcast" onClick={() => setIsMobileMenuOpen(false)} className="text-xs font-medium text-slate-500 hover:text-rose-600 py-1">
+                          Podcast
+                        </Link>
+                        <Link to="/blog" onClick={() => setIsMobileMenuOpen(false)} className="text-xs font-medium text-slate-500 hover:text-rose-600 py-1 flex items-center justify-between">
+                          <span>Blog</span>
+                          <span className="text-[8px] font-bold bg-rose-50 text-rose-600 px-1.5 py-0.5 rounded-full border border-rose-100">NEW</span>
+                        </Link>
+                      </AccordionContent>
+                    </AccordionItem>
+
+                    <AccordionItem value="company" className="border-b border-slate-50">
+                      <AccordionTrigger className="text-sm font-semibold hover:no-underline py-2 text-slate-700 hover:text-rose-600">
+                        Company
+                      </AccordionTrigger>
+                      <AccordionContent className="pl-4 pt-1 pb-2 flex flex-col gap-2">
+                        <Link to="/support" onClick={() => setIsMobileMenuOpen(false)} className="text-xs font-medium text-slate-500 hover:text-rose-600 py-1">
+                          Support
+                        </Link>
+                        <Link to="/join-us" onClick={() => setIsMobileMenuOpen(false)} className="text-xs font-medium text-slate-500 hover:text-rose-600 py-1">
+                          Careers
+                        </Link>
+                      </AccordionContent>
+                    </AccordionItem>
+                  </Accordion>
+
                   <Link 
                     to="/tracking" 
                     onClick={() => setIsMobileMenuOpen(false)}
-                    className="text-base font-bold text-slate-900 hover:text-[#d8000d] transition-colors py-1 flex items-center justify-between group"
+                    className="text-sm font-semibold text-slate-700 hover:text-rose-600 transition-colors py-2 border-b border-slate-50"
                   >
-                    <span>Tracking</span>
-                    <ChevronRight className="h-4 w-4 text-slate-400 group-hover:text-[#d8000d] group-hover:translate-x-1 transition-all" />
-                  </Link>
-                  <Link 
-                    to="/support" 
-                    onClick={() => setIsMobileMenuOpen(false)}
-                    className="text-base font-bold text-slate-900 hover:text-[#d8000d] transition-colors py-1 flex items-center justify-between group"
-                  >
-                    <span>Support</span>
-                    <ChevronRight className="h-4 w-4 text-slate-400 group-hover:text-[#d8000d] group-hover:translate-x-1 transition-all" />
-                  </Link>
-                  <Link 
-                    to="/join-us" 
-                    onClick={() => setIsMobileMenuOpen(false)}
-                    className="text-base font-bold text-slate-900 hover:text-[#d8000d] transition-colors py-1 flex items-center justify-between group"
-                  >
-                    <span>Career</span>
-                    <ChevronRight className="h-4 w-4 text-slate-400 group-hover:text-[#d8000d] group-hover:translate-x-1 transition-all" />
+                    Tracking
                   </Link>
                 </nav>
               </div>
@@ -829,15 +909,15 @@ const Index = () => {
               <div className="space-y-6 pt-6 border-t border-slate-100">
                 <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
                   <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Customer Support</p>
-                  <a href="tel:+260211220012" className="flex items-center gap-3 group text-slate-700 hover:text-[#d8000d] transition-colors">
-                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white shadow-sm border border-slate-100 text-slate-800 transition-colors group-hover:bg-[#d8000d] group-hover:text-white">
+                  <a href="tel:+260211220012" className="flex items-center gap-3 group text-slate-700 hover:text-rose-600 transition-colors">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white shadow-sm border border-slate-100 text-slate-800 transition-colors group-hover:bg-[#E11D48] group-hover:text-white">
                       <Phone className="h-4 w-4" />
                     </div>
                     <span className="text-sm font-bold">+260 211220012</span>
                   </a>
                 </div>
 
-                <Button asChild onClick={() => setIsMobileMenuOpen(false)} className="w-full rounded-xl bg-[#d8000d] hover:bg-[#bf000c] h-12 text-sm font-bold shadow-lg shadow-[#d8000d]/10">
+                <Button asChild onClick={() => setIsMobileMenuOpen(false)} className="w-full rounded-xl bg-[#E11D48] hover:bg-[#BE123C] h-12 text-sm font-bold shadow-lg shadow-[#E11D48]/10 text-white border-none">
                   <Link to="/login" className="flex items-center justify-center gap-2">
                     <User className="h-4 w-4" />
                     Get Started Now
@@ -1005,19 +1085,27 @@ const Index = () => {
             <div className="mx-auto max-w-5xl rounded-3xl bg-slate-950/65 backdrop-blur-md border border-white/10 p-5 shadow-2xl">
               <div className="grid grid-cols-4 gap-6 text-white divide-x divide-white/10 text-center">
                 <div className="px-4">
-                  <p className="text-2xl font-black tracking-tight text-white font-satoshi">2000+</p>
+                  <p className="text-2xl font-black tracking-tight text-white font-satoshi">
+                    <CountUp end="2000+" />
+                  </p>
                   <p className="text-[10px] uppercase tracking-wider text-slate-400 mt-1 font-bold">Satisfied Clients</p>
                 </div>
                 <div className="px-4">
-                  <p className="text-2xl font-black tracking-tight text-white font-satoshi">2.98%</p>
+                  <p className="text-2xl font-black tracking-tight text-white font-satoshi">
+                    <CountUp end="99.8%" />
+                  </p>
                   <p className="text-[10px] uppercase tracking-wider text-slate-400 mt-1 font-bold">On-Time Delivery Rate</p>
                 </div>
                 <div className="px-4">
-                  <p className="text-2xl font-black tracking-tight text-white font-satoshi">150+</p>
+                  <p className="text-2xl font-black tracking-tight text-white font-satoshi">
+                    <CountUp end="150+" />
+                  </p>
                   <p className="text-[10px] uppercase tracking-wider text-slate-400 mt-1 font-bold">Countries Served</p>
                 </div>
                 <div className="px-4">
-                  <p className="text-2xl font-black tracking-tight text-white font-satoshi">24/7</p>
+                  <p className="text-2xl font-black tracking-tight text-white font-satoshi">
+                    <CountUp end="24/7" />
+                  </p>
                   <p className="text-[10px] uppercase tracking-wider text-slate-400 mt-1 font-bold">Customer Support</p>
                 </div>
               </div>
@@ -1029,30 +1117,38 @@ const Index = () => {
         <section className="bg-slate-950 border-b border-slate-900 py-8 lg:hidden">
           <div className="mx-auto grid grid-cols-2 gap-y-6 gap-x-4 px-6 text-center text-white">
             <div>
-              <p className="text-2xl font-black text-white font-satoshi">2000+</p>
+              <p className="text-2xl font-black text-white font-satoshi">
+                <CountUp end="2000+" />
+              </p>
               <p className="text-[10px] uppercase tracking-wider text-slate-400 mt-1 font-bold">Satisfied Clients</p>
             </div>
             <div>
-              <p className="text-2xl font-black text-white font-satoshi">2.98%</p>
+              <p className="text-2xl font-black text-white font-satoshi">
+                <CountUp end="99.8%" />
+              </p>
               <p className="text-[10px] uppercase tracking-wider text-slate-400 mt-1 font-bold">On-Time Delivery Rate</p>
             </div>
             <div>
-              <p className="text-2xl font-black text-white font-satoshi">150+</p>
+              <p className="text-2xl font-black text-white font-satoshi">
+                <CountUp end="150+" />
+              </p>
               <p className="text-[10px] uppercase tracking-wider text-slate-400 mt-1 font-bold">Countries Served</p>
             </div>
             <div>
-              <p className="text-2xl font-black text-white font-satoshi">24/7</p>
+              <p className="text-2xl font-black text-white font-satoshi">
+                <CountUp end="24/7" />
+              </p>
               <p className="text-[10px] uppercase tracking-wider text-slate-400 mt-1 font-bold">Customer Support</p>
             </div>
           </div>
         </section>
 
         {/* Section 1: Tailored Logistics Services */}
-        <section className="bg-white py-24 border-t border-slate-100 reveal-on-scroll">
+        <section className="bg-white py-24 border-t border-slate-100">
           <div className="mx-auto max-w-7xl px-6">
             {/* Header Area */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start mb-16">
-              <div className="space-y-4">
+              <div className="space-y-4 reveal-on-scroll reveal-left">
                 <div className="flex items-center gap-2">
                   <span className="w-2.5 h-2.5 bg-[#d8000d] shrink-0" />
                   <span className="text-xs font-extrabold text-slate-900 uppercase tracking-widest">Our Services</span>
@@ -1061,7 +1157,7 @@ const Index = () => {
                   Tailored Logistics <br /> Services For You
                 </h2>
               </div>
-              <div className="md:pt-8">
+              <div className="md:pt-8 reveal-on-scroll reveal-right">
                 <p className="text-sm sm:text-base text-slate-500 leading-relaxed max-w-xl font-medium">
                   From Transportation To Supply Chain Optimization, XY Cargo Provides End-To-End Services That Help Your Business Move Faster And Smarter.
                 </p>
@@ -1069,11 +1165,12 @@ const Index = () => {
             </div>
 
             {/* 3x2 Border Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 border-t border-l border-slate-200">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 border-t border-l border-slate-200 reveal-on-scroll reveal-scale">
               {services.map((service) => (
-                <div 
+                <Link 
                   key={service.id} 
-                  className="border-r border-b border-slate-200 bg-white group overflow-hidden flex flex-col justify-between"
+                  to={getServiceLink(service.title)}
+                  className="border-r border-b border-slate-200 bg-white group overflow-hidden flex flex-col justify-between hover:shadow-md transition-all duration-300"
                 >
                   <div>
                     {/* Seamless Image Container */}
@@ -1085,9 +1182,9 @@ const Index = () => {
                       />
                     </div>
                     {/* Text Block */}
-                    <div className="p-8 space-y-4">
+                    <div className="p-8 space-y-4 font-satoshi">
                       <div className="flex items-center justify-between gap-4">
-                        <h3 className="text-lg font-extrabold text-slate-900 uppercase tracking-tight font-syne group-hover:text-[#d8000d] transition-colors duration-300">
+                        <h3 className="text-lg font-extrabold text-slate-900 uppercase tracking-tight group-hover:text-[#d8000d] transition-colors duration-300">
                           {service.title}
                         </h3>
                         <span className="text-sm font-bold text-slate-400 font-mono tracking-wider">
@@ -1099,29 +1196,28 @@ const Index = () => {
                       </p>
                     </div>
                   </div>
-                </div>
+                </Link>
               ))}
             </div>
           </div>
         </section>
 
         {/* Section 1.5: About Us Section */}
-        <section className="bg-white py-24 border-t border-slate-100 reveal-on-scroll">
+        <section className="bg-white py-24 border-t border-slate-100">
           <div className="mx-auto max-w-7xl px-6 relative z-10">
-            {/* Top Grid: Copywriting & Rotated Card Stack */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-16 items-center">
               {/* Left Column: Text and CTA Button */}
-              <div className="lg:col-span-7 space-y-8 text-left">
+              <div className="lg:col-span-5 space-y-8 text-left reveal-on-scroll reveal-left">
                 <div className="space-y-4">
                   <div className="flex items-center gap-2">
-                    <span className="w-2.5 h-2.5 bg-[#d8000d] shrink-0" />
-                    <span className="text-xs font-extrabold text-slate-900 uppercase tracking-widest">Who We Are</span>
+                    <span className="w-2.5 h-2.5 bg-[#E11D48] shrink-0" />
+                    <span className="text-xs font-extrabold text-slate-900 uppercase tracking-widest font-satoshi">Who We Are</span>
                   </div>
-                  <h2 className="text-4xl md:text-[60px] font-[900] md:leading-[60px] text-slate-900 uppercase font-satoshi tracking-tight">
+                  <h2 className="text-4xl md:text-[60px] font-[900] md:leading-[60px] text-slate-900 font-satoshi tracking-tight">
                     About Us
                   </h2>
                 </div>
-                <div className="space-y-6 text-sm sm:text-base text-slate-600 leading-relaxed font-medium">
+                <div className="space-y-6 text-sm sm:text-base text-slate-600 leading-relaxed font-medium font-satoshi">
                   <p>
                     XY Cargo Zambia is your premier logistics gateway connecting China to Zambia. We specialize in fast, secure, and affordable air and sea freight cargo consolidation, dedicated customs clearance, and secure warehousing. From individual parcels to commercial cargo shipments, we manage your entire supply chain with total transparency and care.
                   </p>
@@ -1130,7 +1226,7 @@ const Index = () => {
                   </p>
                 </div>
                 <div className="pt-2">
-                  <Button asChild className="rounded-full bg-[#d8000d] hover:bg-[#bf000c] text-white font-extrabold text-xs uppercase tracking-widest px-8 py-5 shadow-lg shadow-red-900/10 transition-all duration-300 hover:scale-[1.02] group">
+                  <Button asChild className="rounded-full bg-[#E11D48] hover:bg-[#BE123C] text-white font-extrabold text-xs uppercase tracking-widest px-8 py-5 shadow-lg shadow-red-900/10 transition-all duration-300 hover:scale-[1.02] group font-satoshi">
                     <Link to="/about" className="flex items-center gap-2">
                       <span>More About Us</span>
                       <ArrowRight className="h-3.5 w-3.5 transition-transform duration-300 group-hover:translate-x-1" />
@@ -1139,71 +1235,69 @@ const Index = () => {
                 </div>
               </div>
 
-              {/* Right Column: Rotated Overlapping Stack & Dashed Plane Line */}
-              <div className="lg:col-span-5 relative h-[460px] sm:h-[500px] w-full z-10">
-                {/* SVG Loop Path & Airplane */}
-                <svg className="absolute inset-0 w-full h-full -z-10 pointer-events-none" viewBox="0 0 500 400" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M 30,340 Q 150,400 280,280 T 440,50" fill="none" stroke="#d8000d" strokeWidth="2.5" strokeDasharray="6,6" opacity="0.35" />
-                  <g transform="translate(440,50) rotate(-35)">
-                    <path d="M0,0 L-10,-4 L-8,0 L-10,4 Z" fill="#d8000d" opacity="0.75" />
-                  </g>
-                </svg>
-
-                {/* Background Rotated Card - Polaroid Style */}
-                <div className="absolute top-2 left-6 w-[280px] h-[320px] sm:w-[340px] sm:h-[380px] rounded-[24px] overflow-hidden shadow-2xl border border-slate-100 bg-white p-3.5 pb-16 transform rotate-[-6deg] hover:rotate-[-2deg] transition-all duration-500">
-                  <OptimizedImage
-                    src="https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?q=80&w=600&auto=format&fit=crop"
-                    alt="XY Cargo Warehouse Operations"
-                    className="w-full h-full object-cover rounded-[16px]"
-                  />
-                </div>
-
-                {/* Foreground Rotated Card - Polaroid Style */}
-                <div className="absolute top-14 left-24 sm:left-36 w-[260px] h-[300px] sm:w-[320px] sm:h-[360px] rounded-[24px] overflow-hidden shadow-2xl border border-slate-100 bg-white p-3.5 pb-16 transform rotate-[8deg] hover:rotate-[3deg] transition-all duration-500 bg-white z-20">
-                  <OptimizedImage
-                    src={home?.about?.image || cmsDefaults.home.about.image}
-                    alt="XY Cargo Logistics Delivery"
-                    className="w-full h-full object-cover rounded-[16px]"
-                  />
+              {/* Right Column: Custom 3-Image Grid Layout matching user photo */}
+              <div className="lg:col-span-7 reveal-on-scroll reveal-right">
+                <div className="grid grid-cols-12 gap-6 items-center">
+                  {/* Left Column tall image (About Us Warehouse & Staff) */}
+                  <div className="col-span-7">
+                    <OptimizedImage
+                      src="/images/about_us_warehouse.png"
+                      alt="XY Cargo Zambia Warehouse Operations"
+                      className="w-full object-cover rounded-[32px] aspect-[4/5] shadow-2xl hover:scale-[1.01] transition-transform duration-500"
+                    />
+                  </div>
+                  {/* Right Column stacked images */}
+                  <div className="col-span-5 flex flex-col gap-6">
+                    <OptimizedImage
+                      src="/images/About us 1.jpg"
+                      alt="XY Cargo Package Delivery"
+                      className="w-full object-cover rounded-[24px] aspect-[4/3] shadow-lg hover:scale-[1.02] transition-transform duration-500"
+                    />
+                    <OptimizedImage
+                      src="/services/grid-cargo-transport.png"
+                      alt="XY Cargo Loading Operations"
+                      className="w-full object-cover rounded-[24px] aspect-[4/3] shadow-lg hover:scale-[1.02] transition-transform duration-500"
+                    />
+                  </div>
                 </div>
               </div>
             </div>
 
             {/* Bottom Stats Row */}
-            <div className="border-t border-slate-100 pt-16 mt-16 grid grid-cols-2 md:grid-cols-4 gap-8 justify-center">
+            <div className="border-t border-slate-100 pt-16 mt-20 grid grid-cols-2 md:grid-cols-4 gap-8 justify-center">
               <div className="space-y-1 text-center">
                 <p className="text-4xl sm:text-5xl font-[900] text-slate-900 tracking-tight font-satoshi">
-                  10,000<span className="text-[#d8000d] font-black">+</span>
+                  <CountUp end="10,000+" />
                 </p>
-                <p className="text-[10px] uppercase tracking-wider text-slate-400 font-black">Packages Delivered</p>
+                <p className="text-[10px] uppercase tracking-wider text-slate-400 font-satoshi font-black">Packages Delivered</p>
               </div>
               <div className="space-y-1 text-center">
                 <p className="text-4xl sm:text-5xl font-[900] text-slate-900 tracking-tight font-satoshi">
-                  50<span className="text-[#d8000d] font-black">+</span>
+                  <CountUp end="50+" />
                 </p>
-                <p className="text-[10px] uppercase tracking-wider text-slate-400 font-black">Global Partners</p>
+                <p className="text-[10px] uppercase tracking-wider text-slate-400 font-satoshi font-black">Global Partners</p>
+              </div>
+              <div className="space-y-1 text-center">
+                <p className="text-4xl sm:text-5xl font-[900] text-[#E11D48] tracking-tight font-satoshi">
+                  <CountUp end="99.8%" />
+                </p>
+                <p className="text-[10px] uppercase tracking-wider text-slate-400 font-satoshi font-black">Delivery Success</p>
               </div>
               <div className="space-y-1 text-center">
                 <p className="text-4xl sm:text-5xl font-[900] text-slate-900 tracking-tight font-satoshi">
-                  98<span className="text-[#d8000d] font-black">%</span>
+                  <CountUp end="15+" />
                 </p>
-                <p className="text-[10px] uppercase tracking-wider text-slate-400 font-black">Delivery Success</p>
-              </div>
-              <div className="space-y-1 text-center">
-                <p className="text-4xl sm:text-5xl font-[900] text-slate-900 tracking-tight font-satoshi">
-                  15<span className="text-[#d8000d] font-black">+</span>
-                </p>
-                <p className="text-[10px] uppercase tracking-wider text-slate-400 font-black">Years Experience</p>
+                <p className="text-[10px] uppercase tracking-wider text-slate-400 font-satoshi font-black">Years Experience</p>
               </div>
             </div>
           </div>
         </section>
 
         {/* Section 2: Insights & Updates */}
-        <section className="bg-white py-24 border-t border-slate-100 reveal-on-scroll">
+        <section className="bg-white py-24 border-t border-slate-100">
           <div className="mx-auto max-w-7xl px-6">
             {/* Header Area */}
-            <div className="text-center max-w-3xl mx-auto space-y-4 mb-16">
+            <div className="text-center max-w-3xl mx-auto space-y-4 mb-16 reveal-on-scroll reveal-left">
               <div className="flex items-center justify-center gap-2">
                 <span className="w-2.5 h-2.5 bg-[#d8000d] shrink-0" />
                 <span className="text-xs font-extrabold text-slate-900 uppercase tracking-widest">Insights & Updates</span>
@@ -1213,41 +1307,46 @@ const Index = () => {
               </h2>
             </div>
 
-            {/* Featured Article Card */}
-            <div className="relative h-[480px] w-full overflow-hidden rounded-[32px] shadow-2xl border border-slate-100 group">
-              <OptimizedImage 
-                src="https://images.unsplash.com/photo-1494412574643-ff11b0a5c1c3?q=80&w=1200&auto=format&fit=crop" 
+            {/* Redesigned Featured Article Card */}
+            <div className="relative min-h-[480px] w-full overflow-hidden rounded-[32px] shadow-2xl border border-slate-100/60 group flex items-center justify-center md:justify-start reveal-on-scroll reveal-scale">
+               <OptimizedImage 
+                src="/images/trends_command_center.png" 
                 alt="5 Trends Shaping The Future Of Global Logistics" 
-                className="h-full w-full object-cover transform scale-100 group-hover:scale-[1.02] transition-all duration-700 ease-out" 
+                containerClassName="absolute inset-0 w-full h-full"
+                className="transform scale-100 group-hover:scale-[1.01] transition-transform duration-700 ease-out" 
               />
-              {/* Linear Gradient Overlay */}
-              <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent" />
+              {/* Subtle Overlay to blend */}
+              <div className="absolute inset-0 bg-slate-950/15" />
               
-              {/* Overlaid Content Grid */}
-              <div className="absolute inset-0 p-8 sm:p-12 flex flex-col justify-end">
-                <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6">
-                  {/* Left Column: Heading and Info */}
-                  <div className="space-y-4 max-w-2xl text-left">
-                    <h3 className="text-2xl sm:text-3xl font-[900] text-white leading-tight uppercase font-satoshi tracking-tight">
-                      5 Trends Shaping The <br className="hidden sm:inline" /> Future Of Global Logistics
-                    </h3>
-                    <p className="text-xs sm:text-sm text-slate-200 leading-relaxed font-medium">
-                      Discover The Key Innovations Transforming Supply Chains Worldwide, From Automation To Sustainable Shipping.
-                    </p>
+              {/* Left Aligned Content Card (Glassmorphic Redesign) */}
+              <div className="relative z-10 mx-6 my-8 md:my-10 md:ml-12 w-full max-w-[90%] md:max-w-[420px] bg-white rounded-[24px] shadow-xl p-8 md:p-10 flex flex-col justify-between border border-slate-100/50 min-h-[360px] text-left">
+                {/* Badge/Header */}
+                <div className="flex items-center gap-2 text-slate-500 text-xs font-semibold tracking-wide">
+                  <div className="w-6 h-6 rounded-lg bg-slate-100 flex items-center justify-center text-slate-700">
+                    <FileText className="h-3.5 w-3.5" />
                   </div>
-                  
-                  {/* Right Column: Read More Button */}
-                  <div className="shrink-0">
-                    <Link 
-                      to="/blog" 
-                      className="flex items-center gap-4 text-white font-bold text-xs uppercase tracking-widest group/link hover:text-[#d8000d] transition-colors"
-                    >
-                      <span>Read More</span>
-                      <div className="w-12 h-12 bg-[#d8000d] flex items-center justify-center rounded-2xl text-white font-bold transition-all duration-300 group-hover/link:scale-110 group-hover/link:bg-[#bf000c] shadow-lg shadow-red-900/30">
-                        <ArrowRight className="h-5 w-5 text-white transform rotate-[-45deg]" />
-                      </div>
-                    </Link>
-                  </div>
+                  <span className="font-bold text-slate-400 uppercase tracking-wider font-satoshi">Featured Article</span>
+                </div>
+                
+                {/* Title and Description */}
+                <div className="my-6 space-y-4">
+                  <h3 className="text-2xl sm:text-[28px] font-black text-slate-900 leading-tight font-satoshi tracking-tight">
+                    5 Trends Shaping The Future Of Global Logistics
+                  </h3>
+                  <p className="text-xs sm:text-sm text-slate-500 leading-relaxed font-medium font-satoshi">
+                    Discover the key innovations transforming supply chains worldwide, from automation to sustainable shipping.
+                  </p>
+                </div>
+
+                {/* Continue/Read Link */}
+                <div className="pt-2">
+                  <Link 
+                    to="/blog" 
+                    className="flex items-center gap-2 text-slate-900 hover:text-[#E11D48] transition-colors font-bold text-xs uppercase tracking-widest group/btn font-satoshi"
+                  >
+                    <ArrowRight className="h-4 w-4 transform transition-transform duration-300 group-hover/btn:translate-x-1" />
+                    <span>Continue</span>
+                  </Link>
                 </div>
               </div>
             </div>
@@ -1322,7 +1421,7 @@ const Index = () => {
                       >
                         <span
                           className={cn(
-                            "font-extrabold text-lg font-syne",
+                            "font-extrabold text-lg font-satoshi",
                             isFirst
                               ? "text-white"
                               : "text-slate-900 group-hover:text-[#d8000d]"
@@ -1463,9 +1562,9 @@ const Index = () => {
         <Dialog open={isCalculatorDialogOpen} onOpenChange={setIsCalculatorDialogOpen}>
           <DialogContent className="max-w-2xl bg-white rounded-3xl p-6 border-slate-100 shadow-2xl">
             <DialogHeader>
-              <DialogTitle className="text-xl font-bold flex items-center gap-2">
+              <DialogTitle className="text-xl font-bold flex items-center gap-2 font-satoshi">
                 <Calculator className="h-5 w-5 text-[#d8000d]" />
-                Shipping Quote: <span className="text-[#d8000d] font-syne">Instant Estimate</span>
+                Shipping Quote: <span className="text-[#d8000d]">Instant Estimate</span>
               </DialogTitle>
             </DialogHeader>
 
@@ -1575,8 +1674,8 @@ const Index = () => {
               {/* Calculated Estimate Box */}
               <div className="rounded-2xl border border-slate-100 bg-slate-50 p-5 mt-4">
                 <p className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400">Estimated Total Cost</p>
-                <div className="mt-2 flex items-end justify-between">
-                  <p className="text-3xl font-black text-slate-900 font-syne">{formatAmount(calcCurrentQuote.estimatedCost)}</p>
+                <div className="mt-2 flex items-end justify-between font-satoshi">
+                  <p className="text-3xl font-black text-slate-900">{formatAmount(calcCurrentQuote.estimatedCost)}</p>
                   <div className="text-right text-xs text-slate-500 font-bold">
                     <div>Rate: {formatAmount(calcCurrentQuote.rateValue)} / {calcCurrentQuote.rateUnit}</div>
                     <div className="text-[10px] text-slate-400 font-medium">{calcCurrentQuote.detail}</div>

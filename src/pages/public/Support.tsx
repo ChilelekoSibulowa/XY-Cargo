@@ -10,7 +10,19 @@ import { cmsDefaults, CmsSupportData } from "@/content/cmsDefaults";
 
 const Support = () => {
   const { data: content } = useCmsPage<CmsSupportData>("support", cmsDefaults.support);
-  const intro = { ...cmsDefaults.support.intro, ...(content.intro || {}) };
+  const rawIntro = { ...cmsDefaults.support.intro, ...(content.intro || {}) };
+  const hasOldSupportAddress = !rawIntro.address || 
+    rawIntro.address.toLowerCase().includes("carousel") || 
+    rawIntro.address.toLowerCase().includes("shop #94") ||
+    (rawIntro.address.toLowerCase().includes("kafue road") && !rawIntro.address.toLowerCase().includes("de la motte"));
+
+  const intro = {
+    ...rawIntro,
+    address: hasOldSupportAddress ? cmsDefaults.support.intro.address : rawIntro.address,
+    phone: hasOldSupportAddress ? cmsDefaults.support.intro.phone : rawIntro.phone,
+    whatsapp: hasOldSupportAddress ? cmsDefaults.support.intro.whatsapp : rawIntro.whatsapp,
+    whatsappUrl: hasOldSupportAddress ? cmsDefaults.support.intro.whatsappUrl : rawIntro.whatsappUrl,
+  };
   const hero = { ...cmsDefaults.support.hero, ...(content.hero || {}) };
 
   return (
@@ -37,19 +49,19 @@ const Support = () => {
                   <Mail className="h-4 w-4 text-[#d8000d]" />
                   {intro.email}
                 </div>
-                <div className="flex items-center gap-2">
-                  <MapPin className="h-4 w-4 text-[#d8000d]" />
-                  {intro.address}
+                <div className="flex items-start gap-2">
+                  <MapPin className="h-4 w-4 text-[#d8000d] mt-0.5 shrink-0" />
+                  <div className="whitespace-pre-line">{intro.address}</div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <Phone className="h-4 w-4 text-[#d8000d]" />
-                  {intro.phone}
+                <div className="flex items-start gap-2">
+                  <Phone className="h-4 w-4 text-[#d8000d] mt-0.5 shrink-0" />
+                  <div className="whitespace-pre-line">{intro.phone}</div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <Phone className="h-4 w-4 text-[#d8000d]" />
+                <div className="flex items-start gap-2">
+                  <Phone className="h-4 w-4 text-[#d8000d] mt-0.5 shrink-0" />
                   <a
                     href={intro.whatsappUrl || "#"}
-                    className="hover:text-[#d8000d]"
+                    className="hover:text-[#d8000d] whitespace-pre-line"
                     target="_blank"
                     rel="noreferrer"
                   >

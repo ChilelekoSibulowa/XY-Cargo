@@ -106,6 +106,12 @@ export const TrackingPageContent = () => {
 
     if (details) {
       setResult(details);
+      const resolvedParams = getShipsGoEmbedParams(details) || guessShipsGoEmbedParamsFromQuery(query);
+      if (resolvedParams) {
+        setMapQuery(resolvedParams.query);
+        setMapTransport(resolvedParams.transport);
+        void handleMapSearch(resolvedParams.query, resolvedParams.transport);
+      }
     } else {
       setErrorMessage("No shipment found with that tracking number.");
     }
@@ -117,7 +123,7 @@ export const TrackingPageContent = () => {
     }
 
     setIsLoading(false);
-  }, [searchParams, setSearchParams, trackingId, userRole]);
+  }, [searchParams, setSearchParams, trackingId, userRole, handleMapSearch]);
 
   useEffect(() => {
     const query = searchParams.get("query")?.trim() || "";
@@ -132,7 +138,7 @@ export const TrackingPageContent = () => {
     void handleTrack(query);
   }, [handleTrack, searchParams]);
 
-  const handleMapSearch = useCallback((rawValue?: string, transport?: ShipsGoTransport) => {
+  const handleMapSearch = useCallback(async (rawValue?: string, transport?: ShipsGoTransport) => {
     const value = (rawValue ?? mapQuery).trim();
     const chosenTransport = transport ?? mapTransport;
     if (!value) {
@@ -142,8 +148,25 @@ export const TrackingPageContent = () => {
     }
     const guessed = guessShipsGoEmbedParamsFromQuery(value);
     const params = guessed || { transport: chosenTransport, query: value };
-    setEmbedUrl(buildShipsGoEmbedUrl(null, params));
     setEmbedContext(params);
+
+    let fetchedEmbedUrl = null;
+    try {
+      const embedRes = await supabase.functions.invoke("shipsgo-tracking", {
+        body: {
+          action: "embed",
+          transport: params.transport,
+          query: params.query
+        }
+      });
+      if (!embedRes.error && embedRes.data?.success && embedRes.data?.data?.embed_url) {
+        fetchedEmbedUrl = embedRes.data.data.embed_url;
+      }
+    } catch (e) {
+      console.warn("Failed to fetch secure ShipsGo embed URL:", e);
+    }
+
+    setEmbedUrl(fetchedEmbedUrl || buildShipsGoEmbedUrl(null, params));
   }, [mapQuery, mapTransport]);
 
   const hydratedResult = useMemo(() => {

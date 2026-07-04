@@ -168,36 +168,36 @@ export const NewsletterCta = () => {
   };
 
   return (
-    <section className="bg-white px-6 py-16 reveal-on-scroll">
+    <section className="bg-slate-950 px-6 py-8">
       <div className="mx-auto max-w-7xl">
-        <div className="relative overflow-hidden rounded-[32px] bg-white border border-slate-200/85 p-8 sm:p-12 shadow-xl shadow-slate-100/50">
-          <div className="absolute top-0 right-0 w-64 h-64 bg-red-600/[0.02] rounded-full blur-3xl pointer-events-none" />
+        <div className="relative overflow-hidden rounded-2xl bg-[#0E1321] border border-white/5 px-8 py-6 shadow-2xl">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-[#E11D48]/[0.03] rounded-full blur-3xl pointer-events-none" />
           
-          <div className="relative flex flex-col items-center justify-between gap-8 lg:flex-row z-10">
-            <div className="space-y-2 text-center lg:text-left max-w-xl">
-              <h2 className="text-2xl sm:text-3xl font-[900] uppercase tracking-tight text-slate-900 font-satoshi">
-                Get Shipping Tips & <br className="hidden sm:inline" /> Exclusive Offers
+          <div className="relative flex flex-col items-center justify-between gap-6 lg:flex-row z-10">
+            <div className="space-y-1.5 text-center lg:text-left max-w-xl">
+              <h2 className="text-xl sm:text-2xl font-[900] tracking-tight !text-white font-satoshi">
+                Get Shipping Tips & Exclusive Offers
               </h2>
-              <p className="text-xs sm:text-sm text-slate-500 font-medium leading-relaxed">
+              <p className="text-xs sm:text-sm !text-slate-400 font-medium leading-relaxed font-satoshi">
                 Join over 5,000+ businesses and individuals receiving our weekly logistics updates, customs guides, and freight discounts.
               </p>
             </div>
 
             <div className="w-full max-w-md">
               <form onSubmit={handleSubscribe} className="space-y-3">
-                <div className="flex flex-col gap-2 sm:flex-row bg-slate-50 p-1.5 rounded-full border border-slate-200/80 shadow-inner w-full focus-within:border-[#d8000d] focus-within:ring-2 focus-within:ring-[#d8000d]/10 transition-all">
+                <div className="flex flex-col gap-2 sm:flex-row bg-white p-1 rounded-full shadow-inner w-full focus-within:ring-2 focus-within:ring-rose-500/20 transition-all items-center">
                   <Input
                     type="email"
                     placeholder="Enter your email address"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     disabled={status === 'loading'}
-                    className="h-11 border-0 bg-transparent px-4 text-sm text-slate-900 focus-visible:ring-0 shadow-none placeholder:text-slate-400 flex-1"
+                    className="h-10 border-0 bg-transparent px-4 text-sm text-slate-900 focus-visible:ring-0 shadow-none placeholder:text-slate-400 flex-1 outline-none font-satoshi"
                   />
                   <Button
                     type="submit"
                     disabled={status === 'loading' || status === 'success'}
-                    className="h-11 rounded-full bg-[#d8000d] px-8 text-xs font-black uppercase tracking-widest text-white hover:bg-[#bf000c] transition-all hover:scale-[1.02] shadow-lg shadow-red-900/20"
+                    className="h-10 rounded-full bg-[#E11D48] px-6 text-xs font-bold text-white hover:bg-[#BE123C] transition-all hover:scale-[1.02] shadow-md border-none font-satoshi"
                   >
                     {status === 'loading' ? 'Joining...' : 'Subscribe'}
                   </Button>
@@ -205,14 +205,14 @@ export const NewsletterCta = () => {
 
                 {/* Status Messages */}
                 {status === 'success' && (
-                  <div className="flex items-center justify-center lg:justify-start gap-2 text-green-600 font-bold px-4 animate-fade-in">
+                  <div className="flex items-center justify-center lg:justify-start gap-2 text-green-400 font-bold px-4 animate-fade-in font-satoshi">
                     <CheckCircle className="h-4 w-4 shrink-0" />
                     <span className="text-xs">{message}</span>
                   </div>
                 )}
 
                 {status === 'error' && (
-                  <div className="flex items-center justify-center lg:justify-start gap-2 text-red-600 font-bold px-4 animate-fade-in">
+                  <div className="flex items-center justify-center lg:justify-start gap-2 text-red-400 font-bold px-4 animate-fade-in font-satoshi">
                     <AlertCircle className="h-4 w-4 shrink-0" />
                     <span className="text-xs">{message}</span>
                   </div>

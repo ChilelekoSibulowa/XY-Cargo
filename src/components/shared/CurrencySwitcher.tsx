@@ -8,7 +8,9 @@ import {
 } from "@/components/ui/select";
 import { DollarSign } from "lucide-react";
 
-export const CurrencySwitcher = () => {
+import { cn } from "@/lib/utils";
+
+export const CurrencySwitcher = ({ className }: { className?: string }) => {
   const { currencies, selectedCurrency, setSelectedCurrency, isLoading } = useCurrency();
 
   const isInactive = isLoading || currencies.length <= 1;
@@ -26,7 +28,7 @@ export const CurrencySwitcher = () => {
       onValueChange={handleChange}
       disabled={isInactive}
     >
-      <SelectTrigger className="w-fit min-w-[65px] h-8 px-2 text-[10px] font-bold border border-slate-200 bg-slate-50 hover:bg-slate-100 transition-colors rounded-md flex items-center justify-between gap-1">
+      <SelectTrigger className={cn("w-fit min-w-[65px] h-8 px-2 text-[10px] font-bold border border-slate-200 bg-slate-50 hover:bg-slate-100 transition-colors rounded-md flex items-center justify-between gap-1", className)}>
         <div className="truncate text-slate-700">
           {isLoading ? "..." : selectedCurrency?.code || "USD"}
         </div>

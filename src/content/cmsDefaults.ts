@@ -257,8 +257,8 @@ export const cmsDefaults = {
   site: {
     topBar: {
       hours: "8:00am-5:00pm (Zambia Time)",
-      email: "info@xycargozm.com",
-      address: "Plot 26592, Kafue Road, Lusaka",
+      email: "Support@xycargozm.com",
+      address: "De la motte Zambia Ltd Building, Plot 26592, Kafue Road, Lusaka, Zambia, 10101",
       phone: "+260 211220012",
       facebookUrl: "https://www.facebook.com/share/1AwnHQ7TFp/?mibextid=wwXIfr",
       instagramUrl: "https://www.instagram.com/xy_cargo_zm?igsh=MWVoNHowcDFjMHY3ag==",
@@ -296,11 +296,12 @@ export const cmsDefaults = {
         },
       ],
       supportItems: [
-        "Support Centre: Call: +260 211220012",
-        "WhatsApp: +260 967379139 / +260 769481203",
-        "Live Chat: chat with us at xycargozm.com",
-        "Get in touch with us: info@xycargozm.com",
-        "Address: Plot 26592, Kafue Road, Lusaka",
+        "Lusaka HQ: De la motte Zambia Ltd Building, Plot 26592, Kafue Road, Lusaka, Zambia, 10101",
+        "Copperbelt Office: Real masters complex, shinde street corner of kabelenga road",
+        "Lusaka Customer Care: +260 211220012",
+        "Copperbelt Customer Care: 0958 977 051",
+        "WhatsApp Support: +260 95 8977049 / +260 95 8977051",
+        "Email Support: Support@xycargozm.com",
       ],
       bottomLeft:
         "(c) 2026 XY Cargo Zambia. All Rights Reserved. China to Zambia Shipping Specialists - Designed by",
@@ -396,7 +397,7 @@ export const cmsDefaults = {
     stats: [
       { label: "Countries served", value: "200+" },
       { label: "Packages Delivered", value: "1M+" },
-      { label: "Customer Support", value: "24/7" },
+      { label: "Customer Support", value: "24/7" }, 
     ],
     airServices: [
       { title: "Fastest Delivery", body: "Express air freight solutions with tight ETAs." },
@@ -764,11 +765,11 @@ export const cmsDefaults = {
       title: "Customer Support Center",
       body:
         "Get help when you need it. Our expert support team is here to assist you with any questions or concerns about your shipments.",
-      email: "info@xycargozm.com",
-      address: "Plot 26592, Kafue Road, Lusaka",
-      phone: "Call : +260 211220012",
-      whatsapp: "WhatsApp: +260 967379139 / +260 769481203",
-      whatsappUrl: "https://wa.me/260967379139",
+      email: "Support@xycargozm.com",
+      address: "Lusaka HQ:\nDe la motte Zambia Ltd Building, Plot 26592, Kafue Road, Lusaka, Zambia, 10101\n\nCopperbelt Office:\nReal masters complex, shinde street corner of kabelenga road",
+      phone: "Lusaka Customer Care: +260 211220012\nCopperbelt Customer Care: 0958 977 051",
+      whatsapp: "WhatsApp Support: +260 95 8977049 / +260 95 8977051",
+      whatsappUrl: "https://wa.me/260958977049",
       liveChat: "Live Chat: chat with us at xycargozm.com",
       liveChatUrl: "https://embed.tawk.to/69d2d838eece5f1c34664134/1jlfpp8ge",
     },
@@ -781,7 +782,7 @@ export const cmsDefaults = {
     hero: {
       title: "About Us",
       breadcrumb: "XY Cargo Zambia / About Us",
-      image: heroImage,
+      image: "/images/about_us_warehouse.png",
     },
     intro: {
       title: "About XY Cargo Zambia",
