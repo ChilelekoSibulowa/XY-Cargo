@@ -304,7 +304,7 @@ export const cmsDefaults = {
         "Email Support: Support@xycargozm.com",
       ],
       bottomLeft:
-        "(c) 2026 XY Cargo Zambia. All Rights Reserved. China to Zambia Shipping Specialists - Designed by",
+        "(c) 2026 XY Cargo Zambia. All Rights Reserved. China to Zambia Shipping Specialists",
       bottomRight: "Privacy Policy  /  Terms & Conditions",
     },
   } satisfies CmsSiteData,
