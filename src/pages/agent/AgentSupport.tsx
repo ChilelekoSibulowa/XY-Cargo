@@ -258,7 +258,7 @@ const AgentSupport = () => {
           <CardHeader className="pb-2"><CardTitle className="text-sm">Live Chat</CardTitle></CardHeader>
           <CardContent>
             <Button asChild variant="outline" className="w-full">
-              <a href="mailto:support@xycargo.com?subject=Agent%20Live%20Chat%20Request">
+              <a href="mailto:support@xycargozm.com?subject=Agent%20Live%20Chat%20Request">
                 <MessageCircle className="mr-2 h-4 w-4" /> Start Chat
               </a>
             </Button>
@@ -268,7 +268,7 @@ const AgentSupport = () => {
           <CardHeader className="pb-2"><CardTitle className="text-sm">Message Support</CardTitle></CardHeader>
           <CardContent>
             <Button asChild variant="outline" className="w-full">
-              <a href="mailto:support@xycargo.com?subject=Agent%20Support%20Message">
+              <a href="mailto:support@xycargozm.com?subject=Agent%20Support%20Message">
                 <MessagesSquare className="mr-2 h-4 w-4" /> Send Message
               </a>
             </Button>

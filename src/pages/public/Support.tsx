@@ -18,6 +18,7 @@ const Support = () => {
 
   const intro = {
     ...rawIntro,
+    email: (!rawIntro.email || rawIntro.email.toLowerCase().includes("info@")) ? cmsDefaults.support.intro.email : rawIntro.email,
     address: hasOldSupportAddress ? cmsDefaults.support.intro.address : rawIntro.address,
     phone: hasOldSupportAddress ? cmsDefaults.support.intro.phone : rawIntro.phone,
     whatsapp: hasOldSupportAddress ? cmsDefaults.support.intro.whatsapp : rawIntro.whatsapp,
