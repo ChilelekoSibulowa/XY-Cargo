@@ -103,7 +103,7 @@ export const PublicLayout = () => {
     { label: "Refund Policy", to: "/refund-policy" },
   ];
   const normalizedFooterBottomLeft = footer.bottomLeft
-    .replace("Desig Platonic Hub", "")
+    .replace("Desig Platonic Hub", "Designed by")
     .replace("", "");
   const resolveFooterLink = (item: string, columnTitle: string) => {
     const key = item.trim().toLowerCase();
@@ -494,15 +494,7 @@ export const PublicLayout = () => {
         <div className="border-t border-white/10 bg-slate-950/50 py-8">
           <div className="mx-auto max-w-7xl px-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-center sm:text-left">
             <span className="text-sm !text-slate-400 font-satoshi">
-              © 2026 XY Cargo Zambia. All Rights Reserved. China to Zambia Shipping Specialists{" "}
-              <a
-                href="https://platonyx.com"
-                target="_blank"
-                rel="noreferrer"
-                className="font-semibold transition-colors !text-slate-400 hover:!text-white hover:underline"
-              >
-                
-              </a>
+              © 2026 XY Cargo Zambia. All Rights Reserved. China to Zambia Shipping Specialists
             </span>
             <div className="flex items-center gap-6 text-sm font-satoshi">
               {footerLegalLinks.map((link) => (
