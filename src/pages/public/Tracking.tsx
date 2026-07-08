@@ -18,6 +18,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { supabase } from "@/integrations/supabase/client";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   buildShipsGoEmbedUrl,
   formatTrackingServiceType,
@@ -75,7 +76,10 @@ const getStatusLabel = (status: string) => statusLabel[status] || status || "Unk
 const Tracking = () => {
   const { formatAmount } = useDefaultCurrency();
   const [searchParams, setSearchParams] = useSearchParams();
+  const [activeTab, setActiveTab] = useState<string>("standard");
   const [trackingNumber, setTrackingNumber] = useState("");
+  const [mapQuery, setMapQuery] = useState("");
+  const [mapTransport, setMapTransport] = useState<ShipsGoTransport>("ocean");
   const [isLoading, setIsLoading] = useState(false);
   const [isLiveLoading, setIsLiveLoading] = useState(false);
   const [isEmbedLoading, setIsEmbedLoading] = useState(false);
@@ -99,7 +103,11 @@ const Tracking = () => {
     [searchParams, setSearchParams]
   );
 
-  const handleTrack = useCallback(async (inputQuery?: string, preferredTransport?: ShipsGoTransport | null) => {
+  const handleTrack = useCallback(async (
+    inputQuery?: string, 
+    preferredTransport?: ShipsGoTransport | null,
+    isMapTabSearch?: boolean
+  ) => {
     const query = (inputQuery ?? trackingNumber).trim();
     setErrorMessage("");
     setResult(null);
@@ -192,7 +200,9 @@ const Tracking = () => {
     if (!details && !hasExternalTracking) {
       if (immediateParams) {
         // If it's a valid container/AWB format, keep the embed URL & context as a fallback
-        setErrorMessage("No local shipment record found. Displaying map search fallback...");
+        if (!isMapTabSearch) {
+          setErrorMessage("No local shipment record found. Displaying map search fallback...");
+        }
       } else {
         setEmbedContext(null);
         setEmbedUrl(DEFAULT_SHIPSGO_EMBED_URL);
@@ -216,11 +226,24 @@ const Tracking = () => {
       return;
     }
 
-    setTrackingNumber(query);
+    const guessed = guessShipsGoEmbedParamsFromQuery(query);
+    const isDirectMap = Boolean(transport || guessed);
+
+    if (isDirectMap) {
+      setActiveTab("map");
+      setMapQuery(query);
+      if (transport || guessed?.transport) {
+        setMapTransport(transport || guessed!.transport);
+      }
+    } else {
+      setActiveTab("standard");
+      setTrackingNumber(query);
+    }
+
     const key = `${transport || ""}:${query}`;
     if (autoTrackedKeyRef.current === key) return;
     autoTrackedKeyRef.current = key;
-    void handleTrack(query, transport);
+    void handleTrack(query, transport, isDirectMap);
   }, [handleTrack, searchParams]);
 
   const liveMovements = useMemo(() => {
@@ -296,40 +319,115 @@ const Tracking = () => {
 
       </div>
 
-      <Card>
-        <CardContent className="space-y-4 p-4 sm:p-6">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-            <Input
-              placeholder="Shipment code, custom tracking number, or consolidated tracking number"
-              value={trackingNumber}
-              onChange={(event) => {
-                const nextValue = event.target.value;
-                setTrackingNumber(nextValue);
-                setResult(null);
-                setLiveData(null);
-                setEmbedContext(null);
-                setEmbedUrl(DEFAULT_SHIPSGO_EMBED_URL);
-                setEmbedErrorMessage(null);
-                setErrorMessage("");
-                if (searchParams.get("query")) {
-                  autoTrackedKeyRef.current = null;
-                  setSearchParams({}, { replace: true });
-                }
-                if (!nextValue.trim()) {
-                  autoTrackedKeyRef.current = null;
-                }
-              }}
-              onKeyDown={(event) => event.key === "Enter" && handleTrack()}
-              className="flex-1"
-            />
-            <Button className="shrink-0 gap-2" onClick={() => handleTrack()} disabled={isLoading}>
-              {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <PackageSearch className="h-4 w-4" />}
-              {isLoading ? "Searching..." : "Track"}
-            </Button>
-          </div>
-          {errorMessage ? <p className="text-sm text-destructive">{errorMessage}</p> : null}
-        </CardContent>
-      </Card>
+      <Tabs value={activeTab} onValueChange={(value) => {
+        setActiveTab(value);
+        setErrorMessage("");
+      }} className="w-full">
+        <TabsList className="grid w-full max-w-[400px] grid-cols-2 mb-6">
+          <TabsTrigger value="standard" className="gap-2">
+            <PackageSearch className="h-4 w-4" /> Standard Tracking
+          </TabsTrigger>
+          <TabsTrigger value="map" className="gap-2">
+            <MapPin className="h-4 w-4" /> Live Tracking Map
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="standard">
+          <Card>
+            <CardContent className="space-y-4 p-4 sm:p-6">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                <Input
+                  placeholder="Shipment code, custom tracking number, or consolidated tracking number"
+                  value={trackingNumber}
+                  onChange={(event) => {
+                    const nextValue = event.target.value;
+                    setTrackingNumber(nextValue);
+                    setResult(null);
+                    setLiveData(null);
+                    setEmbedContext(null);
+                    setEmbedUrl(DEFAULT_SHIPSGO_EMBED_URL);
+                    setEmbedErrorMessage(null);
+                    setErrorMessage("");
+                    if (searchParams.get("query")) {
+                      autoTrackedKeyRef.current = null;
+                      setSearchParams({}, { replace: true });
+                    }
+                    if (!nextValue.trim()) {
+                      autoTrackedKeyRef.current = null;
+                    }
+                  }}
+                  onKeyDown={(event) => event.key === "Enter" && handleTrack()}
+                  className="flex-1"
+                />
+                <Button className="shrink-0 gap-2" onClick={() => handleTrack()} disabled={isLoading}>
+                  {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <PackageSearch className="h-4 w-4" />}
+                  {isLoading ? "Searching..." : "Track"}
+                </Button>
+              </div>
+              {errorMessage ? <p className="text-sm text-destructive">{errorMessage}</p> : null}
+
+              {/* Inline helper link to the Live Tracking Map */}
+              <div className="flex items-center justify-between px-1">
+                <p className="text-xs text-muted-foreground">
+                  Looking for ocean/air vessel tracking?{" "}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setActiveTab("map");
+                      setErrorMessage("");
+                    }}
+                    className="font-medium text-rose-600 hover:text-rose-700 hover:underline"
+                  >
+                    Use Live Carrier Map Search
+                  </button>
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="map">
+          <Card>
+            <CardContent className="space-y-4 p-4 sm:p-6">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                <select
+                  value={mapTransport}
+                  onChange={(event) => setMapTransport(event.target.value as ShipsGoTransport)}
+                  className="h-10 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 sm:w-40"
+                >
+                  <option value="ocean">Ocean</option>
+                  <option value="air">Air</option>
+                </select>
+                <Input
+                  placeholder="Container / BL / AWB / Booking number"
+                  value={mapQuery}
+                  onChange={(event) => {
+                    const nextValue = event.target.value;
+                    setMapQuery(nextValue);
+                    setResult(null);
+                    setLiveData(null);
+                    setEmbedContext(null);
+                    setEmbedUrl(DEFAULT_SHIPSGO_EMBED_URL);
+                    setEmbedErrorMessage(null);
+                    setErrorMessage("");
+                    if (searchParams.get("query")) {
+                      autoTrackedKeyRef.current = null;
+                      setSearchParams({}, { replace: true });
+                    }
+                  }}
+                  onKeyDown={(event) => event.key === "Enter" && handleTrack(mapQuery, mapTransport, true)}
+                  className="flex-1"
+                />
+                <Button className="shrink-0 gap-2 font-medium" onClick={() => handleTrack(mapQuery, mapTransport, true)} disabled={isLoading}>
+                  {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <MapPin className="h-4 w-4" />}
+                  {isLoading ? "Loading Map..." : "Load Map"}
+                </Button>
+              </div>
+              {errorMessage ? <p className="text-sm text-destructive">{errorMessage}</p> : null}
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
 
       <ShipsGoEmbedCard
         embedUrl={embedUrl}
